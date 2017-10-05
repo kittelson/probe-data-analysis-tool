@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-from viz import extract_vals, create_columns2
+from viz import extract_vals, create_columns
 from stat_func import percentile
 
 
@@ -47,7 +47,7 @@ new_mat = [extract_vals(dStr) for dStr in df_dir1['measurement_tstamp']]
 time2 = time.time()
 print('Mat Creation: ' + str(time2 - time1))
 time1 = time.time()
-df_dir1['Date'], df_dir1['Year'], df_dir1['Month'], df_dir1['Day'], df_dir1['AP'], df_dir1['weekday'] = create_columns2(new_mat)
+df_dir1['Date'], df_dir1['Year'], df_dir1['Month'], df_dir1['Day'], df_dir1['AP'], df_dir1['weekday'] = create_columns(new_mat)
 time2 = time.time()
 print('df_dir1 Creation: '+str(time2-time1))
 # Filtering to selected set of days
@@ -82,7 +82,7 @@ new_mat = [extract_vals(dStr) for dStr in df_dir2['measurement_tstamp']]
 time2 = time.time()
 print('Mat Creation: ' + str(time2 - time1))
 time1 = time.time()
-df_dir2['Date'], df_dir2['Year'], df_dir2['Month'], df_dir2['Day'], df_dir2['AP'], df_dir2['weekday'] = create_columns2(new_mat)
+df_dir2['Date'], df_dir2['Year'], df_dir2['Month'], df_dir2['Day'], df_dir2['AP'], df_dir2['weekday'] = create_columns(new_mat)
 time2 = time.time()
 print('df_dir2 Creation: '+str(time2-time1))
 # Filtering to selected set of days
@@ -134,8 +134,10 @@ tt_pm_pct95_dir2 = plot_df_dir2['percentile_95pm']
 x = [el for el in range(len(tt_am_mean_dir1))]
 
 fig = plt.figure(figsize=(12, 8))
-ax1 = fig.add_subplot(2, 1, 1)
-ax2 = fig.add_subplot(2, 1, 2)
+ax1 = fig.add_subplot(2, 2, 1)
+ax2 = fig.add_subplot(2, 2, 2)
+ax3 = fig.add_subplot(2, 2, 3)
+ax4 = fig.add_subplot(2, 2, 4)
 
 ax1.plot(x, tt_am_mean_dir1, color='C0', linestyle='-', lw=2.0, label='AM-Mean')
 ax1.plot(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
@@ -150,6 +152,22 @@ ax1.set_ylabel('Travel Time (Minutes)')
 ax1.legend()
 ax1.set_xticks([0, 5, 10, 15, 20])
 ax1.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+ax1.grid(True)
+
+width = 0.35
+ax3.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
+#ax3.bar(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+ax3.bar(x, [tt_am_pct95_dir1[i]-tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8', label='AM-95th Pct')
+
+ax3.bar([el + width for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
+#ax1.bar(x + width, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+ax3.bar([el + width for el in x], [tt_pm_pct95_dir1[i]-tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width, bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+
+ax3.set_title(dirs[0] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len1) + ' mi)')
+ax3.set_ylabel('Travel Time (Minutes)')
+ax3.legend()
+ax3.set_xticks([0, 5, 10, 15, 20])
+ax3.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
 
 ax2.plot(x, tt_am_mean_dir2, color='C2', linestyle='-', lw=2.0, label='AM-Mean')
 ax2.plot(x, tt_am_pct5_dir2, color='C2', linestyle='--', lw=1.0, label='AM-5th Pct')
@@ -164,3 +182,19 @@ ax2.set_ylabel('Travel Time (Minutes)')
 ax2.legend()
 ax2.set_xticks([0, 5, 10, 15, 20])
 ax2.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+ax2.grid(True)
+
+width = 0.35
+ax4.bar(x, tt_am_mean_dir2, width, color='C2', label='AM-Mean')
+#ax4.bar(x, tt_am_pct5_dir2, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+ax4.bar(x, [tt_am_pct95_dir2[i]-tt_am_mean_dir2[i] for i in range(len(tt_am_mean_dir2))], width, bottom=tt_am_mean_dir2, color='#98df8a', label='AM-95th Pct')
+
+ax4.bar([el + width for el in x], tt_pm_mean_dir2, width, color='C3', label='PM-Mean')
+#ax4.bar(x + width, tt_pm_pct5_dir2, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+ax4.bar([el + width for el in x], [tt_pm_pct95_dir2[i]-tt_pm_mean_dir2[i] for i in range(len(tt_pm_mean_dir2))], width, bottom=tt_pm_mean_dir2, color='#ff9896', label='PM-95th Pct')
+
+ax4.set_title(dirs[1] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len2) + ' mi)')
+ax4.set_ylabel('Travel Time (Minutes)')
+ax4.legend()
+ax4.set_xticks([0, 5, 10, 15, 20])
+ax4.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])

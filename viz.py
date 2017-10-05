@@ -42,18 +42,15 @@ def extract_vals3(tstamp, open_date1, open_date2):
     return tstamp.date, ap, region, day_type
 
 
-def create_columns(data):
-    dates, years, months, days, aps, regions, weekday = zip(*data)
-    # dates, aps, regions, weekday = zip(*data)
-    return list(dates), list(years), list(months), list(days), list(aps), list(regions), list(weekday)
-    # return list(dates), list(aps), list(regions), list(weekday)
-
-def create_columns2(data):
-    dates, years, months, days, aps, weekday = zip(*data)
-    return list(dates), list(years), list(months), list(days), list(aps), list(weekday)
+def create_columns(data, is_case_study=False):
+    if is_case_study is False:
+        dates, years, months, days, aps, weekday = zip(*data)
+        return list(dates), list(years), list(months), list(days), list(aps), list(weekday)
+    else:
+        dates, years, months, days, aps, regions, weekday = zip(*data)
+        return list(dates), list(years), list(months), list(days), list(aps), list(regions), list(weekday)
 
 
-#os.chdir('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/')
 def run_viz(case_study_idx, print_csv=True):
     fname, tmc, site_name, start_date, open_date1, open_date2, end_date = create_casestudy(case_study_idx)
 
@@ -65,7 +62,7 @@ def run_viz(case_study_idx, print_csv=True):
     df = pd.read_csv(fname)
     df = df[df.speed.notnull()]
     df['Date'], df['AP'], df['region'], df['weekday'] = create_columns(
-        [extract_vals2(dStr, open_date1, open_date2) for dStr in df['measurement_tstamp']])
+        [extract_vals2(dStr, open_date1, open_date2) for dStr in df['measurement_tstamp']], is_case_study=True)
 
     # Creating Before Data
     df1 = df[df.region == 1]
@@ -114,7 +111,7 @@ def run_viz_day(case_study_idx, day_list, include_tmc=None, print_csv=True, retu
     time2 = time.time()
     print('Mat Creation: ' + str(time2 - time1))
     time1 = time.time()
-    df['Date'], df['AP'], df['region'], df['weekday'] = create_columns(new_mat)
+    df['Date'], df['AP'], df['region'], df['weekday'] = create_columns(new_mat, is_case_study=True)
     time2 = time.time()
     print('DF Creation: '+str(time2-time1))
 

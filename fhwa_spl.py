@@ -1,15 +1,14 @@
 import sys
-from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread
+from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
-from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit
+from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem
 from mw_test import Ui_MainWindow
 from viz import run_viz, run_viz_day
-from viz_qt import DataLoadQT
+from viz_qt import DataLoadQT, LoadProjectQT
 from data_import import get_case_study_list, get_spm_study_list
-
-from offline_viz import FourByFourPanel
-
+from DataHelper import DataHelper
+from offline_viz import FourByFourPanel, FourByFourPanelTimeTime
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -34,12 +33,20 @@ class MainWindow(QMainWindow):
         self.ui = Ui_MainWindow()
         self.ui.setupUi(self)
 
+        self.project = None
         self.database = DataHelper()
 
         #self.web = QWebView()
         #self.container = ConnectionContainer()
 
-        open_file_action = QAction('&Open', self)
+        new_file_action = QAction('&New Project', self)
+        new_file_action.setShortcut('Ctrl+N')
+        new_file_action.setToolTip('Create New Project File')
+        new_file_action.triggered.connect(self.create_new)
+        self.ui.menuFile.addAction(new_file_action)
+        self.ui.pushButton.clicked.connect(self.create_new)
+
+        open_file_action = QAction('&Open Project', self)
         open_file_action.setShortcut('Ctrl+O')
         open_file_action.setToolTip('Open Project File')
         open_file_action.triggered.connect(self.open_file)
@@ -88,6 +95,12 @@ class MainWindow(QMainWindow):
         # update_chart_action.triggered.connect(self.update_chart)
         # self.ui.menuAnalyze.addAction(update_chart_action)
 
+        self.ui.add_range_button.clicked.connect(self.add_date_range)
+        self.ui.del_range_button.clicked.connect(self.del_date_range)
+
+        #self.ui.create_charts_button.clicked.connect(self.load_extra_time_charts)
+        self.ui.create_charts_button.clicked.connect(self.load_time_time_charts)
+
         self.show()
 
     # def load_finished(self):
@@ -100,11 +113,11 @@ class MainWindow(QMainWindow):
     #     self.ui.webView.loadFinished.connect(self.load_finished)
     #     self.ui.webView.load(QUrl('file:///' + f_name[0]))
 
-    def load_reader(self):
-        print('Action Triggered')
-        f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "HTML files (*.html)")
-        print(f_name[0])
-        self.ui.webView_2.load(QUrl('file:///' + f_name[0]))  # 'file:///C:/Users/ltrask/PycharmProjects/BrowserTest/index.html'
+    # def load_reader(self):
+    #     print('Action Triggered')
+    #     f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "HTML files (*.html)")
+    #     print(f_name[0])
+    #     self.ui.webView_2.load(QUrl('file:///' + f_name[0]))  # 'file:///C:/Users/ltrask/PycharmProjects/BrowserTest/index.html'
 
     def load_flask_chart(self):
         print('Action Triggered')
@@ -114,10 +127,87 @@ class MainWindow(QMainWindow):
         print('action triggered')
         self.ui.webView.page().mainFrame().evaluateJavaScript('transitionStacked()')
 
+    def create_new(self):
+        project_dir_name = QFileDialog.getExistingDirectory(self, "Select Project/Data Folder")
+        tokens = project_dir_name.split('/')
+        tmc_file_name = project_dir_name + '/tmc_identification.csv'
+        data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+        project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
+        if ok:
+            self.project = Project(project_name, project_dir_name, self)
+            self.project.set_tmc_file(tmc_file_name)
+            self.project.set_data_file(data_file_name)
+            self.project.load()
+
+    def add_project(self, project):
+        # Updating Tool Labels
+        # self.ui.label.setText(project.get_name)
+        # Updating Dataset Tree
+        if self.ui.treeWidget_3.model().hasChildren():
+            self.ui.treeWidget_3.model().removeRows(0, self.ui.treeWidget_3.model().rowCount())
+        proj_item = QTreeWidgetItem(self.ui.treeWidget_3)
+        proj_item.setText(0, project.get_name())
+        # proj_item.setFlags(proj_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
+        directions = project.database.get_directions()
+        for dir in directions:
+            child = QTreeWidgetItem(proj_item)
+            child.setText(0, dir)
+            child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
+            child.setCheckState(0, Qt.Unchecked)
+        # proj_item.child(0).setCheckState(0, Qt.Checked)
+
+        # Updating Data Types
+        self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
+        self.ui.listWidget_4.addItem('End Date: ' + project.database.get_last_date())
+        self.ui.listWidget_4.addItem('Weekdays: ' + project.database.get_available_weekdays(as_string=True))
+        self.ui.listWidget_4.addItem('Weekends: ' + project.database.get_available_weekends(as_string=True))
+        self.ui.listWidget_4.addItem('Months: ' + project.database.get_available_months(as_string=True))
+
+        # Updating analysis types
+        # Updating date ranges
+        s_date = project.database.get_first_date().split('-')
+        e_date = project.database.get_last_date().split('-')
+        s_qdate = QDate(int(s_date[0]), int(s_date[1]), int(s_date[2]))
+        e_qdate = QDate(int(e_date[0]), int(e_date[1]), int(e_date[2]))
+        self.ui.dateEdit_start.setDate(s_qdate)
+        self.ui.dateEdit_start.setDateRange(s_qdate, e_qdate)
+        self.ui.dateEdit_end.setDate(e_qdate)
+        self.ui.dateEdit_end.setDateRange(s_qdate, e_qdate)
+
     def open_file(self):
         f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "CSV files (*.csv)")
         print(f_name)
         print('done')
+
+    def add_date_range(self):
+        start_date = self.ui.dateEdit_start.date()
+        end_date = self.ui.dateEdit_end.date()
+        # print(start_date.toString())
+        # print(end_date.toString())
+        self.project.add_date_range([start_date, end_date])
+        self.update_date_range_tree()
+
+    def update_date_range_tree(self):
+        if self.ui.treeWidget.model().hasChildren():
+            self.ui.treeWidget.model().removeRows(0, self.ui.treeWidget.model().rowCount())
+        range_idx = 1
+        for d_range in self.project.get_date_ranges():
+            range_item = QTreeWidgetItem(self.ui.treeWidget)
+            range_item.setText(0, 'Period ' + str(range_idx))
+            range_item.setFlags(range_item.flags() | Qt.ItemIsUserCheckable)
+            child1 = QTreeWidgetItem(range_item)
+            child1.setText(0, d_range[0].toString())
+            child2 = QTreeWidgetItem(range_item)
+            child2.setText(0, d_range[1].toString())
+            range_idx += 1
+            # proj_item.child(0).setCheckState(0, Qt.Checked)
+
+    def del_date_range(self):
+        model_indexes = self.ui.treeWidget.selectionModel().selectedIndexes()
+        indexes = [m_idx.row() for m_idx in model_indexes]
+        for d_range_idx in indexes:
+            d_range = self.project.del_date_range(d_range_idx)
+        self.update_date_range_tree()
 
     def run_case_study(self):
         case_studies = get_case_study_list()
@@ -130,16 +220,16 @@ class MainWindow(QMainWindow):
         case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
         return case_studies.index(case_study) + 1, ok
 
-    def select_case_study_spm(self):
-        case_studies = get_spm_study_list()
-        case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
-        return case_studies.index(case_study) + 1, ok
-
     def extract_case_study(self):
         cs_idx, ok = self.select_case_study()
         if ok:
             self.database.set_active_subset(-1)
             DataLoadQT(self, cs_idx, [], print_csv=False, return_tt=False)
+
+    def select_case_study_spm(self):
+        case_studies = get_spm_study_list()
+        case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
+        return case_studies.index(case_study) + 1, ok
 
     def extract_case_study_spm(self):
         cs_idx, ok = self.select_case_study_spm()
@@ -148,7 +238,10 @@ class MainWindow(QMainWindow):
             DataLoadQT(self, cs_idx, [], print_csv=False, return_tt=False)
 
     def load_mpl_charts(self, chart_panel_name):
-        mpl_widget = FourByFourPanel(self.database.get_tmc_list(), self.database.data, self.database.tt_comp, self.database.available_days,
+        mpl_widget = FourByFourPanel(self.database.get_tmc_list(),
+                                     self.database.data,
+                                     self.database.tt_comp,
+                                     self.database.available_days,
                                      self.database.titles)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
@@ -160,6 +253,40 @@ class MainWindow(QMainWindow):
                    subset_name=chart_name,
                    print_csv=False,
                    return_tt=False)
+
+    def load_extra_time_charts(self):
+        chart_panel_name = self.project.get_name() + ' Extra Time Charts'
+        df = self.project.database.get_data()
+        dr1 = self.project.get_date_range(0)
+        df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
+        dr2 = self.project.get_date_range(1)
+        df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
+        mpl_widget = FourByFourPanel(self.project.database.get_tmcs(),
+                                     [df_period1, None, df_period2],
+                                     None,
+                                     self.project.database.get_available_days(),
+                                     ['Period 1: ' + dr1[0].toString('yyyy-MM-dd') + ' to ' + dr1[1].toString('yyyy-MM-dd'),
+                                      'Period 2: ',
+                                      'Period 2: ' + dr2[0].toString('yyyy-MM-dd') + ' to ' + dr2[1].toString('yyyy-MM-dd')])
+        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+
+    def load_time_time_charts(self):
+        chart_panel_name = self.project.get_name() + ' Time / Time Charts'
+        df = self.project.database.get_data()
+        # dr1 = self.project.get_date_range(0)
+        # df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
+        # dr2 = self.project.get_date_range(1)
+        # df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
+        mpl_widget = FourByFourPanelTimeTime(self.project.database.get_tmcs(),
+                                     [df, None, None],
+                                     None,
+                                     self.project.database.get_available_days(),
+                                     ['Period 1: ',
+                                      'Period 2: ',
+                                      'Period 3: '])
+        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
 
     def edit_tmcs(self):
         if self.database.tmc_df is not None:
@@ -213,65 +340,52 @@ class TMCList(QDialog):
     def close_press(self):
         self.close()
 
-class DataHelper():
-    def __init__(self):
-        self.curr_cs_idx = -1
-        self.curr_subset_idx = -1
-        self.site_name = ''
-        self.tmc_df = None
-        self.data = None
-        self.tt_comp = None
-        self.available_days = None
-        self.available_months = None
-        self.titles = None
-        self.tmc_subset = []
 
-    def set_curr_cs_idx(self, index):
-        self.curr_cs_idx = index
+class Project:
+    def __init__(self, project_name, directory, main_window):
+        self.main_window = main_window
+        self._project_name = project_name
+        self._project_dir = directory
+        self._tmc_file_name = None
+        self._data_file_name = None
+        self.database = None
+        self._date_ranges = []
 
-    def set_site_name(self, name):
-        self.site_name = name
+    def set_name(self, new_name):
+        self._project_name = new_name
 
-    def set_tmc_list(self, tmc_list):
-        self.tmc_df = tmc_list
+    def get_name(self):
+        return self._project_name
 
-    def set_data(self, data):
-        self.data = data
+    def set_tmc_file(self, new_name):
+        self._tmc_file_name = new_name
 
-    def set_tt_comp(self, tt_comp):
-        self.tt_comp = tt_comp
+    def get_tmc_file_name(self):
+        return self._tmc_file_name
 
-    def set_available_days(self, available_days):
-        self.available_days = available_days
+    def set_data_file(self, new_name):
+        self._data_file_name = new_name
 
-    def set_available_months(self, available_months):
-        self.available_months = available_months
+    def get_data_file_name(self):
+        return self._data_file_name
 
-    def set_titles(self, titles):
-        self.titles = titles
+    def add_date_range(self, new_date_range):
+        self._date_ranges.append(new_date_range)
 
-    def add_tmc_subset(self, tmc_subset):
-        self.tmc_subset.append(tmc_subset)
-        return len(self.tmc_subset) - 1
+    def del_date_range(self, index):
+        return self._date_ranges.pop(index)
 
-    def get_tmc_subset(self, subset_idx):
-        if subset_idx < len(self.tmc_subset):
-            return self.tmc_subset[subset_idx]
-        else:
-            return []
+    def get_date_ranges(self):
+        return self._date_ranges
 
-    def set_active_subset(self, subset_idx):
-        self.curr_subset_idx = subset_idx
+    def get_date_range(self, index):
+        return self._date_ranges[index]
 
-    def get_active_subset(self):
-        return self.curr_subset_idx
+    def load(self):
+        LoadProjectQT(self.main_window, create_database=True, print_csv=False)
 
-    def get_tmc_list(self):
-        if self.curr_subset_idx < 0:
-            return self.tmc_df
-        else:
-            return self.tmc_df[self.tmc_df['tmc'].isin(self.tmc_subset[self.curr_subset_idx])]
-
+    def loaded(self):
+        self.main_window.add_project(self)
 
 class ConnectionContainer(QObject):
 

@@ -1,0 +1,1 @@
+All fields for NPMRDS (Trucks and passenger vehicles) data for WA-99  Northbound between Western Ave and Columbia St from Jan 01, 2014 through Jan 31, 2017

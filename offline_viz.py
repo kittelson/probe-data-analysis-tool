@@ -3,7 +3,7 @@ from PyQt5 import QtCore
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from stat_func import create_et_analysis
+from stat_func import create_et_analysis, create_timetime_analysis
 
 
 TT_BLUE = '#6e97c8'  # '#4f81bd'
@@ -230,6 +230,139 @@ class SpeedBandCanvas(MyMplCanvas):
         self.axes.set_xticklabels(['12:00am', '4:00am', '8:00am', '12:00pm', '4:00pm', '8:00pm', '11:55pm'])
         self.axes.legend()
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+
+
+class TimeTimeLineChartCanvas(MyMplCanvas):
+    """Extra-Time Bar Chart Plot"""
+    def __init__(self, *args, **kwargs):
+        MyMplCanvas.__init__(self, *args, **kwargs)
+        self.show_am = True
+        self.show_pm = True
+
+    def compute_initial_figure(self):
+        tt_am_mean_dir1 = self.app.plot_dfs[0]['mean']
+        tt_am_pct5_dir1 = self.app.plot_dfs[0]['percentile_5']
+        tt_am_pct95_dir1 = self.app.plot_dfs[0]['percentile_95']
+        tt_pm_mean_dir1 = self.app.plot_dfs[0]['meanpm']
+        tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
+        tt_pm_pct95_dir1 = self.app.plot_dfs[0]['percentile_95pm']
+
+        x = [el for el in range(len(tt_am_mean_dir1))]
+
+        self.axes.plot(x, tt_am_mean_dir1, color='C0', linestyle='-', lw=2.0, label='AM-Mean')
+        self.axes.plot(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+        self.axes.plot(x, tt_am_pct95_dir1, color='C0', linestyle='--', lw=1.0, label='AM-95th Pct')
+
+        self.axes.plot(x, tt_pm_mean_dir1, color='C1', linestyle='-', lw=2.0, label='PM-Mean')
+        self.axes.plot(x, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+        self.axes.plot(x, tt_pm_pct95_dir1, color='C1', linestyle='--', lw=1.0, label='PM-95th Pct')
+
+        #self.axes.set_title(dirs[0] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len1) + ' mi)')
+        self.axes.set_ylabel('Travel Time (Minutes)')
+        self.axes.legend()
+        self.axes.set_xticks([0, 5, 10, 15, 20])
+        self.axes.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+
+    def update_figure(self):
+        self.axes.cla()
+        tt_am_mean_dir1 = self.app.plot_dfs[0]['mean']
+        tt_am_pct5_dir1 = self.app.plot_dfs[0]['percentile_5']
+        tt_am_pct95_dir1 = self.app.plot_dfs[0]['percentile_95']
+        tt_pm_mean_dir1 = self.app.plot_dfs[0]['meanpm']
+        tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
+        tt_pm_pct95_dir1 = self.app.plot_dfs[0]['percentile_95pm']
+
+        x = [el for el in range(len(tt_am_mean_dir1))]
+
+        if self.show_am:
+            self.axes.plot(x, tt_am_mean_dir1, color='C0', linestyle='-', lw=2.0, label='AM-Mean')
+            self.axes.plot(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+            self.axes.plot(x, tt_am_pct95_dir1, color='C0', linestyle='--', lw=1.0, label='AM-95th Pct')
+
+        if self.show_pm:
+            self.axes.plot(x, tt_pm_mean_dir1, color='C1', linestyle='-', lw=2.0, label='PM-Mean')
+            self.axes.plot(x, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+            self.axes.plot(x, tt_pm_pct95_dir1, color='C1', linestyle='--', lw=1.0, label='PM-95th Pct')
+
+        #self.axes.set_title(dirs[0] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len1) + ' mi)')
+        self.axes.set_ylabel('Travel Time (Minutes)')
+        self.axes.legend()
+        self.axes.set_xticks([0, 5, 10, 15, 20])
+        self.axes.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+
+    def get_y_max(self):
+        return self.axes.get_ylim()[1]
+
+
+class TimeTimeBarChartCanvas(MyMplCanvas):
+    """Extra-Time Bar Chart Plot"""
+    def __init__(self, *args, **kwargs):
+        MyMplCanvas.__init__(self, *args, **kwargs)
+        self.show_am = True
+        self.show_pm = True
+
+    def compute_initial_figure(self):
+        tt_am_mean_dir1 = self.app.plot_dfs[0]['mean']
+        tt_am_pct5_dir1 = self.app.plot_dfs[0]['percentile_5']
+        tt_am_pct95_dir1 = self.app.plot_dfs[0]['percentile_95']
+        tt_pm_mean_dir1 = self.app.plot_dfs[0]['meanpm']
+        tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
+        tt_pm_pct95_dir1 = self.app.plot_dfs[0]['percentile_95pm']
+
+        x = [el for el in range(len(tt_am_mean_dir1))]
+
+        width = 0.35
+        self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
+        # ax3.bar(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+        self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
+                label='AM-95th Pct')
+
+        self.axes.bar([el + width for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
+        # ax1.bar(x + width, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+        self.axes.bar([el + width for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
+                bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+
+        # self.axes.set_title(dirs[0] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len1) + ' mi)')
+        self.axes.set_ylabel('Travel Time (Minutes)')
+        self.axes.legend()
+        self.axes.set_xticks([0, 5, 10, 15, 20])
+        self.axes.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+
+    def update_figure(self):
+        self.axes.cla()
+        tt_am_mean_dir1 = self.app.plot_dfs[0]['mean']
+        tt_am_pct5_dir1 = self.app.plot_dfs[0]['percentile_5']
+        tt_am_pct95_dir1 = self.app.plot_dfs[0]['percentile_95']
+        tt_pm_mean_dir1 = self.app.plot_dfs[0]['meanpm']
+        tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
+        tt_pm_pct95_dir1 = self.app.plot_dfs[0]['percentile_95pm']
+
+        x = [el for el in range(len(tt_am_mean_dir1))]
+
+        width = 0.35
+        if self.show_am:
+            self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
+            # ax3.bar(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1,
+                          color='#aec7e8',
+                          label='AM-95th Pct')
+
+        if self.show_pm:
+            self.axes.bar([el + width for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
+            # ax1.bar(x + width, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+            self.axes.bar([el + width for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
+                          bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+
+        # self.axes.set_title(dirs[0] + ' Peak Travel Times over Time' + ' (' + '{:1.2f}'.format(facility_len1) + ' mi)')
+        self.axes.set_ylabel('Travel Time (Minutes)')
+        self.axes.legend()
+        self.axes.set_xticks([0, 5, 10, 15, 20])
+        self.axes.set_xticklabels(['2015 Dec', '2016 May', '2016 Oct', '2017 March', '2017 Aug'])
+
+    def get_y_max(self):
+        return self.axes.get_ylim()[1]
 
 
 class ReliabilityCDFCanvas(MyMplCanvas):
@@ -501,7 +634,6 @@ class FourByFourPanel(QtWidgets.QWidget):
         self.no_compute = False
         self.check_func()
 
-
     def check_func(self):
         if not (self.init_mode or self.no_compute):
             plot_days = []
@@ -525,6 +657,237 @@ class FourByFourPanel(QtWidgets.QWidget):
                 self.update_extra_time()
 
     def update_extra_time(self):
+        self.chart11.update_figure()
+        self.chart21.update_figure()
+        self.chart11.draw()
+        self.chart21.draw()
+        self.chart12.update_figure()
+        self.chart22.update_figure()
+        self.chart12.draw()
+        self.chart22.draw()
+
+
+class FourByFourPanelTimeTime(QtWidgets.QWidget):
+    def __init__(self, tmcs, data, travel_time_comp, available_days, titles):
+        QtWidgets.QWidget.__init__(self)
+        self.init_mode = True
+
+        self.facility_len = tmcs['miles'].sum()
+        #print(self.facility_len)
+        self.dfs = data
+        self.tt_comp = travel_time_comp
+        self.available_days = available_days
+        self.titles = titles
+
+        self.plot_tt = self.tt_comp
+        self.plot_dfs = [create_timetime_analysis(df) for df in self.dfs]
+        self.v_layout = QtWidgets.QVBoxLayout(self)
+        self.before_bar = QtWidgets.QWidget(self)
+        self.after_bar = QtWidgets.QWidget(self)
+        self.analysis_bar = QtWidgets.QWidget(self)
+        self.v_layout_before = QtWidgets.QVBoxLayout(self.before_bar)
+        self.v_layout_after = QtWidgets.QVBoxLayout(self.after_bar)
+        self.h_layout_analysis = QtWidgets.QHBoxLayout(self.analysis_bar)
+        self.chart11 = TimeTimeLineChartCanvas(self, app=self, region=0, width=5, height=4, dpi=100)
+        self.chart21 = TimeTimeBarChartCanvas(self, app=self, region=0, width=5, height=4, dpi=100)
+        self.chart12 = TimeTimeLineChartCanvas(self, app=self, region=0, width=5, height=4, dpi=100)
+        self.chart22 = TimeTimeBarChartCanvas(self, app=self, region=0, width=5, height=4, dpi=100)
+        #self.setup_figure_bounds()
+        self.navi_toolbar11 = NavigationToolbar(self.chart11, self)
+        self.navi_toolbar21 = NavigationToolbar(self.chart21, self)
+        self.navi_toolbar12 = NavigationToolbar(self.chart12, self)
+        self.navi_toolbar22 = NavigationToolbar(self.chart22, self)
+        self.check_bar_day = QtWidgets.QWidget(self)
+        self.h_layout = QtWidgets.QHBoxLayout(self.check_bar_day)
+        self.check_wkdy = QtWidgets.QCheckBox('Weekdays')
+        self.check_wknd = QtWidgets.QCheckBox("Weekends")
+        line = QtWidgets.QFrame(self)
+        line.setFrameShape(QtWidgets.QFrame.VLine)
+        line.setLineWidth(5)
+        line.setMidLineWidth(5)
+        line2 = QtWidgets.QFrame(self)
+        line2.setFrameShape(QtWidgets.QFrame.VLine)
+        line2.setLineWidth(5)
+        line2.setMidLineWidth(5)
+        self.check_am = QtWidgets.QCheckBox('AM')
+        self.check_pm = QtWidgets.QCheckBox('PM')
+        self.check_mon = QtWidgets.QCheckBox('Mon')
+        self.check_tue = QtWidgets.QCheckBox('Tue')
+        self.check_wed = QtWidgets.QCheckBox('Wed')
+        self.check_thu = QtWidgets.QCheckBox('Thu')
+        self.check_fri = QtWidgets.QCheckBox('Fri')
+        self.check_sat = QtWidgets.QCheckBox('Sat')
+        self.check_sun = QtWidgets.QCheckBox('Sun')
+        self.connect_check_boxes()
+        self.h_layout.addWidget(self.check_am)
+        self.h_layout.addWidget(self.check_pm)
+        self.h_layout.addWidget(line)
+        self.h_layout.addWidget(self.check_wkdy)
+        self.h_layout.addWidget(self.check_wknd)
+        self.h_layout.addWidget(line2)
+        self.h_layout.addWidget(self.check_mon)
+        self.h_layout.addWidget(self.check_tue)
+        self.h_layout.addWidget(self.check_wed)
+        self.h_layout.addWidget(self.check_thu)
+        self.h_layout.addWidget(self.check_fri)
+        self.h_layout.addWidget(self.check_sat)
+        self.h_layout.addWidget(self.check_sun)
+        self.v_layout_before.addWidget(self.navi_toolbar11)
+        self.v_layout_before.addWidget(self.chart11)
+        self.v_layout_before.addWidget(self.navi_toolbar21)
+        self.v_layout_before.addWidget(self.chart21)
+        self.v_layout_after.addWidget(self.navi_toolbar12)
+        self.v_layout_after.addWidget(self.chart12)
+        self.v_layout_after.addWidget(self.navi_toolbar22)
+        self.v_layout_after.addWidget(self.chart22)
+        self.h_layout_analysis.addWidget(self.before_bar)
+        self.h_layout_analysis.addWidget(self.after_bar)
+        self.v_layout.addWidget(self.analysis_bar)
+        self.v_layout.addWidget(self.check_bar_day)
+
+        self.init_mode = False
+        self.no_compute = False
+
+    def connect_check_boxes(self):
+        self.check_am.stateChanged.connect(self.check_peak_func)
+        self.check_pm.stateChanged.connect(self.check_peak_func)
+
+        self.check_wkdy.stateChanged.connect(self.check_weekday)
+        if sum([self.available_days.count(el) for el in range(5)]) > 0:
+            self.check_wkdy.setChecked(True)
+        else:
+            self.check_wkdy.setDisabled(True)
+
+        self.check_wknd.stateChanged.connect(self.check_weekend)
+        if sum([self.available_days.count(el) for el in range(5, 7)]) > 0:
+            self.check_wknd.setChecked(True)
+        else:
+            self.check_wknd.setDisabled(True)
+
+        self.check_mon.stateChanged.connect(self.check_func)
+        if self.available_days.count(0) > 0:
+            self.check_mon.setChecked(True)
+        else:
+            self.check_mon.setDisabled(True)
+
+        self.check_tue.stateChanged.connect(self.check_func)
+        if self.available_days.count(1) > 0:
+            self.check_tue.setChecked(True)
+        else:
+            self.check_tue.setDisabled(True)
+
+        self.check_wed.stateChanged.connect(self.check_func)
+        if self.available_days.count(2) > 0:
+            self.check_wed.setChecked(True)
+        else:
+            self.check_wed.setDisabled(True)
+
+        self.check_thu.stateChanged.connect(self.check_func)
+        if self.available_days.count(3) > 0:
+            self.check_thu.setChecked(True)
+        else:
+            self.check_thu.setDisabled(True)
+
+        self.check_fri.stateChanged.connect(self.check_func)
+        if self.available_days.count(4) > 0:
+            self.check_fri.setChecked(True)
+        else:
+            self.check_fri.setDisabled(True)
+
+        self.check_sat.stateChanged.connect(self.check_func)
+        if self.available_days.count(5) > 0:
+            self.check_sat.setChecked(True)
+        else:
+            self.check_sat.setDisabled(True)
+
+        self.check_sun.stateChanged.connect(self.check_func)
+        if self.available_days.count(6) > 0:
+            self.check_sun.setChecked(True)
+        else:
+            self.check_sun.setDisabled(True)
+
+    def setup_figure_bounds(self):
+        zoom_full = True
+        if zoom_full:
+            x_min = 0
+            x_max = 288
+        else:
+            x_min = 192
+            x_max = 240
+
+        y_max = max(self.chart11.get_y_max(), self.chart12.get_y_max())
+        self.chart11.set_x_bounds(x_min, x_max, make_default=True)
+        self.chart11.set_y_bounds(0, y_max, make_default=True)
+        self.chart12.set_x_bounds(x_min, x_max, make_default=True)
+        self.chart12.set_y_bounds(0, y_max, make_default=True)
+        self.chart21.set_x_bounds(x_min, x_max, make_default=True)
+        self.chart21.set_y_bounds(0, 80, make_default=True)
+        self.chart22.set_x_bounds(x_min, x_max, make_default=True)
+        self.chart22.set_y_bounds(0, 80, make_default=True)
+
+    def check_weekday(self):
+        self.no_compute = True
+        weekday_checked =  self.check_wkdy.isChecked()
+        if self.available_days.count(0) > 0:
+            self.check_mon.setChecked(weekday_checked)
+        if self.available_days.count(1) > 0:
+            self.check_tue.setChecked(weekday_checked)
+        if self.available_days.count(2) > 0:
+            self.check_wed.setChecked(weekday_checked)
+        if self.available_days.count(3) > 0:
+            self.check_thu.setChecked(weekday_checked)
+        if self.available_days.count(4) > 0:
+            self.check_fri.setChecked(weekday_checked)
+        self.no_compute = False
+        self.check_func()
+
+    def check_weekend(self):
+        self.no_compute = True
+        weekend_checked =  self.check_wknd.isChecked()
+        if self.available_days.count(5) > 0:
+            self.check_sat.setChecked(weekend_checked)
+        if self.available_days.count(6) > 0:
+            self.check_sun.setChecked(weekend_checked)
+        self.no_compute = False
+        self.check_func()
+
+    def check_func(self):
+        if not (self.init_mode or self.no_compute):
+            plot_days = []
+            if self.check_mon.isChecked() is True:
+                plot_days.append(0)
+            if self.check_tue.isChecked() is True:
+                plot_days.append(1)
+            if self.check_wed.isChecked() is True:
+                plot_days.append(2)
+            if self.check_thu.isChecked() is True:
+                plot_days.append(3)
+            if self.check_fri.isChecked() is True:
+                plot_days.append(4)
+            if self.check_sat.isChecked() is True:
+                plot_days.append(5)
+            if self.check_sun.isChecked() is True:
+                plot_days.append(6)
+
+            if len(plot_days) > 0:
+                self.plot_dfs = [create_timetime_analysis(df[df['weekday'].isin(plot_days)]) if df is not None else None for df in self.dfs]
+                self.update_time_time()
+
+    def check_peak_func(self):
+        if not (self.init_mode or self.no_compute):
+            include_am = self.check_am.isChecked()
+            include_pm = self.check_pm.isChecked()
+            self.chart11.show_am = include_am
+            self.chart21.show_am = include_am
+            self.chart12.show_am = include_am
+            self.chart22.show_am = include_am
+            self.chart11.show_pm = include_pm
+            self.chart21.show_pm = include_pm
+            self.chart12.show_pm = include_pm
+            self.chart22.show_pm = include_pm
+            self.update_time_time()
+
+    def update_time_time(self):
         self.chart11.update_figure()
         self.chart21.update_figure()
         self.chart11.draw()
