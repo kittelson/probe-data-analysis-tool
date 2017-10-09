@@ -2,13 +2,14 @@ import sys
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
-from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem
+from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel
 from mw_test import Ui_MainWindow
 from viz import run_viz, run_viz_day
 from viz_qt import DataLoadQT, LoadProjectQT
 from data_import import get_case_study_list, get_spm_study_list
 from DataHelper import DataHelper
-from offline_viz import FourByFourPanel, FourByFourPanelTimeTime
+from offline_viz import FourByFourPanel, FourByFourTimeTimePanel, TwoByTwoPanelTimeTime
+import os
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -52,6 +53,12 @@ class MainWindow(QMainWindow):
         open_file_action.triggered.connect(self.open_file)
         self.ui.menuFile.addAction(open_file_action)
 
+        exit_app_action = QAction('&Exit', self)
+        exit_app_action.setShortcut(('Ctrl+Q'))
+        exit_app_action.setToolTip('Exit Program')
+        exit_app_action.triggered.connect(self.close)
+        self.ui.menuFile.addAction(exit_app_action)
+
         run_case_action = QAction('&Run Case Study', self)
         run_case_action.setShortcut('Ctrl+R')
         run_case_action.setToolTip('Select and Run Case Study')
@@ -74,20 +81,20 @@ class MainWindow(QMainWindow):
         load_flask_action.triggered.connect(self.load_flask_chart)
         self.ui.menuAnalyze.addAction(load_flask_action)
 
-        load_mpl_action = QAction('&Load Offline Chart', self)
-        load_mpl_action.setToolTip('Load Charts in offline mode.')
-        load_mpl_action.triggered.connect(self.extract_case_study)
-        self.ui.menuAnalyze.addAction(load_mpl_action)
+        # load_mpl_action = QAction('&Load Offline Chart', self)
+        # load_mpl_action.setToolTip('Load Charts in offline mode.')
+        # load_mpl_action.triggered.connect(self.extract_case_study)
+        # self.ui.menuAnalyze.addAction(load_mpl_action)
 
-        load_mpl_spm_action = QAction('&Load SPM Chart', self)
-        load_mpl_spm_action.setToolTip('Load Charts for SPM Case Study.')
-        load_mpl_spm_action.triggered.connect(self.extract_case_study_spm)
-        self.ui.menuAnalyze.addAction(load_mpl_spm_action)
+        # load_mpl_spm_action = QAction('&Load SPM Chart', self)
+        # load_mpl_spm_action.setToolTip('Load Charts for SPM Case Study.')
+        # load_mpl_spm_action.triggered.connect(self.extract_case_study_spm)
+        # self.ui.menuAnalyze.addAction(load_mpl_spm_action)
 
-        edit_tmcs_action = QAction('&Create TMC Subset', self)
-        edit_tmcs_action.setToolTip('Edit the set of TMCs')
-        edit_tmcs_action.triggered.connect(self.edit_tmcs)
-        self.ui.menuAnalyze.addAction(edit_tmcs_action)
+        # edit_tmcs_action = QAction('&Create TMC Subset', self)
+        # edit_tmcs_action.setToolTip('Edit the set of TMCs')
+        # edit_tmcs_action.triggered.connect(self.edit_tmcs)
+        # self.ui.menuAnalyze.addAction(edit_tmcs_action)
 
         # update_chart_action = QAction('&Update Chart', self)
         # update_chart_action.setShortcut('Ctrl+K')
@@ -98,8 +105,14 @@ class MainWindow(QMainWindow):
         self.ui.add_range_button.clicked.connect(self.add_date_range)
         self.ui.del_range_button.clicked.connect(self.del_date_range)
 
-        #self.ui.create_charts_button.clicked.connect(self.load_extra_time_charts)
-        self.ui.create_charts_button.clicked.connect(self.load_time_time_charts)
+        self.ui.create_charts_button.setText('Create Extra Time Charts')
+        self.ui.create_charts_button.clicked.connect(self.load_extra_time_charts)
+
+        self.ui.pushButton_first_chart.clicked.connect(self.load_time_time_charts)
+        self.ui.pushButton_first_chart.setDisabled(True)
+
+        self.ui.pushButton_2.clicked.connect(self.create_new)
+        self.ui.pushButton_3.clicked.connect(self.close)
 
         self.show()
 
@@ -129,15 +142,16 @@ class MainWindow(QMainWindow):
 
     def create_new(self):
         project_dir_name = QFileDialog.getExistingDirectory(self, "Select Project/Data Folder")
-        tokens = project_dir_name.split('/')
-        tmc_file_name = project_dir_name + '/tmc_identification.csv'
-        data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
-        project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
-        if ok:
-            self.project = Project(project_name, project_dir_name, self)
-            self.project.set_tmc_file(tmc_file_name)
-            self.project.set_data_file(data_file_name)
-            self.project.load()
+        if project_dir_name != '':
+            tokens = project_dir_name.split('/')
+            tmc_file_name = project_dir_name + '/tmc_identification.csv'
+            data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+            project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
+            if ok:
+                self.project = Project(project_name, project_dir_name, self)
+                self.project.set_tmc_file(tmc_file_name)
+                self.project.set_data_file(data_file_name)
+                self.project.load()
 
     def add_project(self, project):
         # Updating Tool Labels
@@ -154,7 +168,7 @@ class MainWindow(QMainWindow):
             child.setText(0, dir)
             child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
             child.setCheckState(0, Qt.Unchecked)
-        # proj_item.child(0).setCheckState(0, Qt.Checked)
+            self.ui.pushButton_first_chart.setDisabled(False)
 
         # Updating Data Types
         self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
@@ -165,14 +179,19 @@ class MainWindow(QMainWindow):
 
         # Updating analysis types
         # Updating date ranges
-        s_date = project.database.get_first_date().split('-')
-        e_date = project.database.get_last_date().split('-')
-        s_qdate = QDate(int(s_date[0]), int(s_date[1]), int(s_date[2]))
-        e_qdate = QDate(int(e_date[0]), int(e_date[1]), int(e_date[2]))
+        s_date = project.database.get_first_date(as_datetime=True)
+        e_date = project.database.get_last_date(as_datetime=True)
+        s_qdate = QDate(s_date.year, s_date.month, s_date.day)
+        e_qdate = QDate(e_date.year, e_date.month, e_date.day)
         self.ui.dateEdit_start.setDate(s_qdate)
         self.ui.dateEdit_start.setDateRange(s_qdate, e_qdate)
         self.ui.dateEdit_end.setDate(e_qdate)
         self.ui.dateEdit_end.setDateRange(s_qdate, e_qdate)
+
+        # Setting up tmc list
+        self.setup_tmc_list()
+
+        self.load_data_density_charts('Data Quality/Density')
 
     def open_file(self):
         f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "CSV files (*.csv)")
@@ -195,6 +214,7 @@ class MainWindow(QMainWindow):
             range_item = QTreeWidgetItem(self.ui.treeWidget)
             range_item.setText(0, 'Period ' + str(range_idx))
             range_item.setFlags(range_item.flags() | Qt.ItemIsUserCheckable)
+            range_item.setExpanded(True)
             child1 = QTreeWidgetItem(range_item)
             child1.setText(0, d_range[0].toString())
             child2 = QTreeWidgetItem(range_item)
@@ -237,12 +257,16 @@ class MainWindow(QMainWindow):
             self.database.set_active_subset(-1)
             DataLoadQT(self, cs_idx, [], print_csv=False, return_tt=False)
 
+    def load_data_density_charts(self, chart_panel_name):
+        temp_widget = QWidget(self)
+        v_layout = QVBoxLayout(temp_widget)
+        v_layout.addWidget(QLabel('Placeholder for data "density" chart panel.  This will provide basic information about the dataset, as well as '
+                                  'show charts giving a glimpse at the availability of data in the dataset.'))
+        new_tab_index = self.ui.tabWidget.addTab(temp_widget, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+
     def load_mpl_charts(self, chart_panel_name):
-        mpl_widget = FourByFourPanel(self.database.get_tmc_list(),
-                                     self.database.data,
-                                     self.database.tt_comp,
-                                     self.database.available_days,
-                                     self.database.titles)
+        mpl_widget = FourByFourPanel(self.project)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
 
@@ -256,41 +280,59 @@ class MainWindow(QMainWindow):
 
     def load_extra_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Extra Time Charts'
-        df = self.project.database.get_data()
-        dr1 = self.project.get_date_range(0)
-        df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
-        dr2 = self.project.get_date_range(1)
-        df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
-        mpl_widget = FourByFourPanel(self.project.database.get_tmcs(),
-                                     [df_period1, None, df_period2],
-                                     None,
-                                     self.project.database.get_available_days(),
-                                     ['Period 1: ' + dr1[0].toString('yyyy-MM-dd') + ' to ' + dr1[1].toString('yyyy-MM-dd'),
-                                      'Period 2: ',
-                                      'Period 2: ' + dr2[0].toString('yyyy-MM-dd') + ' to ' + dr2[1].toString('yyyy-MM-dd')])
+        mpl_widget = FourByFourPanel(self.project)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)
 
     def load_time_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Time / Time Charts'
-        df = self.project.database.get_data()
-        # dr1 = self.project.get_date_range(0)
-        # df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
-        # dr2 = self.project.get_date_range(1)
-        # df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
-        mpl_widget = FourByFourPanelTimeTime(self.project.database.get_tmcs(),
-                                     [df, None, None],
-                                     None,
-                                     self.project.database.get_available_days(),
-                                     ['Period 1: ',
-                                      'Period 2: ',
-                                      'Period 3: '])
+        #mpl_widget = FourByFourTimeTimePanel(self.project)TwoByTwoPanelTimeTime
+        mpl_widget = TwoByTwoPanelTimeTime(self.project)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        self.ui.pushButton_first_chart.setDisabled(True)
+        self.ui.toolBox.setCurrentIndex(3)
 
     def edit_tmcs(self):
         if self.database.tmc_df is not None:
             TMCList(self, self.database.tmc_df)
+
+    def setup_tmc_list(self):
+        tmc_list = self.project.database.get_tmcs()
+        cumulative_mi = 0
+        for index, row in tmc_list.iterrows():
+            tmc_item = QTreeWidgetItem(self.ui.treeWidget_2)
+            tmc_item.setFlags(tmc_item.flags() | Qt.ItemIsUserCheckable)
+            # tmc_item.setCheckState(0, Qt.Checked)
+            tmc_item.setCheckState(0, Qt.Unchecked)
+            tmc_item.setText(0, row['tmc'])
+            tmc_item.setText(1, row['intersection'])
+            tmc_item.setText(2, '{:1.1f}'.format(row['miles']))
+            cumulative_mi += row['miles']
+            tmc_item.setText(3, '{:1.1f}'.format(cumulative_mi))
+
+        self.ui.treeWidget_2.itemChanged.connect(self.handle_item_check)
+
+    def handle_item_check(self):
+        cumulative_mi = 0
+        tmc_list = self.project.database.get_tmcs()
+        root_item = self.ui.treeWidget_2.invisibleRootItem()
+        for tmc_idx in range(root_item.childCount()):
+            if root_item.child(tmc_idx).checkState(0):
+                cumulative_mi += tmc_list['miles'][tmc_idx]
+        self.ui.label_6.setText('{:1.1f}'.format(cumulative_mi))
+        self.ui.pushButton_tmc_subset.setEnabled(True)
+
+    def get_tmc_subset(self):
+        tmc_subset = []
+        tmc_list = self.project.database.get_tmcs()
+        root_item = self.ui.treeWidget_2.invisibleRootItem()
+        for tmc_idx in range(root_item.childCount()):
+            if root_item.child(tmc_idx).checkState(0):
+                tmc_subset.append(tmc_list['tmc'][tmc_idx])
+
+        return tmc_subset
 
 
 class TMCList(QDialog):
@@ -409,6 +451,7 @@ def provide_gui_for(application):
     qt_app.aboutToQuit.connect(web_app.terminate)
     mw = MainWindow()
     return qt_app.exec_()
+
 
 if __name__ == '__main__':
     from fhwa_spl_flask import app

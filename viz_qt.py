@@ -371,6 +371,7 @@ def load_project_data(project, progress_tracker=None):
     # Joining dataframe
     time1 = time.time()  # Print_Delete
     df['Date'], df['Year'], df['Month'], df['Day'], df['AP'], df['weekday'] = create_columns(new_mat)
+    df['Hour'] = df['AP'] // 12
     time2 = time.time()  # Print_Delete
     print('DF Creation: '+str(time2-time1))  # Print_Delete
 

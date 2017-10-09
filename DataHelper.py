@@ -1,4 +1,6 @@
 import calendar
+import datetime
+
 
 class DataHelper:
     def __init__(self):
@@ -80,23 +82,32 @@ class Database:
     def set_tmcs(self, tmcs):
         self._tmcs = tmcs
 
-    def get_tmcs(self):
-        return self._tmcs
+    def get_tmcs(self, as_list=False):
+        if as_list:
+            return self._tmcs['tmc']
+        else:
+            return self._tmcs
 
     def get_directions(self):
         return self._tmcs['direction'].unique()
 
     def set_first_date(self, date):
-       self._first_date = date
+        self._first_date = date
 
-    def get_first_date(self):
-        return self._first_date
+    def get_first_date(self, as_datetime=False):
+        if not as_datetime:
+            return self._first_date
+        else:
+            return datetime.datetime.strptime(self._first_date, '%Y-%m-%d')
 
     def set_last_date(self, date):
         self._last_date = date
 
-    def get_last_date(self):
-        return self._last_date
+    def get_last_date(self, as_datetime=False):
+        if not as_datetime:
+            return self._last_date
+        else:
+            return datetime.datetime.strptime(self._last_date, '%Y-%m-%d')
 
     def set_available_months(self, months):
         self._months = months
