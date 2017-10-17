@@ -6,7 +6,7 @@
 #
 # WARNING! All changes made in this file will be lost!
 
-from PyQt5 import QtCore, QtGui, QtWidgets
+from PyQt5 import QtCore, QtGui, QtWidgets, QtWebEngineWidgets
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -308,7 +308,7 @@ class Ui_MainWindow(object):
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.tab_3)
         self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        self.webView_3 = QtWebKitWidgets.QWebView(self.tab_3)
+        self.webView_3 = QtWebEngineWidgets.QWebEngineView(self.tab_3)
         self.webView_3.setUrl(QtCore.QUrl("about:blank"))
         self.webView_3.setObjectName("webView_3")
         self.verticalLayout_10.addWidget(self.webView_3)
@@ -401,4 +401,4 @@ class Ui_MainWindow(object):
         self.actionLoad_Data.setText(_translate("MainWindow", "Load Data"))
         self.actionView_Extra_Time.setText(_translate("MainWindow", "View Extra Time"))
 
-from PyQt5 import QtWebKitWidgets
+# from PyQt5 import QtWebKitWidgets

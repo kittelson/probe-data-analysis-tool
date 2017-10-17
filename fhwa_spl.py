@@ -1,6 +1,8 @@
 import sys
+import PyQt5
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
-from PyQt5.QtWebKitWidgets import QWebView
+# from PyQt5.QtWebKitWidgets import QWebView
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
 from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel
 from mw_test import Ui_MainWindow
@@ -37,7 +39,7 @@ class MainWindow(QMainWindow):
         self.project = None
         self.database = DataHelper()
 
-        #self.web = QWebView()
+        #self.web = QWebEngineView()
         #self.container = ConnectionContainer()
 
         new_file_action = QAction('&New Project', self)
