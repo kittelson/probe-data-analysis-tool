@@ -2,15 +2,12 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="853c6873-bad2-4a6b-83bc-3775a05ce9ba" name="Default" comment="">
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/NPMRDS_Data_Tool.iml" afterPath="$PROJECT_DIR$/.idea/NPMRDS_Data_Tool.iml" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/DataHelper.py" afterPath="$PROJECT_DIR$/DataHelper.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fhwa_spl.py" afterPath="$PROJECT_DIR$/fhwa_spl.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mw_test.py" afterPath="$PROJECT_DIR$/mw_test.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/offline_viz.py" afterPath="$PROJECT_DIR$/offline_viz.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/stat_func.py" afterPath="$PROJECT_DIR$/stat_func.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/testbed2.py" afterPath="$PROJECT_DIR$/test/testbed2.py" />
-      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/viz_qt.py" afterPath="$PROJECT_DIR$/viz_qt.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -22,11 +19,11 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file leaf-file-name="fhwa_spl.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="fhwa_spl.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fhwa_spl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="364">
-              <caret line="451" column="21" lean-forward="false" selection-start-line="451" selection-start-column="21" selection-end-line="451" selection-end-column="21" />
+            <state relative-caret-position="188">
+              <caret line="478" column="26" lean-forward="true" selection-start-line="478" selection-start-column="26" selection-end-line="478" selection-end-column="26" />
               <folding>
                 <element signature="e#0#10#0" expanded="true" />
               </folding>
@@ -34,11 +31,21 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="offline_viz.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="chart_panel_options.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/chart_panel_options.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="0">
+              <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+              <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="offline_viz.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/offline_viz.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="439">
-              <caret line="365" column="43" lean-forward="false" selection-start-line="365" selection-start-column="43" selection-end-line="365" selection-end-column="43" />
+            <state relative-caret-position="418">
+              <caret line="396" column="46" lean-forward="true" selection-start-line="396" selection-start-column="46" selection-end-line="396" selection-end-column="46" />
               <folding>
                 <element signature="e#0#27#0" expanded="true" />
               </folding>
@@ -49,9 +56,11 @@
       <file leaf-file-name="stat_func.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/stat_func.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="525">
-              <caret line="40" column="4" lean-forward="false" selection-start-line="40" selection-start-column="4" selection-end-line="40" selection-end-column="4" />
-              <folding />
+            <state relative-caret-position="1365">
+              <caret line="67" column="32" lean-forward="false" selection-start-line="67" selection-start-column="32" selection-end-line="67" selection-end-column="32" />
+              <folding>
+                <element signature="e#0#18#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -59,8 +68,8 @@
       <file leaf-file-name="DataHelper.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/DataHelper.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="3276">
-              <caret line="157" column="46" lean-forward="false" selection-start-line="157" selection-start-column="46" selection-end-line="157" selection-end-column="46" />
+            <state relative-caret-position="1869">
+              <caret line="90" column="8" lean-forward="false" selection-start-line="90" selection-start-column="8" selection-end-line="90" selection-end-column="8" />
               <folding>
                 <element signature="e#0#15#0" expanded="true" />
               </folding>
@@ -81,8 +90,8 @@
       <file leaf-file-name="testbed2.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/testbed2.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="105">
-              <caret line="31" column="14" lean-forward="false" selection-start-line="31" selection-start-column="14" selection-end-line="31" selection-end-column="14" />
+            <state relative-caret-position="378">
+              <caret line="18" column="31" lean-forward="true" selection-start-line="18" selection-start-column="31" selection-end-line="18" selection-end-column="31" />
               <folding>
                 <element signature="e#0#19#0" expanded="true" />
               </folding>
@@ -103,7 +112,7 @@
       <file leaf-file-name="viz_qt.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/viz_qt.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="147">
+            <state relative-caret-position="3906">
               <caret line="193" column="48" lean-forward="false" selection-start-line="193" selection-start-column="48" selection-end-line="193" selection-end-column="69" />
               <folding>
                 <element signature="e#0#44#0" expanded="true" />
@@ -124,36 +133,36 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>self.app.plot_dfs</find>
-      <find>plot_subset_dfs</find>
-      <find>Fou</find>
-      <find>print</find>
-      <find>subset</find>
-      <find>connect</find>
-      <find>setFlags</find>
-      <find>ItemIsUserCheckable</find>
-      <find>treeWidget</find>
-      <find>Period 2</find>
-      <find>tmc_subset</find>
-      <find>tmc_subset_button</find>
-      <find>extra</find>
-      <find>1:1</find>
-      <find>format</find>
-      <find>facility_len_subset</find>
-      <find>Speed</find>
       <find>zoom_factory</find>
       <find>pushButton_first_chart</find>
       <find>MaxN</find>
       <find>Qwi</find>
       <find>QWidget</find>
-      <find>four</find>
       <find>tabWid</find>
       <find>QLabel</find>
       <find>loaded</find>
       <find>strf</find>
       <find>load_data_density_charts</find>
-      <find>two</find>
       <find>update_tit</find>
+      <find>fourbyfour</find>
+      <find>df['weekday'].isin(plot_days)tow</find>
+      <find>twoby</find>
+      <find>Four</find>
+      <find>plot_days</find>
+      <find>two</find>
+      <find>setup_tmc_list</find>
+      <find>four</find>
+      <find>facility_len_subset</find>
+      <find>self.app.facility_len</find>
+      <find>create_et_analysis</find>
+      <find>fourby</find>
+      <find>df_dir1</find>
+      <find>create</find>
+      <find>create_et</find>
+      <find>convert_</find>
+      <find>PCTCong</find>
+      <find>TMCLIST</find>
+      <find>ChartPanelOptionsDlg</find>
     </findStrings>
     <replaceStrings>
       <replace>h_layout</replace>
@@ -171,6 +180,8 @@
       <replace>dir2</replace>
       <replace>md</replace>
       <replace>data</replace>
+      <replace>df_dir2</replace>
+      <replace>fl</replace>
     </replaceStrings>
   </component>
   <component name="Git.Settings">
@@ -196,12 +207,12 @@
         <option value="$PROJECT_DIR$/speed_contour.py" />
         <option value="$PROJECT_DIR$/viz.py" />
         <option value="$PROJECT_DIR$/data_import.py" />
-        <option value="$PROJECT_DIR$/test/testbed2.py" />
         <option value="$PROJECT_DIR$/viz_qt.py" />
-        <option value="$PROJECT_DIR$/stat_func.py" />
         <option value="$PROJECT_DIR$/DataHelper.py" />
-        <option value="$PROJECT_DIR$/fhwa_spl.py" />
         <option value="$PROJECT_DIR$/offline_viz.py" />
+        <option value="$PROJECT_DIR$/stat_func.py" />
+        <option value="$PROJECT_DIR$/test/testbed2.py" />
+        <option value="$PROJECT_DIR$/fhwa_spl.py" />
       </list>
     </option>
   </component>
@@ -226,7 +237,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="Scratches" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -270,6 +280,7 @@
         </subPane>
       </pane>
       <pane id="Scope" />
+      <pane id="Scratches" />
     </panes>
   </component>
   <component name="PropertiesComponent">
@@ -507,17 +518,18 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-9" y="-9" width="1938" height="1050" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.13856068" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.1471536" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
       <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.50625" order="6" side_tool="true" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.2367531" sideWeight="0.49166667" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24689966" sideWeight="0.49166667" order="8" side_tool="false" content_ui="tabs" x="1526" y="36" width="1920" height="1032" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.40106952" sideWeight="0.49166667" order="8" side_tool="false" content_ui="tabs" x="1526" y="36" width="1920" height="1032" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.2356257" sideWeight="0.49166667" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27733934" sideWeight="0.49375" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27733934" sideWeight="0.49375" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32975295" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
@@ -560,18 +572,11 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="2" />
+      <option name="time" value="5" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/templates/index2.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="756">
-          <caret line="36" column="8" lean-forward="false" selection-start-line="36" selection-start-column="8" selection-end-line="36" selection-end-column="8" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/index2.html" />
     <entry file="file://$PROJECT_DIR$/viz_test.py" />
     <entry file="file://$PROJECT_DIR$/fhwa_spl_flask.py">
@@ -758,13 +763,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://C:/Program Files/Anaconda3/Lib/site-packages/IPython/core/interactiveshell.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="218">
-          <caret line="2880" column="0" lean-forward="false" selection-start-line="2880" selection-start-column="0" selection-end-line="2880" selection-end-column="0" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://C:/Program Files/Anaconda3/Lib/site-packages/PyQt5/QtCore.pyi">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="215">
@@ -787,6 +785,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/viz_qt.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="3906">
+          <caret line="193" column="48" lean-forward="false" selection-start-line="193" selection-start-column="48" selection-end-line="193" selection-end-column="69" />
+          <folding>
+            <element signature="e#0#44#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/data_import.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="2982">
@@ -795,60 +803,67 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://C:/Program Files/Anaconda3/Lib/site-packages/IPython/core/interactiveshell.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="66">
+          <caret line="2880" column="0" lean-forward="false" selection-start-line="2880" selection-start-column="0" selection-end-line="2880" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/DataHelper.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="3276">
-          <caret line="157" column="46" lean-forward="false" selection-start-line="157" selection-start-column="46" selection-end-line="157" selection-end-column="46" />
+        <state relative-caret-position="1869">
+          <caret line="90" column="8" lean-forward="false" selection-start-line="90" selection-start-column="8" selection-end-line="90" selection-end-column="8" />
           <folding>
             <element signature="e#0#15#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/stat_func.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1365">
+          <caret line="67" column="32" lean-forward="false" selection-start-line="67" selection-start-column="32" selection-end-line="67" selection-end-column="32" />
+          <folding>
+            <element signature="e#0#18#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/test/testbed2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="105">
-          <caret line="31" column="14" lean-forward="false" selection-start-line="31" selection-start-column="14" selection-end-line="31" selection-end-column="14" />
+        <state relative-caret-position="378">
+          <caret line="18" column="31" lean-forward="true" selection-start-line="18" selection-start-column="31" selection-end-line="18" selection-end-column="31" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/stat_func.py">
+    <entry file="file://$PROJECT_DIR$/offline_viz.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="525">
-          <caret line="40" column="4" lean-forward="false" selection-start-line="40" selection-start-column="4" selection-end-line="40" selection-end-column="4" />
-          <folding />
+        <state relative-caret-position="418">
+          <caret line="396" column="46" lean-forward="true" selection-start-line="396" selection-start-column="46" selection-end-line="396" selection-end-column="46" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/viz_qt.py">
+    <entry file="file://$PROJECT_DIR$/chart_panel_options.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="147">
-          <caret line="193" column="48" lean-forward="false" selection-start-line="193" selection-start-column="48" selection-end-line="193" selection-end-column="69" />
-          <folding>
-            <element signature="e#0#44#0" expanded="true" />
-          </folding>
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+          <folding />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fhwa_spl.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="364">
-          <caret line="451" column="21" lean-forward="false" selection-start-line="451" selection-start-column="21" selection-end-line="451" selection-end-column="21" />
+        <state relative-caret-position="188">
+          <caret line="478" column="26" lean-forward="true" selection-start-line="478" selection-start-column="26" selection-end-line="478" selection-end-column="26" />
           <folding>
             <element signature="e#0#10#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/offline_viz.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="439">
-          <caret line="365" column="43" lean-forward="false" selection-start-line="365" selection-start-column="43" selection-end-line="365" selection-end-column="43" />
-          <folding>
-            <element signature="e#0#27#0" expanded="true" />
           </folding>
         </state>
       </provider>

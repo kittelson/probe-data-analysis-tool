@@ -65,6 +65,21 @@ def create_et_analysis_v2(data):
     return et
 
 
+def create_et_analysis_v3(data):
+    if data is None:
+        return None
+    if not data.columns.contains('travel_time_minutes'):
+        data['travel_time_minutes'] = data['travel_time_seconds']/60
+    time1 = time.time()
+    et = data.groupby(['Date', 'AP', 'tmc_code'])['travel_time_minutes'].agg(np.mean)
+    et = et.groupby(['Date', 'AP']).agg(np.sum)
+    et = et.groupby(['AP']).agg([np.mean, percentile(95), percentile(5)])  # .groupby(level=0).sum()
+    et['extra_time'] = et['percentile_95'] - et['mean']
+    time2 = time.time()
+    print('Extra Time Analysis: ' + str(time2 - time1))
+    return et
+
+
 def create_timetime_analysis(data):
     if data is None:
         return None

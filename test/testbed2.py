@@ -5,10 +5,19 @@ import time
 import calendar
 from viz import extract_vals, create_columns
 from matplotlib.ticker import FuncFormatter
-from stat_func import percentile
+import calendar
+from datetime import datetime, timedelta
 
-
+# 1, 1, 6
+# 2, 3, 15
+# 3, 6, 10
+# 4, 1, 5
+# 5, 3, 4
 cs_idx = 2
+tmc_1_idx = 3
+tmc_2_idx = 4
+main_title = 'Daily Speeds over Time: US-1 (Capital Blvd) - Wake Forest, NC'
+
 day_subset = [0, 1, 2, 3, 4, 5, 6]  # Monday = 0, ..., Sunday = 6
 am_start_hour = 8
 am_start_min = 0
@@ -61,6 +70,82 @@ end_date = df_dir1['Date'].max()
 df_dir1['Hour'] = df_dir1['AP'] // 12
 time2 = time.time()
 print('df_dir1 Creation: '+str(time2-time1))
+
+# Creating data for direction #2
+time1 = time.time()
+new_mat2 = [extract_vals(dStr) for dStr in df_dir2['measurement_tstamp']]
+time2 = time.time()
+print('Mat Creation: ' + str(time2 - time1))
+time1 = time.time()
+df_dir2['Date'], df_dir2['Year'], df_dir2['Month'], df_dir2['Day'], df_dir2['AP'], df_dir2['weekday'] = create_columns(new_mat2)
+start_date = df_dir2['Date'].min()
+end_date = df_dir2['Date'].max()
+df_dir2['Hour'] = df_dir2['AP'] // 12
+time2 = time.time()
+print('df_dir2 Creation: '+str(time2-time1))
+
+tmc1 = df_dir1[df_dir1['tmc_code'].isin([tmc['tmc'][tmc_1_idx]])]
+test1 = tmc1.groupby(['Date', 'AP'])['speed'].agg(np.mean)
+d1 = test1.to_frame()
+imshow_data1 = d1.unstack().values[:, :]
+imshow_data1 = imshow_data1.T
+
+tmc2 = df_dir2[df_dir2['tmc_code'].isin([tmc['tmc'][tmc_2_idx]])]
+test2 = tmc2.groupby(['Date', 'AP'])['speed'].agg(np.mean)
+d2 = test2.to_frame()
+imshow_data2 = d2.unstack().values[:, :]
+imshow_data2 = imshow_data2.T
+
+def convert_xval_to_time(x, pos, min_resolution):
+    if x < 0:
+        return ''
+
+    if x - int(x) != 0:
+        return ''
+    aps_per_hour = int(60 / min_resolution)
+    hour = int(x // aps_per_hour)
+    hour = hour % 24
+    ampm_str = 'am'
+    if hour >= 12:
+        ampm_str = 'pm'
+        hour -= 12
+    if hour == 0:
+        hour = 12
+    minute = int(x % aps_per_hour) * min_resolution
+    return str(hour) + ':' + '{num:02d}'.format(num=minute) + ampm_str
+
+def convert_x_to_day(x, pos, start_date):
+    # if int(x) - x != 0:
+    #     return ''
+    # new_date = start_date + timedelta(days=int(x))
+    new_date = start_date + timedelta(days=x)
+    return new_date.strftime('%m/%d/%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
+
+tokens = start_date.split('-')
+start_datetime = datetime(int(tokens[0]), int(tokens[1]), int(tokens[2]))
+f_x_label = lambda x, pos: convert_x_to_day(x, pos, start_datetime)
+f_y_label = lambda y, pos: convert_xval_to_time(y, pos, 5)
+
+fig = plt.figure(figsize=(12, 8))
+ax1 = fig.add_subplot(2, 1, 1)
+ax2 = fig.add_subplot(2, 1, 2)
+im1 = ax1.imshow(imshow_data1, cmap='RdYlGn')
+im2 = ax2.imshow(imshow_data2, cmap='RdYlGn')
+# ax1.set_title('Site ' + str(cs_idx) + ': ' + dirs[0])
+# ax2.set_title('Site ' + str(cs_idx) + ': ' + dirs[1])
+ax1.set_title(dirs[0])
+ax2.set_title(dirs[1])
+cbar1 = fig.colorbar(im1, ax=ax1, shrink=0.8)
+cbar1.set_label('Speed (mph)')
+cbar2 = fig.colorbar(im2, ax=ax2, shrink=0.8)
+cbar2.set_label('Speed (mph)')
+ax1.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+ax1.yaxis.set_major_formatter(FuncFormatter(f_y_label))
+ax2.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+ax2.yaxis.set_major_formatter(FuncFormatter(f_y_label))
+fig.suptitle(main_title)
+fig.tight_layout()
+
 # Filtering to selected set of days
 if len(day_subset) > 0:
   df_dir1 = df_dir1[df_dir1['weekday'].isin(day_subset)]
@@ -114,23 +199,6 @@ md_gp1 = md_gp1[bin_list].div(md_gp1['bin_sum'], axis=0)
 
 # plot_df_dir1 = am_gp1.join(pm_gp1, lsuffix='_pm')
 # plot_df_dir1 = plot_df_dir1.join(md_gp1, lsuffix='_mid')
-
-def convert_x_to_day(x, pos):
-  if x < 0:
-    return ''
-  first_year = int(start_date.split('-')[0])
-  first_month = int(start_date.split('-')[1])
-  first_month -= 1  # decrementing to help with modulus
-  x = int(x)
-  month = x // (24*31)
-  hour = (x + 10) % 24
-  ampm_str = 'am'
-  if hour >= 12:
-    ampm_str = 'pm'
-    hour -= 12
-  if hour == 0:
-    hour = 12
-  return str(first_year + ((first_month + month) // 12)) + '-' + calendar.month_abbr[((first_month + month) % 12) + 1] + ' ' + str(hour) + ':' + '00' + ampm_str
 
 
 plot_df_dir1 = am_gp1
@@ -198,5 +266,3 @@ ax2.legend()
 # bott_arr += plot_df_dir1[bin_list[3] + '_mid']
 # ax3.bar(x, plot_df_dir1[bin_list[4] + '_mid'], width, color=cl[4], label='Mid-'+bin_list[4], bottom=bott_arr)
 # ax3.legend()
-
-

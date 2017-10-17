@@ -4,6 +4,7 @@ from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
 from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel
 from mw_test import Ui_MainWindow
+from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz import run_viz, run_viz_day
 from viz_qt import DataLoadQT, LoadProjectQT
 from data_import import get_case_study_list, get_spm_study_list
@@ -102,6 +103,11 @@ class MainWindow(QMainWindow):
         # update_chart_action.triggered.connect(self.update_chart)
         # self.ui.menuAnalyze.addAction(update_chart_action)
 
+        chart1_options_action = QAction('&Chart 1 Options', self)
+        chart1_options_action.setToolTip('Congifure the Chart Panel 1 Options')
+        chart1_options_action.triggered.connect(self.edit_chart1_options)
+        self.ui.menuView.addAction(chart1_options_action)
+
         self.ui.add_range_button.clicked.connect(self.add_date_range)
         self.ui.del_range_button.clicked.connect(self.del_date_range)
 
@@ -169,6 +175,9 @@ class MainWindow(QMainWindow):
             child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
             child.setCheckState(0, Qt.Unchecked)
             self.ui.pushButton_first_chart.setDisabled(False)
+        proj_item.setExpanded(True)
+        proj_item.child(0).setCheckState(0, Qt.Checked)
+        self.ui.treeWidget_3.itemChanged.connect(self.setup_tmc_list)
 
         # Updating Data Types
         self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
@@ -189,7 +198,7 @@ class MainWindow(QMainWindow):
         self.ui.dateEdit_end.setDateRange(s_qdate, e_qdate)
 
         # Setting up tmc list
-        self.setup_tmc_list()
+        self.setup_tmc_list(is_init=True)
 
         self.load_data_density_charts('Data Quality/Density')
 
@@ -298,23 +307,30 @@ class MainWindow(QMainWindow):
         if self.database.tmc_df is not None:
             TMCList(self, self.database.tmc_df)
 
-    def setup_tmc_list(self):
+    def setup_tmc_list(self, is_init=False):
         tmc_list = self.project.database.get_tmcs()
+        subset_dirs = self.project.get_selected_directions()
+        subset_tmc = tmc_list[tmc_list['direction'].isin(subset_dirs)]
+
+        self.ui.treeWidget_2.clear()
+
         cumulative_mi = 0
-        for index, row in tmc_list.iterrows():
+        for index, row in subset_tmc.iterrows():
             tmc_item = QTreeWidgetItem(self.ui.treeWidget_2)
             tmc_item.setFlags(tmc_item.flags() | Qt.ItemIsUserCheckable)
             # tmc_item.setCheckState(0, Qt.Checked)
             tmc_item.setCheckState(0, Qt.Unchecked)
             tmc_item.setText(0, row['tmc'])
             tmc_item.setText(1, row['intersection'])
-            tmc_item.setText(2, '{:1.1f}'.format(row['miles']))
+            tmc_item.setText(2, row['direction'][0] + 'B')
+            tmc_item.setText(3, '{:1.1f}'.format(row['miles']))
             cumulative_mi += row['miles']
-            tmc_item.setText(3, '{:1.1f}'.format(cumulative_mi))
+            tmc_item.setText(4, '{:1.1f}'.format(cumulative_mi))
 
-        self.ui.treeWidget_2.itemChanged.connect(self.handle_item_check)
+        if is_init:
+            self.ui.treeWidget_2.itemChanged.connect(self.handle_tmc_item_check)
 
-    def handle_item_check(self):
+    def handle_tmc_item_check(self):
         cumulative_mi = 0
         tmc_list = self.project.database.get_tmcs()
         root_item = self.ui.treeWidget_2.invisibleRootItem()
@@ -333,6 +349,10 @@ class MainWindow(QMainWindow):
                 tmc_subset.append(tmc_list['tmc'][tmc_idx])
 
         return tmc_subset
+
+    def edit_chart1_options(self):
+        cp1_dlg = ChartPanelOptionsDlg(self)
+        cp1_dlg.show()
 
 
 class TMCList(QDialog):
@@ -423,11 +443,20 @@ class Project:
     def get_date_range(self, index):
         return self._date_ranges[index]
 
+    def get_selected_directions(self):
+        direction_list = []
+        root = self.main_window.ui.treeWidget_3.invisibleRootItem()
+        for ti in range(root.child(0).childCount()):
+            if root.child(0).child(ti).checkState(0):
+                direction_list.append(root.child(0).child(ti).text(0))
+        return direction_list
+
     def load(self):
         LoadProjectQT(self.main_window, create_database=True, print_csv=False)
 
     def loaded(self):
         self.main_window.add_project(self)
+
 
 class ConnectionContainer(QObject):
 
@@ -441,6 +470,14 @@ class ConnectionContainer(QObject):
     @pyqtSlot(float)
     def change_page(self, page):
         print("changed page: " + str(page))
+
+
+class ChartPanelOptionsDlg(QDialog):
+
+    def __init__(self, main_window):
+        super().__init__(main_window)
+        self.ui = Ui_CPD()
+        self.ui.setupUi(self)
 
 
 def provide_gui_for(application):

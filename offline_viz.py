@@ -5,7 +5,7 @@ from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as Navigatio
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 from stat_func import create_et_analysis, create_timetime_analysis, create_pct_congested_sp, create_pct_congested_tmc
-from stat_func import create_et_analysis_v2, create_timetime_analysis_v2
+from stat_func import create_et_analysis_v2, create_timetime_analysis_v2, create_et_analysis_v3
 import calendar
 from datetime import datetime, timedelta
 
@@ -156,7 +156,7 @@ class ExtraTimeAreaChartCanvas(MyMplCanvas):
             self.title_str = self.title_str + '{:1.1f}'.format(self.app.facility_len) + 'mi'
         self.title_str = self.title_str + ')\n'
         if self.region2 >= 0:
-            self.title_str = self.title_str + 'Before/After: ' + self.app.period1 + ' vs ' + self.app.period1
+            self.title_str = self.title_str + 'Before/After: ' + self.app.period1 + ' vs ' + self.app.period2
         elif self.region == 0:
             self.title_str = self.title_str + 'Period 1: ' + self.app.period1
         else:
@@ -187,31 +187,34 @@ class SpeedBandCanvas(MyMplCanvas):
     def compute_initial_figure(self):
         if self.is_subset:
             data = self.app.plot_subset_dfs
+            fl = self.app.facility_len_subset
         else:
             data = self.app.plot_dfs
+            fl = self.app.facility_len
+
         self.axes.fill_between(data[self.region].index,
-                               (60 * self.app.facility_len) / data[self.region]['percentile_5'],
-                               (60 * self.app.facility_len) / data[self.region]['mean'],
+                               (60 * fl) / data[self.region]['percentile_5'],
+                               (60 * fl) / data[self.region]['mean'],
                                color=SB_BLUE)
         self.axes.fill_between(data[self.region].index,
-                               (60 * self.app.facility_len) / data[self.region]['mean'],
-                               (60 * self.app.facility_len) / data[self.region]['percentile_95'],
+                               (60 * fl) / data[self.region]['mean'],
+                               (60 * fl) / data[self.region]['percentile_95'],
                                color=SB_BLUE)
         self.axes.plot(data[self.region].index,
-                       (60 * self.app.facility_len) / data[self.region]['percentile_5'], color=SB_BLUE, label='5th Percentile')
+                       (60 * fl) / data[self.region]['percentile_5'], color=SB_BLUE, label='5th Percentile')
         self.axes.plot(data[self.region].index,
-                       (60 * self.app.facility_len) / data[self.region]['mean'], color=SB_RED, label='Average')
+                       (60 * fl) / data[self.region]['mean'], color=SB_RED, label='Average')
         self.axes.plot(data[self.region].index,
-                       (60 * self.app.facility_len) / data[self.region]['percentile_95'], color=SB_BLUE, label='95th Percentile')
+                       (60 * fl) / data[self.region]['percentile_95'], color=SB_BLUE, label='95th Percentile')
         if self.region2 >= 0:
             self.axes.plot(data[self.region2].index,
-                           (60 * self.app.facility_len) / data[self.region2]['mean'],
+                           (60 * fl) / data[self.region2]['mean'],
                            color=TT_RED_BEFORE,
                            linestyle='--',
                            lw=BEFORE_LW,
                            label='Before-Average')
             self.axes.plot(data[self.region2].index,
-                           (60 * self.app.facility_len) / data[self.region2]['percentile_95'],
+                           (60 * fl) / data[self.region2]['percentile_95'],
                            color=TT_BLUE_BEFORE,
                            linestyle='--',
                            lw=BEFORE_LW,
@@ -515,6 +518,8 @@ class FourByFourPanel(QtWidgets.QWidget):
     def __init__(self, project):
         QtWidgets.QWidget.__init__(self)
 
+        self.f_extra_time = create_et_analysis_v3
+
         self.init_mode = True
         self.project = project
         df = self.project.database.get_data()
@@ -531,11 +536,12 @@ class FourByFourPanel(QtWidgets.QWidget):
         self.tmc_subset = []
         self.facility_len_subset = tmc[tmc['tmc'].isin(self.tmc_subset)]['miles'].sum()
         self.available_days = self.project.database.get_available_days()
+        self.plot_days = self.available_days.copy()
         self.titles = ['Period 1: ' + dr1[0].toString('yyyy-MM-dd') + ' to ' + dr1[1].toString('yyyy-MM-dd'),
                        'Interim: ',
                        'Period 2: ' + dr2[0].toString('yyyy-MM-dd') + ' to ' + dr2[1].toString('yyyy-MM-dd')]
         self.plot_tt = self.tt_comp
-        self.plot_dfs = [create_et_analysis(df) for df in self.dfs]
+        self.plot_dfs = [self.f_extra_time(df) for df in self.dfs]
         self.plot_subset_dfs = []
         self.update_tmc_subset_dfs()
         self.v_layout = QtWidgets.QVBoxLayout(self)
@@ -688,7 +694,7 @@ class FourByFourPanel(QtWidgets.QWidget):
             self.chart12.region2 = -1
             self.chart22.region = 0
             self.chart22.region2 = -1
-        elif cb_idx == 1:
+        elif cb_idx == 2:
             self.chart11.region = 2
             self.chart11.region2 = -1
             self.chart21.region = 2
@@ -765,24 +771,25 @@ class FourByFourPanel(QtWidgets.QWidget):
 
     def check_func(self):
         if not (self.init_mode or self.no_compute):
-            plot_days = []
+            self.plot_days.clear()
             if self.check_mon.isChecked() is True:
-                plot_days.append(0)
+                self.plot_days.append(0)
             if self.check_tue.isChecked() is True:
-                plot_days.append(1)
+                self.plot_days.append(1)
             if self.check_wed.isChecked() is True:
-                plot_days.append(2)
+                self.plot_days.append(2)
             if self.check_thu.isChecked() is True:
-                plot_days.append(3)
+                self.plot_days.append(3)
             if self.check_fri.isChecked() is True:
-                plot_days.append(4)
+                self.plot_days.append(4)
             if self.check_sat.isChecked() is True:
-                plot_days.append(5)
+                self.plot_days.append(5)
             if self.check_sun.isChecked() is True:
-                plot_days.append(6)
+                self.plot_days.append(6)
 
-            if len(plot_days) > 0:
-                self.plot_dfs = [create_et_analysis(df[df['weekday'].isin(plot_days)]) if df is not None else None for df in self.dfs]
+            if len(self.plot_days) > 0:
+                self.plot_dfs = [self.f_extra_time(df[df['weekday'].isin(self.plot_days)]) if df is not None else None for df in self.dfs]
+                self.update_tmc_subset_dfs()
                 self.update_all_charts()
 
     def update_all_charts(self):
@@ -799,7 +806,7 @@ class FourByFourPanel(QtWidgets.QWidget):
         tmc = self.project.database.get_tmcs()
         print(self.tmc_subset)
         self.facility_len_subset = tmc[tmc['tmc'].isin(self.tmc_subset)]['miles'].sum()
-        self.plot_subset_dfs = [create_et_analysis(df[df['tmc_code'].isin(self.tmc_subset)]) if df is not None else None for df in self.dfs]
+        self.plot_subset_dfs = [self.f_extra_time(df[(df['tmc_code'].isin(self.tmc_subset)) & (df['weekday'].isin(self.plot_days))]) if df is not None else None for df in self.dfs]
 
 
 class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
@@ -813,6 +820,7 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
         self.dfs = [self.project.database.get_data(), None, None]
         self.tt_comp = None
         self.available_days = self.project.database.get_available_days()
+        self.plot_days = self.available_days.copy()
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         self.plot_tt = self.tt_comp
         BIN1 = 25
@@ -999,26 +1007,24 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
 
     def check_func(self):
         if not (self.init_mode or self.no_compute):
-            plot_days = []
+            self.plot_days.clear()
             if self.check_mon.isChecked() is True:
-                plot_days.append(0)
+                self.plot_days.append(0)
             if self.check_tue.isChecked() is True:
-                plot_days.append(1)
+                self.plot_days.append(1)
             if self.check_wed.isChecked() is True:
-                plot_days.append(2)
+                self.plot_days.append(2)
             if self.check_thu.isChecked() is True:
-                plot_days.append(3)
+                self.plot_days.append(3)
             if self.check_fri.isChecked() is True:
-                plot_days.append(4)
+                self.plot_days.append(4)
             if self.check_sat.isChecked() is True:
-                plot_days.append(5)
+                self.plot_days.append(5)
             if self.check_sun.isChecked() is True:
-                plot_days.append(6)
+                self.plot_days.append(6)
 
-            if len(plot_days) > 0:
-                self.plot_dfs = [create_timetime_analysis_v2(self.dfs[0]),
-                                 create_pct_congested_sp(self.dfs[0], self.speed_bins),
-                                 create_pct_congested_tmc(self.dfs[0], self.speed_bins)]
+            if len(self.plot_days) > 0:
+                self.update_plot_data()
                 self.update_time_time()
 
     def check_peak_func(self):
@@ -1039,6 +1045,19 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
             self.chart12.show_mid = include_mid
             self.chart22.show_mid = include_mid
             self.update_time_time()
+
+    def update_plot_data(self, update_tmc=True, update_days=True):
+
+        temp_df = self.dfs[0]
+
+        dirs = self.project.get_selected_directions()
+        tmc = self.project.database.get_tmcs()
+        dir_tmc = tmc[tmc['direction'].isin(dirs)]['tmc']
+        temp_df = temp_df[(temp_df['tmc_code'].isin(dir_tmc)) & (temp_df['weekday'].isin(self.plot_days))]
+
+        self.plot_dfs = [create_timetime_analysis_v2(temp_df),
+                         create_pct_congested_sp(temp_df, self.speed_bins),
+                         create_pct_congested_tmc(temp_df, self.speed_bins)]
 
     def update_time_time(self):
         self.chart11.update_figure()
