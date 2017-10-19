@@ -4,19 +4,14 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
-from stat_func import create_et_analysis, create_timetime_analysis, create_pct_congested_sp, create_pct_congested_tmc
+from stat_func import create_et_analysis, create_timetime_analysis, create_pct_congested_sp, create_pct_congested_tmc, create_speed_heatmap
 from stat_func import create_et_analysis_v2, create_timetime_analysis_v2, create_et_analysis_v3
 import calendar
 from datetime import datetime, timedelta
+from chart_defaults import TT_RED_BEFORE, TT_RED, TT_BLUE_BEFORE, TT_BLUE, BEFORE_LW, SB_BLUE, SB_RED
+from chart_defaults import ChartOptions
+from mpl_charts import MplChart
 
-TT_BLUE = '#6e97c8'  # '#4f81bd'
-TT_RED = '#da9694'  # '#c0504d'
-TT_BLUE_BEFORE = '#032548'  # '#08519c'
-TT_ORANGE_BEFORE = '#d95f0e'
-TT_RED_BEFORE = '#c00000'
-SB_BLUE = '#B0C4DE'
-SB_RED = '#cd5c5c'
-BEFORE_LW = 1.0
 
 class MyMplCanvas(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
@@ -57,7 +52,6 @@ class MyMplCanvas(FigureCanvas):
         FigureCanvas.setSizePolicy(self,
                                    QtWidgets.QSizePolicy.Expanding,
                                    QtWidgets.QSizePolicy.Expanding)
-
 
         FigureCanvas.updateGeometry(self)
         scale = 1.1
@@ -303,7 +297,6 @@ class TimeTimeBarChartCanvas(MyMplCanvas):
         self.update_title()
 
     def compute_initial_figure(self):
-
         width = 0.35
         if self.show_am:
             tt_am_mean_dir1 = self.app.plot_dfs[0]['mean']
@@ -314,7 +307,6 @@ class TimeTimeBarChartCanvas(MyMplCanvas):
             # ax3.bar(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
             self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
                     label='AM-95th Pct')
-
         if self.show_pm:
             tt_pm_mean_dir1 = self.app.plot_dfs[0]['meanpm']
             tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
@@ -327,7 +319,6 @@ class TimeTimeBarChartCanvas(MyMplCanvas):
             # ax1.bar(x + width, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
             self.axes.bar([el + offset for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
                     bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
-
         if self.show_mid:
             tt_md_mean_dir1 = self.app.plot_dfs[0]['meanmid']
             tt_md_pct5_dir1 = self.app.plot_dfs[0]['percentile_5mid']
@@ -380,15 +371,16 @@ class PctCongestedTimeCanvas(MyMplCanvas):
         self.axes.set_title(self.title_str)
 
     def compute_initial_figure(self):
-        BIN1 = 25
-        BIN2 = 35
-        BIN3 = 45
-        BIN4 = 55
-        bin_limits = [BIN1, BIN2, BIN3, BIN4]
+        BIN0 = self.app.options.speed_bins[0]
+        BIN1 = self.app.options.speed_bins[1]
+        BIN2 = self.app.options.speed_bins[2]
+        BIN3 = self.app.options.speed_bins[3]
+        BIN4 = self.app.options.speed_bins[4]
+        bin_limits = [BIN0, BIN1, BIN2, BIN3, BIN4]
         bin_labels = [str(bin_limits[i]) + 'mph-' + str(bin_limits[i + 1]) + 'mph' for i in range(len(bin_limits) - 1)]
-        bin_labels.insert(0, '<' + str(BIN1))
+        #bin_labels.insert(0, '<' + str(BIN1) + 'mph')
         bin_labels.append(str(BIN4) + '+')
-        cl = ['#d62728', '#ff7f0e', '#dbdb8d', '#98df8a', '#2ca02c']
+        cl = self.app.options.speed_bin_colors
         bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
         data = self.app.plot_dfs[self.region]
         x_study_period = [el for el in range(len(data[bin_list[0]]))]
@@ -423,15 +415,16 @@ class PctCongestedTMCCanvas(MyMplCanvas):
         self.axes.set_title(self.title_str)
 
     def compute_initial_figure(self):
-        BIN1 = 25
-        BIN2 = 35
-        BIN3 = 45
-        BIN4 = 55
-        bin_limits = [BIN1, BIN2, BIN3, BIN4]
-        bin_labels = [str(bin_limits[i]) + 'mph-' + str(bin_limits[i+1])+'mph' for i in range(len(bin_limits)-1)]
-        bin_labels.insert(0, '<' + str(BIN1))
+        BIN0 = self.app.options.speed_bins[0]
+        BIN1 = self.app.options.speed_bins[1]
+        BIN2 = self.app.options.speed_bins[2]
+        BIN3 = self.app.options.speed_bins[3]
+        BIN4 = self.app.options.speed_bins[4]
+        bin_limits = [BIN0, BIN1, BIN2, BIN3, BIN4]
+        bin_labels = [str(bin_limits[i]) + 'mph-' + str(bin_limits[i + 1]) + 'mph' for i in range(len(bin_limits) - 1)]
+        # bin_labels.insert(0, '<' + str(BIN1) + 'mph')
         bin_labels.append(str(BIN4) + '+')
-        cl = ['#d62728', '#ff7f0e', '#dbdb8d', '#98df8a', '#2ca02c']
+        cl = self.app.options.speed_bin_colors
         bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
         data = self.app.plot_dfs[self.region]
         x_study_period = [el for el in range(len(data[bin_list[0]]))]
@@ -810,8 +803,21 @@ class FourByFourPanel(QtWidgets.QWidget):
 
 
 class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
-    def __init__(self, project):
+    def __init__(self, project, options=None):
         QtWidgets.QWidget.__init__(self)
+        self.chart11 = None
+        self.chart21 = None
+        self.chart12 = None
+        self.chart22 = None
+        self.navi_toolbar11 = None
+        self.navi_toolbar21 = None
+        self.navi_toolbar12 = None
+        self.navi_toolbar22 = None
+        self.panel_col1 = QtWidgets.QWidget(self)
+        self.panel_col2 = QtWidgets.QWidget(self)
+        self.chart_panel = QtWidgets.QWidget(self)
+        self.v_layout = QtWidgets.QVBoxLayout(self)
+        self.grid_layout = QtWidgets.QGridLayout(self.chart_panel)
 
         self.init_mode = True
 
@@ -823,38 +829,28 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
         self.plot_days = self.available_days.copy()
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         self.plot_tt = self.tt_comp
-        BIN1 = 25
-        BIN2 = 35
-        BIN3 = 45
-        BIN4 = 55
-        self.speed_bins = [BIN1, BIN2, BIN3, BIN4]
-        self.plot_dfs = [create_timetime_analysis_v2(self.dfs[0]),
-                         create_pct_congested_sp(self.dfs[0], self.speed_bins),
-                         create_pct_congested_tmc(self.dfs[0], self.speed_bins)]
-        self.v_layout = QtWidgets.QVBoxLayout(self)
-        self.before_bar = QtWidgets.QWidget(self)
-        self.after_bar = QtWidgets.QWidget(self)
-        self.analysis_bar = QtWidgets.QWidget(self)
-        self.v_layout_before = QtWidgets.QVBoxLayout(self.before_bar)
-        self.v_layout_after = QtWidgets.QVBoxLayout(self.after_bar)
-        self.h_layout_analysis = QtWidgets.QHBoxLayout(self.analysis_bar)
+        if options is not None:
+            self.options = options
+        else:
+            self.options = ChartOptions()
+        self.speed_bins = self.options.speed_bins.copy()
+        self.plot_dfs = []
+        self.update_plot_data()
         start_date = self.project.database.get_first_date(as_datetime=True)
-        l_func = lambda x, pos: convert_xval_to_month(x, pos, start_date.year, start_date.month)
-        self.chart11 = TimeTimeLineChartCanvas(self, app=self, region=0, xlabel_func=l_func)
-        self.chart21 = TimeTimeBarChartCanvas(self, app=self, region=0, xlabel_func=l_func)
-        #self.chart12 = TimeTimeLineChartCanvas(self, app=self, region=0, xlabel_func=l_func, width=5, height=4, dpi=100)
-        #self.chart22 = TimeTimeBarChartCanvas(self, app=self, region=0, xlabel_func=l_func, width=5, height=4, dpi=100)
-        l_func_sp = lambda x, pos: convert_x_to_day(x, pos, self.project.database.get_first_date(as_datetime=True))
-        self.chart12 = PctCongestedTimeCanvas(self, app=self, region=1, xlabel_func=l_func_sp)
-        l_func_tmc = lambda x, pos: convert_x_to_tmc(x, pos, self.project.database.get_tmcs()['tmc'])
-        self.chart22 = PctCongestedTMCCanvas(self, app=self, region=2, xlabel_func=l_func_tmc)
-        #self.setup_figure_bounds()
-        self.navi_toolbar11 = NavigationToolbar(self.chart11, self)
-        self.navi_toolbar21 = NavigationToolbar(self.chart21, self)
-        self.navi_toolbar12 = NavigationToolbar(self.chart12, self)
-        self.navi_toolbar22 = NavigationToolbar(self.chart22, self)
-        self.check_bar_day = QtWidgets.QWidget(self)
-        self.h_layout = QtWidgets.QHBoxLayout(self.check_bar_day)
+        self.l_func = lambda x, pos: convert_xval_to_month(x, pos, start_date.year, start_date.month)
+        self.l_func_sp = lambda x, pos: convert_x_to_day(x, pos, self.project.database.get_first_date(as_datetime=True))
+        self.l_func_tmc = lambda x, pos: convert_x_to_tmc(x, pos, self.project.get_tmc(as_list=True))
+        # self.chart11 = TimeTimeLineChartCanvas(self, app=self, region=0, xlabel_func=self.l_func)
+        # self.chart21 = TimeTimeBarChartCanvas(self, app=self, region=0, xlabel_func=self.l_func)
+        # self.chart12 = PctCongestedTimeCanvas(self, app=self, region=1, xlabel_func=self.l_func_sp)
+        # self.chart22 = PctCongestedTMCCanvas(self, app=self, region=2, xlabel_func=self.l_func_tmc)
+        # self.navi_toolbar11 = NavigationToolbar(self.chart11, self)
+        # self.navi_toolbar21 = NavigationToolbar(self.chart21, self)
+        # self.navi_toolbar12 = NavigationToolbar(self.chart12, self)
+        # self.navi_toolbar22 = NavigationToolbar(self.chart22, self)
+        self.create_charts()
+
+        # Filter Checkboxes
         self.check_wkdy = QtWidgets.QCheckBox('Weekdays')
         self.check_wknd = QtWidgets.QCheckBox("Weekends")
         self.check_am = QtWidgets.QCheckBox('AM')
@@ -868,6 +864,8 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
         self.check_sat = QtWidgets.QCheckBox('Sat')
         self.check_sun = QtWidgets.QCheckBox('Sun')
         self.connect_check_boxes()
+        self.check_bar_day = QtWidgets.QWidget(self)
+        self.h_layout = QtWidgets.QHBoxLayout(self.check_bar_day)
         self.h_layout.addWidget(self.check_am)
         self.h_layout.addWidget(self.check_pm)
         self.h_layout.addWidget(self.check_mid)
@@ -882,21 +880,48 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
         self.h_layout.addWidget(self.check_fri)
         self.h_layout.addWidget(self.check_sat)
         self.h_layout.addWidget(self.check_sun)
-        self.v_layout_before.addWidget(self.navi_toolbar11)
-        self.v_layout_before.addWidget(self.chart11)
-        self.v_layout_before.addWidget(self.navi_toolbar21)
-        self.v_layout_before.addWidget(self.chart21)
-        self.v_layout_after.addWidget(self.navi_toolbar12)
-        self.v_layout_after.addWidget(self.chart12)
-        self.v_layout_after.addWidget(self.navi_toolbar22)
-        self.v_layout_after.addWidget(self.chart22)
-        self.h_layout_analysis.addWidget(self.before_bar)
-        self.h_layout_analysis.addWidget(self.after_bar)
-        self.v_layout.addWidget(self.analysis_bar)
+        self.add_charts_to_layouts()
+        self.v_layout.addWidget(self.chart_panel)
         self.v_layout.addWidget(self.check_bar_day)
+        self.update_chart_visibility()
 
         self.init_mode = False
         self.no_compute = False
+
+    def clear_layouts(self):
+        for cnt in reversed(range(self.v_layout_col2.count())):
+            w = self.v_layout_col2.takeAt(cnt).widget()
+            w.setParent(None)
+        for cnt in reversed(range(self.v_layout_col1.count())):
+            w = self.v_layout_col1.takeAt(cnt).widget()
+            w.setParent(None)
+        for cnt in reversed(range(self.grid_layout.count())):
+            w = self.grid_layout.takeAt(cnt).widget()
+            w.setParent(None)
+
+    def create_charts(self):
+        # self.chart11 = TimeTimeLineChartCanvas(self, app=self, region=0, xlabel_func=self.l_func)
+        # self.chart21 = TimeTimeBarChartCanvas(self, app=self, region=0, xlabel_func=self.l_func)
+        # self.chart12 = PctCongestedTimeCanvas(self, app=self, region=1, xlabel_func=self.l_func_sp)
+        # self.chart22 = PctCongestedTMCCanvas(self, app=self, region=2, xlabel_func=self.l_func_tmc)
+        self.chart11 = MplChart(self, fig_type=0, panel=self, region=0)
+        self.chart21 = MplChart(self, fig_type=1, panel=self, region=0)
+        self.chart12 = MplChart(self, fig_type=3, panel=self, region=1)
+        self.chart22 = MplChart(self, fig_type=4, panel=self, region=2)
+        self.navi_toolbar11 = NavigationToolbar(self.chart11, self)
+        self.navi_toolbar21 = NavigationToolbar(self.chart21, self)
+        self.navi_toolbar12 = NavigationToolbar(self.chart12, self)
+        self.navi_toolbar22 = NavigationToolbar(self.chart22, self)
+
+    def add_charts_to_layouts(self):
+        # Chart 1
+        self.grid_layout.addWidget(self.chart11, 0, 0)
+        # Chart 2
+        self.grid_layout.addWidget(self.chart12, 0, 1)
+        # Chart 3
+        self.grid_layout.addWidget(self.chart21, 1, 0)
+        # Chart 4
+        self.grid_layout.addWidget(self.chart22, 1, 1)
 
     def connect_check_boxes(self):
         self.check_am.stateChanged.connect(self.check_peak_func)
@@ -960,25 +985,6 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
         else:
             self.check_sun.setDisabled(True)
 
-    def setup_figure_bounds(self):
-        zoom_full = True
-        if zoom_full:
-            x_min = 0
-            x_max = 288
-        else:
-            x_min = 192
-            x_max = 240
-
-        y_max = max(self.chart11.get_y_max(), self.chart12.get_y_max())
-        self.chart11.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart11.set_y_bounds(0, y_max, make_default=True)
-        self.chart12.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart12.set_y_bounds(0, y_max, make_default=True)
-        self.chart21.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart21.set_y_bounds(0, 80, make_default=True)
-        self.chart22.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart22.set_y_bounds(0, 80, make_default=True)
-
     def check_weekday(self):
         self.no_compute = True
         weekday_checked = self.check_wkdy.isChecked()
@@ -1032,42 +1038,70 @@ class TwoByTwoPanelTimeTime(QtWidgets.QWidget):
             include_am = self.check_am.isChecked()
             include_pm = self.check_pm.isChecked()
             include_mid = self.check_mid.isChecked()
-            self.chart11.show_am = include_am
-            self.chart21.show_am = include_am
-            self.chart12.show_am = include_am
-            self.chart22.show_am = include_am
-            self.chart11.show_pm = include_pm
-            self.chart21.show_pm = include_pm
-            self.chart12.show_pm = include_pm
-            self.chart22.show_pm = include_pm
-            self.chart11.show_mid = include_mid
-            self.chart21.show_mid = include_mid
-            self.chart12.show_mid = include_mid
-            self.chart22.show_mid = include_mid
+            if self.chart11 is not None:
+                self.chart11.show_am = include_am
+                self.chart11.show_pm = include_pm
+                self.chart11.show_mid = include_mid
+            if self.chart12 is not None:
+                self.chart12.show_am = include_am
+                self.chart12.show_pm = include_pm
+                self.chart12.show_mid = include_mid
+            if self.chart21 is not None:
+                self.chart21.show_am = include_am
+                self.chart21.show_pm = include_pm
+                self.chart21.show_mid = include_mid
+            if self.chart22 is not None:
+                self.chart22.show_am = include_am
+                self.chart22.show_pm = include_pm
+                self.chart22.show_mid = include_mid
             self.update_time_time()
 
     def update_plot_data(self, update_tmc=True, update_days=True):
-
-        temp_df = self.dfs[0]
-
+        full_df = self.dfs[0]
         dirs = self.project.get_selected_directions()
         tmc = self.project.database.get_tmcs()
         dir_tmc = tmc[tmc['direction'].isin(dirs)]['tmc']
-        temp_df = temp_df[(temp_df['tmc_code'].isin(dir_tmc)) & (temp_df['weekday'].isin(self.plot_days))]
+        filtered_df = full_df[(full_df['tmc_code'].isin(dir_tmc)) & (full_df['weekday'].isin(self.plot_days))]
 
-        self.plot_dfs = [create_timetime_analysis_v2(temp_df),
-                         create_pct_congested_sp(temp_df, self.speed_bins),
-                         create_pct_congested_tmc(temp_df, self.speed_bins)]
+        self.plot_dfs = [create_timetime_analysis_v2(filtered_df),
+                         create_pct_congested_sp(filtered_df, self.speed_bins),
+                         create_pct_congested_tmc(filtered_df, self.speed_bins),
+                         create_speed_heatmap(self.dfs[0], self.project.database.get_tmcs(as_list=True)[0])]
 
     def update_time_time(self):
-        self.chart11.update_figure()
-        self.chart21.update_figure()
-        self.chart11.draw()
-        self.chart21.draw()
-        self.chart12.update_figure()
-        self.chart22.update_figure()
-        self.chart12.draw()
-        self.chart22.draw()
+        if self.chart11 is not None:
+            self.chart11.update_figure()
+            self.chart11.draw()
+        if self.chart21 is not None:
+            self.chart21.update_figure()
+            self.chart21.draw()
+        if self.chart12 is not None:
+            self.chart12.update_figure()
+            self.chart12.draw()
+        if self.chart22 is not None:
+            self.chart22.update_figure()
+            self.chart22.draw()
+
+
+    def options_updated(self):
+        self.options = self.project.chart_panel1_opts
+        self.speed_bins = self.options.speed_bins.copy()
+        self.update_plot_data()
+        self.update_chart_types()
+        self.update_time_time()
+        self.update_chart_visibility()
+
+    def update_chart_visibility(self):
+        self.chart11.setVisible(True)
+        self.chart12.setVisible(self.options.num_cols > 1)
+        self.chart21.setVisible(self.options.num_rows > 1)
+        self.chart22.setVisible(self.options.num_rows > 1 and self.options.num_cols > 1)
+
+    def update_chart_types(self):
+        self.chart11.set_fig_type(self.options.chart_type[0][0])
+        self.chart12.set_fig_type(self.options.chart_type[0][1])
+        self.chart21.set_fig_type(self.options.chart_type[1][0])
+        self.chart22.set_fig_type(self.options.chart_type[1][1])
 
 
 class FourByFourTimeTimePanel(QtWidgets.QWidget):
@@ -1193,25 +1227,6 @@ class FourByFourTimeTimePanel(QtWidgets.QWidget):
             self.check_sun.setChecked(True)
         else:
             self.check_sun.setDisabled(True)
-
-    def setup_figure_bounds(self):
-        zoom_full = True
-        if zoom_full:
-            x_min = 0
-            x_max = 288
-        else:
-            x_min = 192
-            x_max = 240
-
-        y_max = max(self.chart11.get_y_max(), self.chart12.get_y_max())
-        self.chart11.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart11.set_y_bounds(0, y_max, make_default=True)
-        self.chart12.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart12.set_y_bounds(0, y_max, make_default=True)
-        self.chart21.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart21.set_y_bounds(0, 80, make_default=True)
-        self.chart22.set_x_bounds(x_min, x_max, make_default=True)
-        self.chart22.set_y_bounds(0, 80, make_default=True)
 
     def check_weekday(self):
         self.no_compute = True

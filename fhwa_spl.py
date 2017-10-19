@@ -2,7 +2,8 @@ import sys
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
-from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel
+from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog
+from PyQt5.QtGui import QColor
 from mw_test import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz import run_viz, run_viz_day
@@ -10,6 +11,8 @@ from viz_qt import DataLoadQT, LoadProjectQT
 from data_import import get_case_study_list, get_spm_study_list
 from DataHelper import DataHelper
 from offline_viz import FourByFourPanel, FourByFourTimeTimePanel, TwoByTwoPanelTimeTime
+from mpl_panels import ChartGridPanel
+from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
 import os
 
 PORT = 5000
@@ -37,6 +40,9 @@ class MainWindow(QMainWindow):
 
         self.project = None
         self.database = DataHelper()
+
+        self.chart_panel1 = None
+        self.chart_panel2 = None
 
         #self.web = QWebView()
         #self.container = ConnectionContainer()
@@ -103,10 +109,11 @@ class MainWindow(QMainWindow):
         # update_chart_action.triggered.connect(self.update_chart)
         # self.ui.menuAnalyze.addAction(update_chart_action)
 
-        chart1_options_action = QAction('&Chart 1 Options', self)
-        chart1_options_action.setToolTip('Congifure the Chart Panel 1 Options')
-        chart1_options_action.triggered.connect(self.edit_chart1_options)
-        self.ui.menuView.addAction(chart1_options_action)
+        self.chart1_options_action = QAction('&Chart 1 Options', self)
+        self.chart1_options_action.setToolTip('Congifure the Chart Panel 1 Options')
+        self.chart1_options_action.triggered.connect(self.edit_chart1_options)
+        self.chart1_options_action.setEnabled(False)
+        self.ui.menuChartOptions.addAction(self.chart1_options_action)
 
         self.ui.add_range_button.clicked.connect(self.add_date_range)
         self.ui.del_range_button.clicked.connect(self.del_date_range)
@@ -114,7 +121,8 @@ class MainWindow(QMainWindow):
         self.ui.create_charts_button.setText('Create Extra Time Charts')
         self.ui.create_charts_button.clicked.connect(self.load_extra_time_charts)
 
-        self.ui.pushButton_first_chart.clicked.connect(self.load_time_time_charts)
+        # self.ui.pushButton_first_chart.clicked.connect(self.load_time_time_charts)
+        self.ui.pushButton_first_chart.clicked.connect(self.create_chart_panel1)
         self.ui.pushButton_first_chart.setDisabled(True)
 
         self.ui.pushButton_2.clicked.connect(self.create_new)
@@ -154,6 +162,7 @@ class MainWindow(QMainWindow):
             data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
             project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
             if ok:
+                self.ui.label_project_name.setText(project_name)
                 self.project = Project(project_name, project_dir_name, self)
                 self.project.set_tmc_file(tmc_file_name)
                 self.project.set_data_file(data_file_name)
@@ -296,22 +305,33 @@ class MainWindow(QMainWindow):
 
     def load_time_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Time / Time Charts'
-        #mpl_widget = FourByFourTimeTimePanel(self.project)TwoByTwoPanelTimeTime
-        mpl_widget = TwoByTwoPanelTimeTime(self.project)
-        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
+        # self.chart_panel1 = TwoByTwoPanelTimeTime(self.project, options=self.project.chart_panel1_opts)
+        self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)
+        self.chart1_options_action.setEnabled(True)
+        new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1, chart_panel_name)
+
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.pushButton_first_chart.setDisabled(True)
         self.ui.toolBox.setCurrentIndex(3)
+
+    def create_chart_panel1(self):
+        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
+        cp1_dlg.show()
+
+    def edit_chart1_options(self):
+        cp1_dlg = ChartPanelOptionsDlg(self, self.update_chart_panel1)
+        cp1_dlg.show()
+
+    def update_chart_panel1(self):
+        if self.chart_panel1 is not None:
+            self.chart_panel1.options_updated()
 
     def edit_tmcs(self):
         if self.database.tmc_df is not None:
             TMCList(self, self.database.tmc_df)
 
     def setup_tmc_list(self, is_init=False):
-        tmc_list = self.project.database.get_tmcs()
-        subset_dirs = self.project.get_selected_directions()
-        subset_tmc = tmc_list[tmc_list['direction'].isin(subset_dirs)]
-
+        subset_tmc = self.project.get_tmc()
         self.ui.treeWidget_2.clear()
 
         cumulative_mi = 0
@@ -349,10 +369,6 @@ class MainWindow(QMainWindow):
                 tmc_subset.append(tmc_list['tmc'][tmc_idx])
 
         return tmc_subset
-
-    def edit_chart1_options(self):
-        cp1_dlg = ChartPanelOptionsDlg(self)
-        cp1_dlg.show()
 
 
 class TMCList(QDialog):
@@ -412,6 +428,7 @@ class Project:
         self._data_file_name = None
         self.database = None
         self._date_ranges = []
+        self.chart_panel1_opts = ChartOptions()
 
     def set_name(self, new_name):
         self._project_name = new_name
@@ -451,6 +468,19 @@ class Project:
                 direction_list.append(root.child(0).child(ti).text(0))
         return direction_list
 
+    def get_tmc(self, full_list=False, as_list=False):
+        if full_list:
+            return self.database.get_tmcs(as_list=as_list)
+        else:
+            tmc_list = self.database.get_tmcs()
+            subset_dirs = self.get_selected_directions()
+            subset_tmc = tmc_list[tmc_list['direction'].isin(subset_dirs)]
+            subset_tmc.reset_index(inplace=True)
+            if as_list:
+                return subset_tmc['tmc']
+            else:
+                return subset_tmc
+
     def load(self):
         LoadProjectQT(self.main_window, create_database=True, print_csv=False)
 
@@ -474,11 +504,146 @@ class ConnectionContainer(QObject):
 
 class ChartPanelOptionsDlg(QDialog):
 
-    def __init__(self, main_window):
+    def __init__(self, main_window, update_func=None):
         super().__init__(main_window)
+        self.main_window = main_window
+        self.update_func = update_func
         self.ui = Ui_CPD()
         self.ui.setupUi(self)
+        self.ui.buttonBox.accepted.connect(self.ok_press)
+        self.ui.buttonBox.rejected.connect(self.close_press)
+        # self.chart_options = ChartOptions()
+        self.chart_options = self.main_window.project.chart_panel1_opts
+        self.color_list = self.chart_options.speed_bin_colors.copy()
+        self.setup_panel()
 
+    def setup_panel(self):
+        self.ui.cb_rows.setCurrentIndex(self.chart_options.num_rows - 1)
+        self.ui.cb_cols.setCurrentIndex(self.chart_options.num_cols - 1)
+        chart_types = CHART1_TYPES
+        self.ui.cb_chart1.addItems(chart_types)
+        self.ui.cb_chart2.addItems(chart_types)
+        self.ui.cb_chart3.addItems(chart_types)
+        self.ui.cb_chart4.addItems(chart_types)
+        self.ui.cb_chart1.setCurrentIndex(self.chart_options.chart_type[0][0])
+        self.ui.cb_chart2.setCurrentIndex(self.chart_options.chart_type[0][1])
+        self.ui.cb_chart3.setCurrentIndex(self.chart_options.chart_type[1][0])
+        self.ui.cb_chart4.setCurrentIndex(self.chart_options.chart_type[1][1])
+        self.ui.cb_chart1.setEnabled(self.chart_options.has_chart[0][0])
+        self.ui.cb_chart2.setEnabled(self.chart_options.has_chart[0][1])
+        self.ui.cb_chart3.setEnabled(self.chart_options.has_chart[1][0])
+        self.ui.cb_chart4.setEnabled(self.chart_options.has_chart[1][1])
+        self.ui.cb_num_bins.setCurrentIndex(self.chart_options.num_speed_bins - 1)
+        self.ui.cb_bin_color_scheme.setCurrentIndex(1)
+        self.ui.pb_bin1.setStyleSheet(generate_color_button_style(self.chart_options.speed_bin_colors[0]))
+        self.ui.pb_bin2.setStyleSheet(generate_color_button_style(self.chart_options.speed_bin_colors[1]))
+        self.ui.pb_bin3.setStyleSheet(generate_color_button_style(self.chart_options.speed_bin_colors[2]))
+        self.ui.pb_bin4.setStyleSheet(generate_color_button_style(self.chart_options.speed_bin_colors[3]))
+        self.ui.pb_bin5.setStyleSheet(generate_color_button_style(self.chart_options.speed_bin_colors[4]))
+        self.ui.spin_min_bin1.setValue(self.chart_options.speed_bins[0])
+        self.ui.spin_max_bin1.setValue(self.chart_options.speed_bins[1])
+        self.ui.label_min_bin2.setText(str(self.chart_options.speed_bins[1]))
+        self.ui.spin_max_bin2.setValue(self.chart_options.speed_bins[2])
+        self.ui.label_min_bin3.setText(str(self.chart_options.speed_bins[2]))
+        self.ui.spin_max_bin3.setValue(self.chart_options.speed_bins[3])
+        self.ui.label_min_bin4.setText(str(self.chart_options.speed_bins[3]))
+        self.ui.spin_max_bin4.setValue(self.chart_options.speed_bins[4])
+        self.ui.label_min_bin5.setText(str(self.chart_options.speed_bins[4]))
+
+        self.connect_cbs()
+        self.connect_color_buttons()
+        self.connect_bin_labels()
+
+    def ok_press(self):
+        rows = int(self.ui.cb_rows.currentText())
+        cols = int(self.ui.cb_cols.currentText())
+        num_speed_bins = int(self.ui.cb_num_bins.currentText())
+        bin_vals = [int(self.ui.spin_min_bin1.text()),
+                    int(self.ui.spin_max_bin1.text()),
+                    int(self.ui.spin_max_bin2.text()),
+                    int(self.ui.spin_max_bin3.text()),
+                    int(self.ui.spin_max_bin4.text())]
+        self.main_window.project.chart_panel1_opts = ChartOptions(rows=rows, cols=cols, num_speed_bins=num_speed_bins, speed_bins_vals=bin_vals,
+                                                          speed_bin_colors=self.color_list)
+        self.main_window.project.chart_panel1_opts.chart_type[0][0] = self.ui.cb_chart1.currentIndex()
+        self.main_window.project.chart_panel1_opts.chart_type[0][1] = self.ui.cb_chart2.currentIndex()
+        self.main_window.project.chart_panel1_opts.chart_type[1][0] = self.ui.cb_chart3.currentIndex()
+        self.main_window.project.chart_panel1_opts.chart_type[1][1] = self.ui.cb_chart4.currentIndex()
+        self.close()
+        if self.update_func is not None:
+            self.update_func()
+
+    def close_press(self):
+        self.close()
+
+    def connect_cbs(self):
+        self.ui.cb_rows.currentIndexChanged.connect(self.update_chart_selection)
+        self.ui.cb_cols.currentIndexChanged.connect(self.update_chart_selection)
+        self.ui.cb_num_bins.currentIndexChanged.connect(self.update_bin_selections)
+        self.ui.cb_bin_color_scheme.currentIndexChanged.connect(self.update_color_scheme)
+
+    def update_chart_selection(self):
+        num_rows = self.ui.cb_rows.currentIndex() + 1
+        num_cols = self.ui.cb_cols.currentIndex() + 1
+        # self.ui.cb_chart1.setEnabled(True)
+        self.ui.cb_chart2.setEnabled(num_cols > 1)
+        self.ui.cb_chart3.setEnabled(num_rows > 1)
+        self.ui.cb_chart4.setEnabled(num_rows > 1 and num_cols > 1)
+
+    def update_bin_selections(self):
+        num_bins = self.ui.cb_num_bins.currentIndex() + 1
+        self.ui.pb_bin2.setEnabled(num_bins > 1)
+        self.ui.label_min_bin2.setEnabled(num_bins > 1)
+        self.ui.spin_max_bin2.setEnabled(num_bins > 1)
+        self.ui.pb_bin3.setEnabled(num_bins > 2)
+        self.ui.label_min_bin3.setEnabled(num_bins > 2)
+        self.ui.spin_max_bin3.setEnabled(num_bins > 2)
+        self.ui.pb_bin4.setEnabled(num_bins > 3)
+        self.ui.label_min_bin4.setEnabled(num_bins > 3)
+        self.ui.spin_max_bin4.setEnabled(num_bins > 3)
+        self.ui.pb_bin5.setEnabled(num_bins > 4)
+        self.ui.label_min_bin5.setEnabled(num_bins > 4)
+        # self.ui.label_max_bin5.setEnabled(num_bins > 4)
+
+    def update_color_scheme(self):
+        if self.ui.cb_bin_color_scheme.currentIndex() == 0:
+            self.color_list = SPEED_BIN_DEFAULTS.copy()
+            self.ui.pb_bin1.setStyleSheet(generate_color_button_style(self.color_list[0]))
+            self.ui.pb_bin2.setStyleSheet(generate_color_button_style(self.color_list[1]))
+            self.ui.pb_bin3.setStyleSheet(generate_color_button_style(self.color_list[2]))
+            self.ui.pb_bin4.setStyleSheet(generate_color_button_style(self.color_list[3]))
+            self.ui.pb_bin5.setStyleSheet(generate_color_button_style(self.color_list[4]))
+
+    def connect_color_buttons(self):
+        self.ui.pb_bin1.clicked.connect(lambda: self.set_speed_bin_color(0, self.ui.pb_bin1))
+        self.ui.pb_bin2.clicked.connect(lambda: self.set_speed_bin_color(1, self.ui.pb_bin2))
+        self.ui.pb_bin3.clicked.connect(lambda: self.set_speed_bin_color(2, self.ui.pb_bin3))
+        self.ui.pb_bin4.clicked.connect(lambda: self.set_speed_bin_color(3, self.ui.pb_bin4))
+        self.ui.pb_bin5.clicked.connect(lambda: self.set_speed_bin_color(4, self.ui.pb_bin5))
+
+    def set_speed_bin_color(self, index, button):
+        if index >=0 and index < len(self.color_list):
+            dlg = QColorDialog()
+            dlg.setCustomColor(1, QColor(SPEED_BIN_DEFAULTS[0]).toRgb())
+            dlg.setCustomColor(3, QColor(SPEED_BIN_DEFAULTS[1]).toRgb())
+            dlg.setCustomColor(5, QColor(SPEED_BIN_DEFAULTS[2]).toRgb())
+            dlg.setCustomColor(7, QColor(SPEED_BIN_DEFAULTS[3]).toRgb())
+            dlg.setCustomColor(9, QColor(SPEED_BIN_DEFAULTS[4]).toRgb())
+            c_str = dlg.getColor(initial=QColor(self.color_list[index]), parent=self)
+
+            if c_str.isValid():
+                self.color_list[index] = c_str.name()
+                button.setStyleSheet(generate_color_button_style(c_str.name()))
+                self.ui.cb_bin_color_scheme.setCurrentIndex(1)
+
+    def connect_bin_labels(self):
+        self.ui.spin_max_bin1.valueChanged.connect(lambda: self.update_bin_label(self.ui.spin_max_bin1, self.ui.label_min_bin2))
+        self.ui.spin_max_bin2.valueChanged.connect(lambda: self.update_bin_label(self.ui.spin_max_bin2, self.ui.label_min_bin3))
+        self.ui.spin_max_bin3.valueChanged.connect(lambda: self.update_bin_label(self.ui.spin_max_bin3, self.ui.label_min_bin4))
+        self.ui.spin_max_bin4.valueChanged.connect(lambda: self.update_bin_label(self.ui.spin_max_bin4, self.ui.label_min_bin5))
+
+    def update_bin_label(self, bin_spin, bin_label):
+        bin_label.setText(bin_spin.text())
 
 def provide_gui_for(application):
     qt_app = QApplication(sys.argv)

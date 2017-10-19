@@ -231,11 +231,12 @@ def create_pct_congested_sp(data, speed_bins, dates=[]):
     if len(dates) == 2:
         data = data[(data['Date'] >= dates[0]) & (data['Date'] <= dates[1])]
     # Aggregating data
-    data[bin_list[0]] = data['speed'] <= speed_bins[0]
-    data[bin_list[1]] = (data['speed'] > speed_bins[0]) & (data['speed'] <= speed_bins[1])
-    data[bin_list[2]] = (data['speed'] > speed_bins[1]) & (data['speed'] <= speed_bins[2])
-    data[bin_list[3]] = (data['speed'] > speed_bins[2]) & (data['speed'] <= speed_bins[3])
-    data[bin_list[4]] = (data['speed'] > speed_bins[3])
+    # data[bin_list[0]] = data['speed'] <= speed_bins[0]
+    data[bin_list[0]] = (data['speed'] >= speed_bins[0]) & (data['speed'] <= speed_bins[1])
+    data[bin_list[1]] = (data['speed'] > speed_bins[1]) & (data['speed'] <= speed_bins[2])
+    data[bin_list[2]] = (data['speed'] > speed_bins[2]) & (data['speed'] <= speed_bins[3])
+    data[bin_list[3]] = (data['speed'] > speed_bins[3]) & (data['speed'] <= speed_bins[4])
+    data[bin_list[4]] = (data['speed'] > speed_bins[4])
     sp_pct_con = data.groupby(['Year', 'Month', 'Day', 'Hour', 'AP', 'tmc_code'])['bin1', 'bin2', 'bin3', 'bin4', 'bin5'].agg(np.sum)
     # sp_pct_con1 = sp_pct_con.groupby(['Year', 'Month', 'Day', 'Hour']).agg(np.sum)
     sp_pct_con1 = sp_pct_con.groupby(['Year', 'Month', 'Day']).agg(np.sum)
@@ -253,15 +254,37 @@ def create_pct_congested_tmc(data, speed_bins, times=None, dates=None):
     if times is not None and len(times) == 2:
         ap_start, ap_end = convert_hour_to_ap(times[0].hour, times[0].minute, times[1].hour, times[1].minute)
         data = data[(data['AP'] >= ap_start) & (data['AP'] < ap_end)]
-    data[bin_list[0]] = data['speed'] <= speed_bins[0]
-    data[bin_list[1]] = (data['speed'] > speed_bins[0]) & (data['speed'] <= speed_bins[1])
-    data[bin_list[2]] = (data['speed'] > speed_bins[1]) & (data['speed'] <= speed_bins[2])
-    data[bin_list[3]] = (data['speed'] > speed_bins[2]) & (data['speed'] <= speed_bins[3])
-    data[bin_list[4]] = (data['speed'] > speed_bins[3])
+    # data[bin_list[0]] = data['speed'] <= speed_bins[0]
+    data[bin_list[0]] = (data['speed'] >= speed_bins[0]) & (data['speed'] <= speed_bins[1])
+    data[bin_list[1]] = (data['speed'] > speed_bins[1]) & (data['speed'] <= speed_bins[2])
+    data[bin_list[2]] = (data['speed'] > speed_bins[2]) & (data['speed'] <= speed_bins[3])
+    data[bin_list[3]] = (data['speed'] > speed_bins[3]) & (data['speed'] <= speed_bins[4])
+    data[bin_list[4]] = (data['speed'] > speed_bins[4])
     tmc_gp = data.groupby(['Year', 'Month', 'Day', 'Hour', 'AP', 'tmc_code'])['bin1', 'bin2', 'bin3', 'bin4', 'bin5'].agg(np.sum)
     tmc_gp1 = tmc_gp.groupby(['tmc_code']).agg(np.sum)
     tmc_gp1['bin_sum'] = tmc_gp1[bin_list].sum(axis=1)
     tmc_gp1 = tmc_gp1[bin_list].div(tmc_gp1['bin_sum'], axis=0)
-
     return tmc_gp1
+
+
+def create_speed_heatmap(data, tmc_id):
+    tmc = data[data['tmc_code'].isin([tmc_id])]
+    test = tmc.groupby(['Date', 'AP'])['speed'].agg(np.mean)
+    df_mat = test.to_frame()
+    imshow_data = df_mat.unstack().values[:, :]
+    imshow_data = imshow_data.T
+    return imshow_data
+
+
+def create_speed_tmc_heatmap(data, period):
+    tmc = data[(data['AP'] >= period[0]) & (data['AP'] <= period[1])]
+    test = tmc.groupby(['Date', 'tmc_code'])['speed'].agg(np.mean)
+    df_mat = test.to_frame()
+    imshow_data = df_mat.unstack().values[:, :]
+    imshow_data = imshow_data.T
+    return imshow_data
+
+
+def convert_time_to_ap(start_hour, start_min, ap_increment):
+    return (start_hour * 12) + start_min // ap_increment
 
