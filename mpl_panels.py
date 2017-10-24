@@ -1,9 +1,19 @@
+"""
+Panel to hold a grid of MplChart objects
+Has additional filtering controls built in
+TMC selection combo box
+Peak hour selection combo box
+Weekday/Weekend/Day of week checkboxes
+Currently limited to a 2x2 grid
+Interacts the with ChartOptions object of the project that is created/edited by the chart_panel_options dialog
+"""
 from PyQt5 import QtWidgets
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from stat_func import create_pct_congested_sp, create_pct_congested_tmc, create_speed_heatmap, create_speed_tmc_heatmap
-from stat_func import create_timetime_analysis_v2, convert_time_to_ap
+from stat_func import create_timetime_analysis, convert_time_to_ap
 from chart_defaults import ChartOptions
 from mpl_charts import MplChart
+from datetime import datetime, timedelta
 
 
 class ChartGridPanel(QtWidgets.QWidget):
@@ -48,6 +58,10 @@ class ChartGridPanel(QtWidgets.QWidget):
         # Filter Components
         self.cb_tmc_select = QtWidgets.QComboBox()
         self.cb_tmc_select.addItems(self.project.get_tmc(as_list=True))
+        self.cb_peak_hour_select = QtWidgets.QComboBox()
+        midnight = datetime(2000, 1, 1, 0, 0, 0)
+        self.cb_peak_hour_select.addItems([(midnight + timedelta(minutes=15*i)).strftime('%I:%M%p') for i in range(93)])
+        self.cb_peak_hour_select.setCurrentIndex(24)
         self.check_am = QtWidgets.QCheckBox('AM')
         self.check_pm = QtWidgets.QCheckBox('PM')
         self.check_mid = QtWidgets.QCheckBox('Midday')
@@ -62,6 +76,7 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.check_sun = QtWidgets.QCheckBox('Sun')
         self.check_bar_day = QtWidgets.QWidget(self)
         self.h_layout = QtWidgets.QHBoxLayout(self.check_bar_day)
+        self.h_layout.addWidget(self.cb_peak_hour_select)
         self.h_layout.addWidget(self.cb_tmc_select)
         self.h_layout.addWidget(create_spacer_line(self))
         self.h_layout.addWidget(self.check_am)
@@ -98,10 +113,10 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.chart21 = MplChart(self, fig_type=self.options.chart_type[1][0], panel=self, region=0)
         self.chart12 = MplChart(self, fig_type=self.options.chart_type[0][1], panel=self, region=1)
         self.chart22 = MplChart(self, fig_type=self.options.chart_type[1][1], panel=self, region=2)
-        self.nav_toolbar11 = NavigationToolbar(self.chart11, self)
-        self.nav_toolbar21 = NavigationToolbar(self.chart21, self)
-        self.nav_toolbar12 = NavigationToolbar(self.chart12, self)
-        self.nav_toolbar22 = NavigationToolbar(self.chart22, self)
+        # self.nav_toolbar11 = NavigationToolbar(self.chart11, self)
+        # self.nav_toolbar21 = NavigationToolbar(self.chart21, self)
+        # self.nav_toolbar12 = NavigationToolbar(self.chart12, self)
+        # self.nav_toolbar22 = NavigationToolbar(self.chart22, self)
 
     def add_charts_to_layouts(self):
         # Chart 1
@@ -177,6 +192,7 @@ class ChartGridPanel(QtWidgets.QWidget):
 
     def connect_combo_boxes(self):
         self.cb_tmc_select.currentIndexChanged.connect(self.options_updated)
+        self.cb_peak_hour_select.currentIndexChanged.connect(self.options_updated)
 
     def check_weekday(self):
         self.no_compute = True
@@ -266,7 +282,9 @@ class ChartGridPanel(QtWidgets.QWidget):
         selected_tmc = self.cb_tmc_select.currentIndex()
         self.selected_tmc_name = dir_tmc['tmc'][selected_tmc]
         self.selected_tmc_len = dir_tmc['miles'][selected_tmc]
-        self.plot_dfs = [create_timetime_analysis_v2(filtered_df),
+        self.ap_start = self.cb_peak_hour_select.currentIndex() * 3
+        self.ap_end = self.ap_start + 12
+        self.plot_dfs = [create_timetime_analysis(filtered_df),
                          create_pct_congested_sp(filtered_df, self.speed_bins),
                          create_pct_congested_tmc(filtered_df, self.speed_bins),
                          create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),

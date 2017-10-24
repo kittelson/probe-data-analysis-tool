@@ -1,3 +1,7 @@
+"""
+Contains default values and utility methods for the matplotlib based charts
+"""
+
 SPEED_BIN_DEFAULTS = ['#d62728', '#ff7f0e', '#dbdb8d', '#98df8a', '#2ca02c']
 TT_BLUE = '#6e97c8'  # '#4f81bd'
 TT_RED = '#da9694'  # '#c0504d'

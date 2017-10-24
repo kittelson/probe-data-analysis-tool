@@ -6,6 +6,10 @@
 #
 # WARNING! All changes made in this file will be lost!
 
+"""
+The PyQt5 based user interface for the Chart Options dialog.
+"""
+
 from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_Dialog(object):

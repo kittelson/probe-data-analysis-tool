@@ -1,65 +1,9 @@
+"""
+Module for the Database class used by the Project class to store the project data
+"""
+
 import calendar
 import datetime
-
-
-class DataHelper:
-    def __init__(self):
-        self.curr_cs_idx = -1
-        self.curr_subset_idx = -1
-        self.site_name = ''
-        self.tmc_df = None
-        self.data = None
-        self.tt_comp = None
-        self.available_days = None
-        self.available_months = None
-        self.titles = None
-        self.tmc_subset = []
-
-    def set_curr_cs_idx(self, index):
-        self.curr_cs_idx = index
-
-    def set_site_name(self, name):
-        self.site_name = name
-
-    def set_tmc_list(self, tmc_list):
-        self.tmc_df = tmc_list
-
-    def set_data(self, data):
-        self.data = data
-
-    def set_tt_comp(self, tt_comp):
-        self.tt_comp = tt_comp
-
-    def set_available_days(self, available_days):
-        self.available_days = available_days
-
-    def set_available_months(self, available_months):
-        self.available_months = available_months
-
-    def set_titles(self, titles):
-        self.titles = titles
-
-    def add_tmc_subset(self, tmc_subset):
-        self.tmc_subset.append(tmc_subset)
-        return len(self.tmc_subset) - 1
-
-    def get_tmc_subset(self, subset_idx):
-        if subset_idx < len(self.tmc_subset):
-            return self.tmc_subset[subset_idx]
-        else:
-            return []
-
-    def set_active_subset(self, subset_idx):
-        self.curr_subset_idx = subset_idx
-
-    def get_active_subset(self):
-        return self.curr_subset_idx
-
-    def get_tmc_list(self):
-        if self.curr_subset_idx < 0:
-            return self.tmc_df
-        else:
-            return self.tmc_df[self.tmc_df['tmc'].isin(self.tmc_subset[self.curr_subset_idx])]
 
 
 class Database:

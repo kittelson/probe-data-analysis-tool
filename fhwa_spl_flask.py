@@ -1,3 +1,8 @@
+"""
+Starts the local flask server that runs the webview/d3js visualizations
+"""
+
+
 from flask import Flask, render_template
 import sys
 import os

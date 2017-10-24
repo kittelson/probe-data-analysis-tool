@@ -1,3 +1,7 @@
+"""
+PyQt5 user-interface for the MainWindow of the program.  Designed using QtDesigner and created using pyuic
+"""
+
 # -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'mw_test.ui'

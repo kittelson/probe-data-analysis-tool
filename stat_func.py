@@ -1,3 +1,7 @@
+"""
+Module that houses various statistical and data aggregation functions for the tool.
+"""
+
 import numpy as np
 import pandas as pd
 import time
@@ -13,13 +17,6 @@ def percentile(n):
         return np.percentile(x, n)
     percentile_.__name__ = 'percentile_%s' % n
     return percentile_
-
-
-def multi_percentile():
-    def multi_percentile_(x):
-        return np.percentile(x, [95, 50, 5])
-    multi_percentile_.__name__ = 'multipct'
-    return multi_percentile_
 
 
 def create_speed_band_analysis(data):
@@ -38,21 +35,12 @@ def create_tt_analysis(data):
     return tt
 
 
-def create_et_analysis(data):
-    if data is None:
-        return None
-    if not data.columns.contains('travel_time_minutes'):
-        data['travel_time_minutes'] = data['travel_time_seconds']/60
-    time1 = time.time()
-    et = data.groupby(['Date', 'AP', 'tmc_code'])['travel_time_minutes'].agg(np.mean)
-    et = et.groupby(['AP', 'tmc_code']).agg([np.mean, percentile(95), percentile(5)]).groupby(level=0).sum()
-    et['extra_time'] = et['percentile_95'] - et['mean']
-    time2 = time.time()
-    print('Extra Time Analysis: ' + str(time2 - time1))
-    return et
-
-
-def create_et_analysis_v2(data):
+def create_et_analysis_deprecated(data):
+    """
+    Deprecated function to create extra-time analysis for a dataframe. No longer used as it incorrectly aggregates by TMC last
+    :param data: pandas dataframe with AP, tmc_code, and travel_time (minutes or seconds)
+    :return: pandas data frame with extra time analysis
+    """
     if data is None:
         return None
     if not data.columns.contains('travel_time_minutes'):
@@ -65,7 +53,12 @@ def create_et_analysis_v2(data):
     return et
 
 
-def create_et_analysis_v3(data):
+def create_et_analysis(data):
+    """
+    Function to create an Extra-Time analysis for a dataframe.
+    :param data: pandas dataframe with AP, tmc_code, and travel_time (minutes or seconds)
+    :return: pandas data frame with extra time analysis
+    """
     if data is None:
         return None
     if not data.columns.contains('travel_time_minutes'):
@@ -80,7 +73,12 @@ def create_et_analysis_v3(data):
     return et
 
 
-def create_timetime_analysis(data):
+def create_timetime_analysis_deprecated(data):
+    """
+    Function to create a travel time trenc over time analysis.  Deprecated as it incorrectly aggregates by TMC last.
+    :param data: 
+    :return: 
+    """
     if data is None:
         return None
     am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
@@ -120,7 +118,12 @@ def create_timetime_analysis(data):
     return plot_df_dir1
 
 
-def create_timetime_analysis_v2(data):
+def create_timetime_analysis(data):
+    """
+    Function to create a travel time trend over time analysis.
+    :param data: 
+    :return: 
+    """
     if data is None:
         return None
     am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
@@ -175,53 +178,6 @@ def create_tt_compare(data_before, data_after):
     deltas['delta_90'] = data_before['percentile_90'] - data_after['percentile_90']
     deltas['delta_95'] = data_before['percentile_95'] - data_after['percentile_95']
     return deltas
-
-
-def create_speed_bin_peak_period(data):
-    if data is None:
-        return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
-
-    # AM Peak Period
-    bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
-    df_dir1_am = data[(data['AP'] >= am_ap_start) & (data['AP'] < am_ap_end)]
-    df_dir1_am[bin_list[0]] = df_dir1_am['speed'] <= BIN1
-    df_dir1_am[bin_list[1]] = (df_dir1_am['speed'] > BIN1) & (df_dir1_am['speed'] <= BIN2)
-    df_dir1_am[bin_list[2]] = (df_dir1_am['speed'] > BIN2) & (df_dir1_am['speed'] <= BIN3)
-    df_dir1_am[bin_list[3]] = (df_dir1_am['speed'] > BIN3) & (df_dir1_am['speed'] <= BIN4)
-    df_dir1_am[bin_list[4]] = (df_dir1_am['speed'] > BIN4)
-    am_gp = df_dir1_am.groupby(['Year', 'Month', 'AP', 'tmc_code'])['bin1', 'bin2', 'bin3', 'bin4', 'bin5'].agg(np.sum)
-    am_gp1 = am_gp.groupby(['Year', 'Month']).agg(np.sum)
-    am_gp1['bin_sum'] = am_gp1[bin_list].sum(axis=1)
-    am_gp1 = am_gp1[bin_list].div(am_gp1['bin_sum'], axis=0)
-    # PM Peak Period
-    df_dir1_pm = data[(data['AP'] >= pm_ap_start) & (data['AP'] < pm_ap_end)]
-    df_dir1_pm['bin1'] = df_dir1_pm['speed'] <= BIN1
-    df_dir1_pm['bin2'] = (df_dir1_pm['speed'] > BIN1) & (df_dir1_pm['speed'] <= BIN2)
-    df_dir1_pm['bin3'] = (df_dir1_pm['speed'] > BIN2) & (df_dir1_pm['speed'] <= BIN3)
-    df_dir1_pm['bin4'] = (df_dir1_pm['speed'] > BIN3) & (df_dir1_pm['speed'] <= BIN4)
-    df_dir1_pm['bin5'] = (df_dir1_pm['speed'] > BIN4)
-    pm_gp = df_dir1_pm.groupby(['Year', 'Month', 'AP', 'tmc_code'])['bin1', 'bin2', 'bin3', 'bin4', 'bin5'].agg(np.sum)
-    pm_gp1 = pm_gp.groupby(['Year', 'Month']).agg(np.sum)
-    pm_gp1['bin_sum'] = pm_gp1[bin_list].sum(axis=1)
-    pm_gp1 = pm_gp1[bin_list].div(pm_gp1['bin_sum'], axis=0)
-    # Midday Peak Period
-    df_dir1_md = data[(data['AP'] >= md_ap_start) & (data['AP'] < md_ap_end)]
-    df_dir1_md['bin1'] = df_dir1_md['speed'] <= BIN1
-    df_dir1_md['bin2'] = (df_dir1_md['speed'] > BIN1) & (df_dir1_md['speed'] <= BIN2)
-    df_dir1_md['bin3'] = (df_dir1_md['speed'] > BIN2) & (df_dir1_md['speed'] <= BIN3)
-    df_dir1_md['bin4'] = (df_dir1_md['speed'] > BIN3) & (df_dir1_md['speed'] <= BIN4)
-    df_dir1_md['bin5'] = (df_dir1_md['speed'] > BIN4)
-    md_gp = df_dir1_md.groupby(['Year', 'Month', 'AP', 'tmc_code'])['bin1', 'bin2', 'bin3', 'bin4', 'bin5'].agg(np.sum)
-    md_gp1 = am_gp.groupby(['Year', 'Month']).agg(np.sum)
-    md_gp1['bin_sum'] = md_gp1[bin_list].sum(axis=1)
-    md_gp1 = md_gp1[bin_list].div(md_gp1['bin_sum'], axis=0)
-
-    plot_df_dir1 = am_gp1.join(pm_gp1, lsuffix='_pm')
-    plot_df_dir1 = plot_df_dir1.join(md_gp1, lsuffix='_mid')
-    return plot_df_dir1
 
 
 def create_pct_congested_sp(data, speed_bins, dates=[]):

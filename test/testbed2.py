@@ -2,8 +2,7 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 import time
-import calendar
-from viz import extract_vals, create_columns
+from viz_qt import extract_vals, create_columns
 from matplotlib.ticker import FuncFormatter
 import calendar
 from datetime import datetime, timedelta

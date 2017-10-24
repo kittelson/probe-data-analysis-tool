@@ -1,19 +1,24 @@
+"""
+Effectively the “main” class of the program
+Includes code for the MainWindow application
+Also defines the core Project class
+Has leftover code defining the FlaskThread for potential future web/d3js visualizations
+"""
+
+
 import sys
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QListWidget, QAbstractItemView, QVBoxLayout
-from PyQt5.QtWidgets import QDialogButtonBox, QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog
+from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog
 from PyQt5.QtGui import QColor
 from mw_test import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
-from viz import run_viz, run_viz_day
-from viz_qt import DataLoadQT, LoadProjectQT
-from data_import import get_case_study_list, get_spm_study_list
-from DataHelper import DataHelper
-from offline_viz import FourByFourPanel, FourByFourTimeTimePanel, TwoByTwoPanelTimeTime
+from viz_qt import LoadProjectQT
+from offline_viz import FourByFourPanel
 from mpl_panels import ChartGridPanel
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
-import os
+import sql_helper
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -39,7 +44,6 @@ class MainWindow(QMainWindow):
         self.ui.setupUi(self)
 
         self.project = None
-        self.database = DataHelper()
 
         self.chart_panel1 = None
         self.chart_panel2 = None
@@ -57,7 +61,7 @@ class MainWindow(QMainWindow):
         open_file_action = QAction('&Open Project', self)
         open_file_action.setShortcut('Ctrl+O')
         open_file_action.setToolTip('Open Project File')
-        open_file_action.triggered.connect(self.open_file)
+        open_file_action.triggered.connect(self.open_sql_project)
         self.ui.menuFile.addAction(open_file_action)
 
         exit_app_action = QAction('&Exit', self)
@@ -65,12 +69,6 @@ class MainWindow(QMainWindow):
         exit_app_action.setToolTip('Exit Program')
         exit_app_action.triggered.connect(self.close)
         self.ui.menuFile.addAction(exit_app_action)
-
-        run_case_action = QAction('&Run Case Study', self)
-        run_case_action.setShortcut('Ctrl+R')
-        run_case_action.setToolTip('Select and Run Case Study')
-        run_case_action.triggered.connect(self.run_case_study)
-        self.ui.menuAnalyze.addAction(run_case_action)
 
         # load_chart_action = QAction('&Load Chart', self)
         # load_chart_action.setShortcut('Ctrl+L')
@@ -216,6 +214,12 @@ class MainWindow(QMainWindow):
         print(f_name)
         print('done')
 
+    def open_sql_project(self):
+        f_name, file_filter = QFileDialog.getOpenFileName(self, 'Select the Data File', '', "CSV files (*.csv)")
+        if f_name:
+            # sql_helper.create_sql_db_from_file(f_name)
+            pass
+
     def add_date_range(self):
         start_date = self.ui.dateEdit_start.date()
         end_date = self.ui.dateEdit_end.date()
@@ -247,34 +251,6 @@ class MainWindow(QMainWindow):
             d_range = self.project.del_date_range(d_range_idx)
         self.update_date_range_tree()
 
-    def run_case_study(self):
-        case_studies = get_case_study_list()
-        case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
-        if ok:
-            run_viz(case_studies.index(case_study) + 1)
-
-    def select_case_study(self):
-        case_studies = get_case_study_list()
-        case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
-        return case_studies.index(case_study) + 1, ok
-
-    def extract_case_study(self):
-        cs_idx, ok = self.select_case_study()
-        if ok:
-            self.database.set_active_subset(-1)
-            DataLoadQT(self, cs_idx, [], print_csv=False, return_tt=False)
-
-    def select_case_study_spm(self):
-        case_studies = get_spm_study_list()
-        case_study, ok = QInputDialog.getItem(self, "Case Study Selection", "Select the Case Study:", case_studies, 0, False)
-        return case_studies.index(case_study) + 1, ok
-
-    def extract_case_study_spm(self):
-        cs_idx, ok = self.select_case_study_spm()
-        if ok:
-            self.database.set_active_subset(-1)
-            DataLoadQT(self, cs_idx, [], print_csv=False, return_tt=False)
-
     def load_data_density_charts(self, chart_panel_name):
         temp_widget = QWidget(self)
         v_layout = QVBoxLayout(temp_widget)
@@ -287,14 +263,6 @@ class MainWindow(QMainWindow):
         mpl_widget = FourByFourPanel(self.project)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
-
-    def generate_subset_charts(self, subset_idx, chart_name):
-        self.database.set_active_subset(subset_idx)
-        DataLoadQT(self, self.database.curr_cs_idx, [],
-                   tmc_subset=self.database.get_tmc_subset(subset_idx),
-                   subset_name=chart_name,
-                   print_csv=False,
-                   return_tt=False)
 
     def load_extra_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Extra Time Charts'
@@ -325,10 +293,6 @@ class MainWindow(QMainWindow):
     def update_chart_panel1(self):
         if self.chart_panel1 is not None:
             self.chart_panel1.options_updated()
-
-    def edit_tmcs(self):
-        if self.database.tmc_df is not None:
-            TMCList(self, self.database.tmc_df)
 
     def setup_tmc_list(self, is_init=False):
         subset_tmc = self.project.get_tmc()
@@ -369,54 +333,6 @@ class MainWindow(QMainWindow):
                 tmc_subset.append(tmc_list['tmc'][tmc_idx])
 
         return tmc_subset
-
-
-class TMCList(QDialog):
-    def __init__(self, main_window, tmc_list):
-        super().__init__(main_window)
-        self.main_window = main_window
-        self.tmc_list = tmc_list
-        self.list_widget = QListWidget(self)
-        self.initUI()
-
-    def initUI(self):
-        accum = 0
-        for row in self.tmc_list.iterrows():
-            accum += row[1]['miles']
-            self.list_widget.addItem(row[1]['tmc'] + ',\t\t' + '{:1.1f}'.format(accum) + ',\t' + '{:1.1f}'.format(row[1]['miles']) + ',\t' + row[1]['intersection'])
-        self.list_widget.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.setWindowTitle('Select the TMC Set')
-        self.button_box = QDialogButtonBox(self)
-        self.button_box.setStandardButtons(QDialogButtonBox.Apply | QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
-        self.button_box.accepted.connect(self.ok_press)
-        self.button_box.rejected.connect(self.close_press)
-        self.button_box.clicked.connect(self.handleButtonClick)
-        self.vlo = QVBoxLayout(self)
-        self.vlo.addWidget(self.list_widget)
-        self.vlo.addWidget(self.button_box)
-        self.resize(600, 800)
-        self.show()
-
-    def handleButtonClick(self, button):
-        sb = self.button_box.standardButton(button)
-        if sb == QDialogButtonBox.Apply:
-            self.apply_press()
-
-    def apply_press(self):
-        if len(self.list_widget.selectedIndexes()) > 0:
-            tmc_ss = [self.tmc_list['tmc'][tmc_id.row()] for tmc_id in self.list_widget.selectedIndexes()]
-            subset_idx = self.main_window.database.add_tmc_subset(tmc_ss)
-            tab_name, ok = QInputDialog.getText(self.main_window, 'Enter Subset Name', 'Please specify the name of the TMC Subset',
-                                                QLineEdit.Normal, self.main_window.database.site_name)
-            if ok:
-                self.main_window.generate_subset_charts(subset_idx, tab_name)
-                self.close()
-
-    def ok_press(self):
-        print('accepted')
-
-    def close_press(self):
-        self.close()
 
 
 class Project:

@@ -1,5 +1,13 @@
+"""
+Creates the matplotlib charts via FigureCanvas for the visualizations
+All charts the MplChart class, but the visualization is determined by the “fig_type” field
+Contains the ZoomPan class for dynamic interaction with the MPL charts without the need for the navigation toolbar.
+"""
+
+
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
+from PyQt5.QtGui import QCursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
@@ -37,6 +45,9 @@ class MplChart(FigureCanvas):
         self.region2 = region2
         self.is_subset = is_subset
 
+        self.default_xlim = None
+        self.default_ylim = None
+
         self.show_am = True
         self.show_pm = True
         self.show_mid = False
@@ -67,23 +78,61 @@ class MplChart(FigureCanvas):
                                    QtWidgets.QSizePolicy.Expanding)
 
         FigureCanvas.updateGeometry(self)
+
+        self.context_menu = QtWidgets.QMenu(self)
+        self.toggle_legend_action = QtWidgets.QAction('Toggle Chart Legend', self)
+        self.toggle_legend_action.setToolTip('Toggle the chart legend on/off')
+        self.toggle_legend_action.triggered.connect(self.toggle_legend)
+        self.context_menu.addAction(self.toggle_legend_action)
+
+        self.save_figure_action = QtWidgets.QAction('Save Chart as Image', self)
+        self.save_figure_action.setToolTip('Save the chart as an image file (png, jpg, etc.)')
+        self.save_figure_action.triggered.connect(self.save_figure)
+        self.context_menu.addAction(self.save_figure_action)
+
+        self.reset_axis_action = QtWidgets.QAction('Reset Axis Bounds', self)
+        self.reset_axis_action.setToolTip('Reset the x and y bounds of the chart')
+        self.reset_axis_action.triggered.connect(self.reset_axis_bounds)
+        self.context_menu.addAction(self.reset_axis_action)
+
         scale = 1.1
         self.zp = ZoomPan()
-        figZoom = self.zp.zoom_factory(self.axes, base_scale=scale)
-        figPan = self.zp.pan_factory(self.axes)
+        figZoom = self.zp.zoom_factory(self.axes, self, base_scale=scale)
+        figPan = self.zp.pan_factory(self.axes, self)
+        self.set_x_bounds(self.axes.get_xlim()[0], self.axes.get_xlim()[1], make_default=True)
+        self.set_y_bounds(self.axes.get_ylim()[0], self.axes.get_ylim()[1], make_default=True)
+
+    def toggle_legend(self):
+        if self.axes.legend_ is not None:
+            self.axes.legend_ = None
+        else:
+            self.axes.legend()
+        self.draw()
 
     def set_x_bounds(self, x_min, x_max, make_default=False):
         self.axes.set_xbound([x_min, x_max])
         if make_default:
-            self.zp.set_default_xlim([x_min, x_max])
+            self.default_xlim = [x_min, x_max]
 
     def set_y_bounds(self, y_min, y_max, make_default=False):
         self.axes.set_ybound([y_min, y_max])
         if make_default:
-            self.zp.set_default_ylim([y_min, y_max])
+            self.default_ylim = [y_min, y_max]
+
+    def reset_axis_bounds(self):
+        if self.default_xlim is not None:
+            self.axes.set_xlim(self.default_xlim)
+        if self.default_ylim is not None:
+            self.axes.set_ylim(self.default_ylim)
+        self.draw()
 
     def set_fig_type(self, fig_type):
         self.fig_type = fig_type
+
+    def save_figure(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'PNG files (*.png);;PDF files (*.pdf);;JPEG files (*.jpg)', 'PNG files (*.png)')
+        if f_name:
+            self.fig.savefig(f_name)
 
     def update_title(self):
         pass
@@ -132,7 +181,6 @@ class MplChart(FigureCanvas):
             self.axes.plot(x, tt_md_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-5th Pct')
             self.axes.plot(x, tt_md_pct95_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-95th Pct')
 
-        # self.update_title()
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month')
         self.axes.set_ylabel('Travel Time (Minutes)')
         self.axes.legend()
@@ -269,7 +317,8 @@ class MplChart(FigureCanvas):
         self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink)
         self.color_bar2.set_label('Speed (mph)')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
-        # self.axes.yaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
+        f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True), tmc_ext)
+        self.axes.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
         self.axes.set_title(self.panel.peak_period_str + ': Facility Speed Heatmap')
 
 
@@ -296,8 +345,10 @@ class ZoomPan:
     def set_default_ylim(self, new_ylim):
         self.default_ylim = new_ylim
 
-    def zoom_factory(self, ax, base_scale=2.0):
+    def zoom_factory(self, ax, mpl_panel, base_scale=2.0):
         def zoom(event):
+            if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                return
 
             cur_xlim = ax.get_xlim()
             cur_ylim = ax.get_ylim()
@@ -314,7 +365,6 @@ class ZoomPan:
             else:
                 # deal with something that should never happen
                 scale_factor = 1
-                print(event.button)
 
             new_width = (cur_xlim[1] - cur_xlim[0]) * scale_factor
             new_height = (cur_ylim[1] - cur_ylim[0]) * scale_factor
@@ -339,50 +389,63 @@ class ZoomPan:
 
             ax.figure.canvas.draw()
 
-        fig = ax.get_figure() # get the figure of interest
+        fig = ax.get_figure()  # get the figure of interest
         fig.canvas.mpl_connect('scroll_event', zoom)
 
         return zoom
 
-    def pan_factory(self, ax):
+    def pan_factory(self, ax, mpl_panel):
         def onPress(event):
-            if ax.get_navigate_mode() is None:
-                if event.dblclick:
-                    if self.default_xlim is not None:
-                        ax.set_xlim(self.default_xlim)
-                    if self.default_ylim is not None:
-                        ax.set_ylim(self.default_ylim)
-                else:
-                    if event.inaxes != ax: return
-                    self.cur_xlim = ax.get_xlim()
-                    self.cur_ylim = ax.get_ylim()
-                    self.press = self.x0, self.y0, event.xdata, event.ydata
-                    self.x0, self.y0, self.xpress, self.ypress = self.press
+            if event.button == 3:
+                cursor = QCursor()
+                mpl_panel.context_menu.popup(cursor.pos())
+            else:
+                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                    return
+                if ax.get_navigate_mode() is None:
+                    if event.dblclick:
+                        mpl_panel.reset_axis_bounds()
+                    else:
+                        if event.inaxes != ax: return
+                        self.cur_xlim = ax.get_xlim()
+                        self.cur_ylim = ax.get_ylim()
+                        self.press = self.x0, self.y0, event.xdata, event.ydata
+                        self.x0, self.y0, self.xpress, self.ypress = self.press
 
         def onRelease(event):
-            if ax.get_navigate_mode() is None:
-                self.press = None
-                ax.figure.canvas.draw()
+            if event.button == 3:
+                pass
+            else:
+                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                    return
+                if ax.get_navigate_mode() is None:
+                    self.press = None
+                    ax.figure.canvas.draw()
 
         def onMotion(event):
-            if ax.get_navigate_mode() is None:
-                if self.press is None: return
-                if event.inaxes != ax: return
-                dx = event.xdata - self.xpress
-                dy = event.ydata - self.ypress
-                self.cur_xlim -= dx
-                self.cur_ylim -= dy
-                ax.set_xlim(self.cur_xlim)
-                ax.set_ylim(self.cur_ylim)
+            if event.button == 3:
+                pass
+            else:
+                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                    return
+                if ax.get_navigate_mode() is None:
+                    if self.press is None: return
+                    if event.inaxes != ax: return
+                    dx = event.xdata - self.xpress
+                    dy = event.ydata - self.ypress
+                    self.cur_xlim -= dx
+                    self.cur_ylim -= dy
+                    ax.set_xlim(self.cur_xlim)
+                    ax.set_ylim(self.cur_ylim)
 
-                ax.figure.canvas.draw()
+                    ax.figure.canvas.draw()
 
         fig = ax.get_figure() # get the figure of interest
 
         # attach the call back
-        fig.canvas.mpl_connect('button_press_event',onPress)
-        fig.canvas.mpl_connect('button_release_event',onRelease)
-        fig.canvas.mpl_connect('motion_notify_event',onMotion)
+        fig.canvas.mpl_connect('button_press_event', onPress)
+        fig.canvas.mpl_connect('button_release_event', onRelease)
+        fig.canvas.mpl_connect('motion_notify_event', onMotion)
 
         #return the function
         return onMotion
@@ -409,6 +472,12 @@ def convert_x_to_tmc(x, pos, tmc_list):
         return tmc_list[int(x)]
     else:
         return 0
+
+
+def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):
+    tmc_span = tmc_extent / len(tmc_list)
+    c_idx = x // tmc_span
+    return tmc_list[min(c_idx, len(tmc_list)-1)]
 
 
 def convert_xval_to_time(x, pos, min_resolution):
