@@ -13,9 +13,9 @@ from datetime import time as dtime
 # 3, 6, 10
 # 4, 1, 5
 # 5, 3, 4
-cs_idx = 2
-tmc_1_idx = 3
-tmc_2_idx = 15
+cs_idx = 4
+tmc_1_idx = 1
+tmc_2_idx = 5
 # main_title = 'Daily Speeds over Time: US-1 (Capital Blvd) - Wake Forest, NC'
 # main_title = 'Peak Period Speeds by TMC: Case Study ' + str(cs_idx)
 main_title = 'Peak Period Speeds by TMC: TX-161'
@@ -51,14 +51,14 @@ path2 = '_20140301_20170930'
 tmc_path = 'TMC_Identification.csv'
 data_path = path1 + str(cs_idx) + path2 + '.csv'
 
-# tmc = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + tmc_path)
-# df = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + data_path)
+tmc = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + tmc_path)
+df = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + data_path)
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I495_VA_NB_Ext13Mi_20130701_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I495_VA_NB_Ext13Mi_20130701_20170131/I495_VA_NB_Ext13Mi_20130701_20170131.csv')
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_NB_Extended_20140901_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_NB_Extended_20140901_20170131/TX161_TX_NB_Extended_20140901_20170131.csv')
-tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/' + tmc_path)
-df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/TX161_TX_SB_Extended_20140901_20170131.csv')
+# tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/' + tmc_path)
+# df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/TX161_TX_SB_Extended_20140901_20170131.csv')
 
 df = df[df.travel_time_minutes.notnull()]
 

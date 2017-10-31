@@ -232,10 +232,12 @@ def create_speed_heatmap(data, tmc_id):
     return imshow_data
 
 
-def create_speed_tmc_heatmap(data, period):
+def create_speed_tmc_heatmap(data, period, tmc_index_list):
     tmc = data[(data['AP'] >= period[0]) & (data['AP'] <= period[1])]
     test = tmc.groupby(['Date', 'tmc_code'])['speed'].agg(np.mean)
     df_mat = test.to_frame()
+    if tmc_index_list is not None:
+        df_mat = df_mat.reindex(tmc_index_list, level=1)
     imshow_data = df_mat.unstack().values[:, :]
     imshow_data = imshow_data.T
     return imshow_data

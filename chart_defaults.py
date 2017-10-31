@@ -59,4 +59,19 @@ class ChartOptions:
         # self.layout = compute_layout()
 
 
+def generate_vega_lite(data_frame, f_name=None):
+    import json
+    # Creating data dictionary
+    data = []
+    for index, row in data_frame.iterrows():
+        data.append({'Time of Day': str(index), 'Travel Time': str(row['travel_time_minutes'])})
+    # Creating JSON dictionary
+    vis = dict()
+    vis['description'] = 'TMC Travel Time by Hour of Day'
+    vis['data'] = {'values': data}
+    vis['mark'] = 'bar'
+    f1 = {'field': 'Time of Day', 'type': 'quantitative'}
+    f2 = {'field': 'Travel Time', 'type': 'quantitative'}
+    vis['encoding'] = {'x': f1, 'y': f2}
 
+    return json.dumps(vis, ensure_ascii=False)

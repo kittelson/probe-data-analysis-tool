@@ -13,6 +13,7 @@ from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 import calendar
 from datetime import datetime, timedelta
+from math import floor
 
 
 FIG_TYPE_TT_TREND_LINE = 0
@@ -51,6 +52,10 @@ class MplChart(FigureCanvas):
         self.show_am = True
         self.show_pm = True
         self.show_mid = False
+
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5), bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5))
+        self.hover_ann.set_visible(False)
+        self.tmc_ext = 0
 
         if kwargs is not None:
             if 'show_am' in kwargs:
@@ -307,19 +312,44 @@ class MplChart(FigureCanvas):
         self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + str(self.panel.selected_tmc_len) + ')')
 
     def compute_speed_tmc_heatmap(self):
-        imshow_data = self.panel.plot_dfs[4]
+        if self.show_am:
+            hour_str = convert_xval_to_time(self.panel.ap_start1, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end1, None, 5)
+            imshow_data = self.panel.plot_dfs[4]
+        elif self.show_mid:
+            hour_str = convert_xval_to_time(self.panel.ap_start2, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end2, None, 5)
+            imshow_data = self.panel.plot_dfs[5]
+        else:
+            hour_str = convert_xval_to_time(self.panel.ap_start3, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end3, None, 5)
+            imshow_data = self.panel.plot_dfs[6]
         num_tmc, num_days = imshow_data.shape
-        tmc_ext = num_days / 2
+        self.tmc_ext = num_days / 5
         cb_shrink = 0.95
-        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
         if self.color_bar2 is not None:
             self.color_bar2.remove()
         self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink)
         self.color_bar2.set_label('Speed (mph)')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
-        f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True), tmc_ext)
+        # f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True), self.tmc_ext)
+        f_tmc_label2 = lambda x, pos: convert_extent_to_mile(x, pos, self.panel.facility_len, self.tmc_ext)
         self.axes.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
-        self.axes.set_title(self.panel.peak_period_str + ': Facility Speed Heatmap')
+        self.axes.set_title(self.panel.project.get_name() + ' Spatial Speed Heatmap: ' + hour_str)
+        # self.fig.tight_layout()
+        tmc_list = self.panel.project.get_tmc(as_list=True).tolist()
+        tmc_list.reverse()
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list))
+
+    def hover_tmc(self, event, tmc_list):
+        if event.xdata is not None and event.ydata is not None:
+            # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
+            self.hover_ann.set_x(int(event.xdata))
+            self.hover_ann.set_y(int(event.ydata))
+            self.hover_ann.set_text(tmc_list[floor(event.ydata*len(tmc_list) / self.tmc_ext)])
+            self.hover_ann.set_visible(True)
+            event.canvas.draw()
+        else:
+            self.hover_ann.set_visible(False)
+            event.canvas.draw()
 
 
 class ZoomPan:
@@ -347,8 +377,8 @@ class ZoomPan:
 
     def zoom_factory(self, ax, mpl_panel, base_scale=2.0):
         def zoom(event):
-            if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                return
+            # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+            #     return
 
             cur_xlim = ax.get_xlim()
             cur_ylim = ax.get_ylim()
@@ -400,8 +430,8 @@ class ZoomPan:
                 cursor = QCursor()
                 mpl_panel.context_menu.popup(cursor.pos())
             else:
-                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                    return
+                # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                #     return
                 if ax.get_navigate_mode() is None:
                     if event.dblclick:
                         mpl_panel.reset_axis_bounds()
@@ -416,8 +446,8 @@ class ZoomPan:
             if event.button == 3:
                 pass
             else:
-                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                    return
+                # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                #     return
                 if ax.get_navigate_mode() is None:
                     self.press = None
                     ax.figure.canvas.draw()
@@ -426,8 +456,8 @@ class ZoomPan:
             if event.button == 3:
                 pass
             else:
-                if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                    return
+                # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                #     return
                 if ax.get_navigate_mode() is None:
                     if self.press is None: return
                     if event.inaxes != ax: return
@@ -478,6 +508,12 @@ def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):
     tmc_span = tmc_extent / len(tmc_list)
     c_idx = x // tmc_span
     return tmc_list[min(c_idx, len(tmc_list)-1)]
+
+
+def convert_extent_to_mile(x, pos, facility_len, tmc_ext):
+    mile_post = facility_len - x * facility_len / tmc_ext
+    return '{:1.1f} mi'.format(mile_post)
+
 
 
 def convert_xval_to_time(x, pos, min_resolution):

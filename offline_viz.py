@@ -130,7 +130,7 @@ class ExtraTimeAreaChartCanvas(MyMplCanvas):
         self.axes.stackplot(data[self.region].index,
                             data[self.region]['mean'],
                             data[self.region]['extra_time'],
-                            labels=['Average', '95th Percentile'], colors=[TT_BLUE, TT_RED])
+                            labels=['After-Average', 'After-95th Pct'], colors=[TT_BLUE, TT_RED])
         if self.region2 >= 0:
             self.axes.plot(data[self.region2].index,
                             data[self.region2]['mean'],
@@ -143,7 +143,7 @@ class ExtraTimeAreaChartCanvas(MyMplCanvas):
                            color=TT_RED_BEFORE,
                            linestyle='--',
                            lw=BEFORE_LW,
-                           label='Before-95th PCT')
+                           label='Before-95th Pct')
         self.title_str = self.app.project.get_name() + ' ('
         if self.is_subset:
             self.title_str = self.title_str + '{:1.1f}'.format(self.app.facility_len_subset) + 'mi'

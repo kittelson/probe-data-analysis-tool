@@ -1,71 +1,68 @@
-from __future__ import print_function
 import matplotlib.pyplot as plt
+
+fig = plt.figure()
+plot = fig.add_subplot(111)
+annotation = plot.annotate('local max',xy=(3, 1.5), bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5))
+annotation
+# create some curves
+for i in range(4):
+    plot.plot(
+        [i*1,i*2,i*3,i*4],
+        gid=i)
+
+def on_plot_hover(event):
+    annotated = False
+    for curve in plot.get_lines():
+        if curve.contains(event)[0]:
+            print("over %s" % curve.get_gid())
+            annotation.set_text(str(curve.get_gid()))
+            print(event.xdata)
+            print(event.ydata)
+            annotation.set_x(event.xdata)
+            annotation.set_y(event.ydata)
+            annotation.set_visible(True)
+            event.canvas.draw()
+            annotated = True
+    if not annotated:
+        annotation.set_visible(False)
+        event.canvas.draw()
+
+fig.canvas.mpl_connect('motion_notify_event', on_plot_hover)
+plt.show()
+
+"""
+==================================
+Modifying the coordinate formatter
+==================================
+
+Show how to modify the coordinate formatter to report the image "z"
+value of the nearest pixel given x and y
+"""
 import numpy as np
+import matplotlib.pyplot as plt
+from mpldatacursor import datacursor
 
 
-class Cursor(object):
-    def __init__(self, ax):
-        self.ax = ax
-        self.lx = ax.axhline(color='k')  # the horiz line
-        self.ly = ax.axvline(color='k')  # the vert line
 
-        # text location in axes coords
-        self.txt = ax.text(0.7, 0.9, '', transform=ax.transAxes)
+X = 10*np.random.rand(5, 3)
 
-    def mouse_move(self, event):
-        if not event.inaxes:
-            return
-
-        x, y = event.xdata, event.ydata
-        # update the line positions
-        self.lx.set_ydata(y)
-        self.ly.set_xdata(x)
-
-        self.txt.set_text('x=%1.2f, y=%1.2f' % (x, y))
-        plt.draw()
-
-
-class SnaptoCursor(object):
-    """
-    Like Cursor but the crosshair snaps to the nearest x,y point
-    For simplicity, I'm assuming x is sorted
-    """
-
-    def __init__(self, ax, x, y):
-        self.ax = ax
-        self.lx = ax.axhline(color='k')  # the horiz line
-        self.ly = ax.axvline(color='k')  # the vert line
-        self.x = x
-        self.y = y
-        # text location in axes coords
-        self.txt = ax.text(0.7, 0.9, '', transform=ax.transAxes)
-
-    def mouse_move(self, event):
-
-        if not event.inaxes:
-            return
-
-        x, y = event.xdata, event.ydata
-
-        indx = np.searchsorted(self.x, [x])[0]
-        x = self.x[indx]
-        y = self.y[indx]
-        # update the line positions
-        self.lx.set_ydata(y)
-        self.ly.set_xdata(x)
-
-        self.txt.set_text('x=%1.2f, y=%1.2f' % (x, y))
-        print('x=%1.2f, y=%1.2f' % (x, y))
-        plt.draw()
-
-t = np.arange(0.0, 1.0, 0.01)
-s = np.sin(2*2*np.pi*t)
 fig, ax = plt.subplots()
+px = ax.imshow(X, interpolation='nearest')
+ann = ax.annotate('local max', xy=(2, 1), xytext=(3, 1.5))
+ann.set_visible(True)
 
-#cursor = Cursor(ax)
-cursor = SnaptoCursor(ax, t, s)
-plt.connect('motion_notify_event', cursor.mouse_move)
+def on_plot_hover(event):
+    if event.xdata is not None and event.ydata is not None:
+        print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
+        ann.set_x(int(event.xdata))
+        ann.set_y(int(event.ydata))
+        ann.set_text(X[min(int(event.ydata), 4)][min(int(event.xdata), 2)])
+        event.canvas.draw()
+    else:
+        ann.set_visible(False)
 
-ax.plot(t, s, 'o')
-plt.axis([0, 1, -1, 1])
+datacursor(px)
+
+fig.canvas.mpl_connect('motion_notify_event', on_plot_hover)
+
 plt.show()
