@@ -163,6 +163,55 @@ def create_timetime_analysis(data):
     return plot_df_dir1
 
 
+def create_tt_trend_analysis(data, tmc_id=None):
+    """
+    Function to create a travel time trend over time analysis.
+    :param data: Pandas dataframe of travel time data
+    :param tmc_id: List of one or more tmcs to include in trend analysis
+    :return: Pandas dataframe of aggregate travel time trend data
+    """
+    if data is None:
+        return None
+    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
+    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
+    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
+    if tmc_id is not None:
+        tmc_data = data[data['tmc_code'].isin(tmc_id)]
+    else:
+        tmc_data = data
+    df_dir1_am = tmc_data[(tmc_data['AP'] >= am_ap_start) & (tmc_data['AP'] < am_ap_end)]
+    df_dir1_pm = tmc_data[(tmc_data['AP'] >= pm_ap_start) & (tmc_data['AP'] < pm_ap_end)]
+    df_dir1_md = tmc_data[(tmc_data['AP'] >= md_ap_start) & (tmc_data['AP'] < md_ap_end)]
+
+    # AM Peak Period
+    am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', 'tmc_code'])['travel_time_minutes']
+    am_num_observations = am_gp0.count()
+    # am_num_observations.groupby(['Year', 'Month']).agg(np.mean)
+    am_gp = am_gp0.agg(np.mean)
+    am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
+    am_gp2 = am_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
+
+    # PM Peak Period
+    pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', 'tmc_code'])['travel_time_minutes']
+    pm_num_observations = pm_gp0.count()
+    # Pm_num_observations.groupby(['Year', 'Month']).agg(np.mean)
+    pm_gp = pm_gp0.agg(np.mean)
+    pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
+    pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
+
+    # Midday Period
+    md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', 'tmc_code'])['travel_time_minutes']
+    md_num_observations = md_gp0.count()
+    # md_num_observations.groupby(['Year', 'Month']).agg(np.mean)
+    md_gp = md_gp0.agg(np.mean)
+    md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
+    md_gp2 = md_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
+
+    plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
+    plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
+    return plot_df_dir1
+
+
 def convert_hour_to_ap(start_hour, start_min, end_hour, end_min):
     ap_start = (start_hour * 12) + start_min // 5
     ap_end = (end_hour * 12) + end_min // 5
@@ -202,7 +251,7 @@ def create_pct_congested_sp(data, speed_bins, dates=[]):
     return sp_pct_con1
 
 
-def create_pct_congested_tmc(data, speed_bins, times=None, dates=None):
+def create_pct_congested_tmc(data, speed_bins, times=None, dates=None, tmc_index_list=None):
     bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
     # Potential data filtering her
     if dates is not None and len(dates) == 2:
@@ -220,6 +269,8 @@ def create_pct_congested_tmc(data, speed_bins, times=None, dates=None):
     tmc_gp1 = tmc_gp.groupby(['tmc_code']).agg(np.sum)
     tmc_gp1['bin_sum'] = tmc_gp1[bin_list].sum(axis=1)
     tmc_gp1 = tmc_gp1[bin_list].div(tmc_gp1['bin_sum'], axis=0)
+    if tmc_index_list is not None:
+        tmc_gp1 = tmc_gp1.reindex(tmc_index_list, level=1)
     return tmc_gp1
 
 

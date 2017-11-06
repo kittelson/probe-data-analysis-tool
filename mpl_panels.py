@@ -9,7 +9,7 @@ Interacts the with ChartOptions object of the project that is created/edited by 
 """
 from PyQt5 import QtWidgets
 from stat_func import create_pct_congested_sp, create_pct_congested_tmc, create_speed_heatmap, create_speed_tmc_heatmap
-from stat_func import create_timetime_analysis, convert_time_to_ap
+from stat_func import create_timetime_analysis, create_tt_trend_analysis, convert_time_to_ap
 from chart_defaults import ChartOptions
 from mpl_charts import MplChart, FIG_TYPE_SPD_HEAT_MAP_FACILITY
 from datetime import datetime, timedelta
@@ -99,11 +99,9 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.update_plot_data()
         self.create_charts()
         self.add_charts_to_layouts()
-
         self.v_layout.addWidget(self.chart_panel)
         self.v_layout.addWidget(self.check_bar_day)
         self.update_chart_visibility()
-
         self.init_mode = False
         self.no_compute = False
 
@@ -262,14 +260,14 @@ class ChartGridPanel(QtWidgets.QWidget):
                 self.chart22.show_am = include_am
                 self.chart22.show_pm = include_pm
                 self.chart22.show_mid = include_mid
-            included_peaks = self.show_am + self.show_pm + self.show_mid
+            included_peaks = include_am + include_pm + include_mid
             if included_peaks == 0 or included_peaks > 1:
                 self.peak_period_str = 'Peak Period '
-            elif self.show_am:
+            elif include_am:
                 self.peak_period_str = 'AM Peak '
-            elif self.show_pm:
+            elif include_pm:
                 self.peak_period_str = 'PM Peak '
-            elif self.show_mid:
+            elif include_mid:
                 self.peak_period_str = 'Midday '
             self.update_figures()
 
@@ -280,10 +278,11 @@ class ChartGridPanel(QtWidgets.QWidget):
         filtered_df = dir_df[dir_df['weekday'].isin(self.plot_days)]
         selected_tmc = self.cb_tmc_select.currentIndex()
         self.selected_tmc_name = dir_tmc['tmc'][selected_tmc]
+        tmc_df = filtered_df[filtered_df['tmc_code'].isin([self.selected_tmc_name])]
         self.selected_tmc_len = dir_tmc['miles'][selected_tmc]
         self.ap_start = self.cb_peak_hour_select.currentIndex() * 3
-        self.ap_end = self.ap_start + 12
-        self.plot_dfs = [create_timetime_analysis(filtered_df),
+        self.ap_end = self.ap_start + 60 / self.project.data_res
+        self.plot_dfs = [create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
                          create_pct_congested_sp(filtered_df, self.speed_bins),
                          create_pct_congested_tmc(filtered_df, self.speed_bins),
                          create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
@@ -426,9 +425,7 @@ class SpatialGridPanel(QtWidgets.QWidget):
         # self.h_layout.addWidget(self.check_sat)
         # self.h_layout.addWidget(self.check_sun)
         self.connect_check_boxes()
-        print('here0')
         self.connect_combo_boxes()
-        print('here1')
         self.plot_dfs = []
         self.update_plot_data()
         self.create_charts()
@@ -494,7 +491,6 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.ap_start3 = self.cb_peak_hour_start3.currentIndex() * 3
         self.ap_end3 = self.cb_peak_hour_end3.currentIndex() * 3
 
-        print('here 0')
         if fig_num == 0:
             df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
             df_md = self.plot_dfs[5]
@@ -511,7 +507,6 @@ class SpatialGridPanel(QtWidgets.QWidget):
             df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
             df_md = create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc'])
             df_pm = create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])
-        print('here 1')
         self.plot_dfs = [None, None, None, None,
                          df_am, df_md, df_pm]
 

@@ -13,7 +13,8 @@ from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QVBoxLayout
 from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog
 from PyQt5.QtGui import QColor
-from mw_test import Ui_MainWindow
+# from mw_test import Ui_MainWindow
+from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz_qt import LoadProjectQT
 from offline_viz import FourByFourPanel
@@ -59,7 +60,7 @@ class MainWindow(QMainWindow):
         new_file_action.setToolTip('Create New Project File')
         new_file_action.triggered.connect(self.create_new)
         self.ui.menuFile.addAction(new_file_action)
-        self.ui.pushButton.clicked.connect(self.create_new)
+        self.ui.pushButton_new_proj.clicked.connect(self.create_new)
 
         open_file_action = QAction('&Open Project', self)
         open_file_action.setShortcut('Ctrl+O')
@@ -135,18 +136,23 @@ class MainWindow(QMainWindow):
         self.ui.add_range_button.clicked.connect(self.add_date_range)
         self.ui.del_range_button.clicked.connect(self.del_date_range)
 
-        self.ui.create_charts_button.setText('Create Extra Time Charts')
         self.ui.create_charts_button.clicked.connect(self.load_extra_time_charts)
 
         # self.ui.pushButton_first_chart.clicked.connect(self.create_chart_panel1)
-        self.ui.pushButton_first_chart.setText('Load Spatial Charts')
+        # self.ui.pushButton_first_chart.setText('Load Spatial Charts')
         self.ui.pushButton_first_chart.clicked.connect(self.load_spatial_charts)
         self.ui.pushButton_first_chart.setDisabled(True)
 
-        self.ui.pushButton_2.clicked.connect(self.create_new)
-        self.ui.pushButton_3.clicked.connect(self.close)
+        self.ui.pushButton_sec_chart.clicked.connect(self.create_chart_panel1)
+        self.ui.pushButton_sec_chart.setDisabled(True)
 
-        self.ui.tabWidget.setTabText(1, 'Facility Map Web Viewer')
+        self.ui.pushButton_open_proj.setEnabled(False)
+        self.ui.pushButton_exit.clicked.connect(self.close)
+
+        self.ui.create_charts_button.setEnabled(False)
+        self.ui.del_range_button.setEnabled(False)
+
+        self.ui.pushButton_tmc_subset.setEnabled(False)
 
         self.show()
 
@@ -167,12 +173,15 @@ class MainWindow(QMainWindow):
     #     self.ui.webView_2.load(QUrl('file:///' + f_name[0]))  # 'file:///C:/Users/ltrask/PycharmProjects/BrowserTest/index.html'
 
     def load_flask_chart(self):
-        print('Action Triggered')
-        self.ui.webView_3.load(QUrl(ROOT_URL))
+        # Example of how to load a chart via Flask
+        # self.ui.webView_3.load(QUrl(ROOT_URL))
+        self.ui.webView_map.load(QUrl(ROOT_URL))
 
     def update_chart(self):
+        # Not In Use, but example of how to fire javascript function
         print('action triggered')
-        self.ui.webView.page().mainFrame().evaluateJavaScript('transitionStacked()')
+        # self.ui.webView.page().mainFrame().evaluateJavaScript('transitionStacked()')
+        self.ui.webView_map.page().mainFrame().evaluateJavaScript('transitionStacked()')
 
     def load_map_chart(self, create_plots=True):
         if self.project is not None:
@@ -183,7 +192,6 @@ class MainWindow(QMainWindow):
             lat = tmc_list['start_latitude'][0]
             lon = tmc_list['start_longitude'][0]
             m = folium.Map(location=[lat, lon])
-            create_plots = True
             if create_plots:
                 df = self.project.database.get_data()
                 tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
@@ -223,7 +231,8 @@ class MainWindow(QMainWindow):
                 pl.add_to(m)
             m.save('templates/map3.html')
             f_name = os.path.realpath('templates/map3.html')
-            self.ui.webView_3.load(QUrl('file:///'+f_name))
+            self.ui.webView_map.load(QUrl('file:///'+f_name))
+            self.ui.webView_minimap.load(QUrl('file:///' + f_name))
 
     def toggle_floating_map(self):
         # index = self.tab.indexOf(self.ui.webView_3)
@@ -269,6 +278,8 @@ class MainWindow(QMainWindow):
             child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
             child.setCheckState(0, Qt.Unchecked)
             self.ui.pushButton_first_chart.setDisabled(False)
+            self.ui.pushButton_sec_chart.setDisabled(False)
+            self.chart1_load_action.setDisabled(False)
         proj_item.setExpanded(True)
         proj_item.child(0).setCheckState(0, Qt.Checked)
         self.ui.treeWidget_3.itemChanged.connect(self.setup_tmc_list)
@@ -331,6 +342,18 @@ class MainWindow(QMainWindow):
             range_idx += 1
             # proj_item.child(0).setCheckState(0, Qt.Checked)
 
+        num_ranges = len(self.project.get_date_ranges())
+        if num_ranges == 2:
+            self.ui.add_range_button.setDisabled(True)
+        else:
+            self.ui.add_range_button.setDisabled(False)
+        if num_ranges > 0:
+            self.ui.del_range_button.setDisabled(False)
+            self.ui.create_charts_button.setDisabled(False)
+        else:
+            self.ui.del_range_button.setDisabled(True)
+            self.ui.create_charts_button.setDisabled(True)
+
     def del_date_range(self):
         model_indexes = self.ui.treeWidget.selectionModel().selectedIndexes()
         indexes = [m_idx.row() for m_idx in model_indexes]
@@ -357,9 +380,10 @@ class MainWindow(QMainWindow):
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)
+        self.ui.pushButton_tmc_subset.setEnabled(True)
 
     def load_time_time_charts(self):
-        chart_panel_name = self.project.get_name() + ' Time / Time Charts'
+        chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
         # self.chart_panel1 = TwoByTwoPanelTimeTime(self.project, options=self.project.chart_panel1_opts)
         self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)
         self.chart1_options_action.setEnabled(True)
@@ -367,18 +391,19 @@ class MainWindow(QMainWindow):
 
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.pushButton_first_chart.setDisabled(True)
-        self.ui.toolBox.setCurrentIndex(3)
+        self.ui.toolBox.setCurrentIndex(2)
         pass
 
     def load_spatial_charts(self):
-        chart_panel_name = self.project.get_name() + ' Spatial Charts'
+        chart_panel_name = self.project.get_name() + ' Spatial Exploration Charts'
         self.chart_panel_spatial = SpatialGridPanel(self.project, options=self.project.chart_panel1_opts)
         # self.chart1_options_action.setEnabled(True)
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel_spatial, chart_panel_name)
 
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         # self.ui.pushButton_first_chart.setDisabled(True)
-        self.ui.toolBox.setCurrentIndex(3)
+        self.ui.pushButton_first_chart.setDisabled(True)
+        self.ui.toolBox.setCurrentIndex(1)
 
     def create_chart_panel1(self):
         cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
@@ -443,6 +468,7 @@ class Project:
         self.database = None
         self._date_ranges = []
         self.chart_panel1_opts = ChartOptions()
+        self.data_res = 5
 
     def set_name(self, new_name):
         self._project_name = new_name
@@ -586,6 +612,8 @@ class ChartPanelOptionsDlg(QDialog):
         self.close()
         if self.update_func is not None:
             self.update_func()
+            self.main_window.ui.pushButton_sec_chart.setDisabled(True)
+            self.main_window.chart1_options_action.setDisabled(False)
 
     def close_press(self):
         self.close()

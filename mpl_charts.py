@@ -53,7 +53,9 @@ class MplChart(FigureCanvas):
         self.show_pm = True
         self.show_mid = False
 
-        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5), bbox = dict(boxstyle = 'round,pad=0.5', fc = 'yellow', alpha = 0.5))
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
         self.hover_ann.set_visible(False)
         self.tmc_ext = 0
 
@@ -111,7 +113,9 @@ class MplChart(FigureCanvas):
         if self.axes.legend_ is not None:
             self.axes.legend_ = None
         else:
-            self.axes.legend()
+            # self.axes.legend()
+            if self.fig_type is FIG_TYPE_TT_TREND_BAR and not self.panel.plot_dfs[0].empty:
+                self.axes.legend()
         self.draw()
 
     def set_x_bounds(self, x_min, x_max, make_default=False):
@@ -144,9 +148,9 @@ class MplChart(FigureCanvas):
 
     def compute_initial_figure(self):
         if self.fig_type == FIG_TYPE_TT_TREND_LINE:
-            self.compute_TT_trend_line()
+            self.compute_trend_line()
         elif self.fig_type == FIG_TYPE_TT_TREND_BAR:
-            self.compute_TT_trend_bar()
+            self.compute_trend_bar()
         elif self.fig_type == FIG_TYPE_PCT_CONG_DAY:
             self.compute_pct_cong_day()
         elif self.fig_type == FIG_TYPE_PCT_CONG_TMC:
@@ -160,7 +164,7 @@ class MplChart(FigureCanvas):
         self.axes.cla()
         self.compute_initial_figure()
 
-    def compute_TT_trend_line(self):
+    def compute_trend_line(self):
         if self.show_am:
             tt_am_mean_dir1 = self.panel.plot_dfs[0]['mean']
             tt_am_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5']
@@ -186,14 +190,20 @@ class MplChart(FigureCanvas):
             self.axes.plot(x, tt_md_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-5th Pct')
             self.axes.plot(x, tt_md_pct95_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-95th Pct')
 
-        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month')
+        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
+                            + '(' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.set_ylabel('Travel Time (Minutes)')
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
+        self.hover_ann.set_visible(False)
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_datetime(event, self.f_x_to_month))
         self.fig.tight_layout()
 
-    def compute_TT_trend_bar(self):
+    def compute_trend_bar(self):
         width = 0.35
         if self.show_am:
             tt_am_mean_dir1 = self.panel.plot_dfs[0]['mean']
@@ -231,10 +241,17 @@ class MplChart(FigureCanvas):
             self.axes.bar([el + offset for el in x], [tt_md_pct95_dir1[i] - tt_md_mean_dir1[i] for i in range(len(tt_md_mean_dir1))], width,
                     bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
 
-        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month')
+        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
+                            + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.set_ylabel('Travel Time (Minutes)')
-        self.axes.legend()
+        if not self.panel.plot_dfs[0].empty:
+            self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
+        self.hover_ann.set_visible(False)
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_datetime(event, self.f_x_to_month))
         self.fig.tight_layout()
 
     def compute_pct_cong_day(self):
@@ -296,7 +313,7 @@ class MplChart(FigureCanvas):
         self.axes.set_xlabel('TMC ID')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title('Facility Speeds by TMC')
+        self.axes.set_title(self.panel.project.get_name() + ' - Facility Speeds by TMC')
         self.axes.legend()
         self.fig.tight_layout()
 
@@ -309,7 +326,7 @@ class MplChart(FigureCanvas):
         self.color_bar1.set_label('Speed (mph)')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
         self.axes.yaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
-        self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + str(self.panel.selected_tmc_len) + ')')
+        self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
 
     def compute_speed_tmc_heatmap(self):
         if self.show_am:
@@ -344,7 +361,26 @@ class MplChart(FigureCanvas):
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
             self.hover_ann.set_x(int(event.xdata))
             self.hover_ann.set_y(int(event.ydata))
-            self.hover_ann.set_text(tmc_list[floor(event.ydata*len(tmc_list) / self.tmc_ext)])
+            hover_idx = floor(event.ydata*len(tmc_list) / self.tmc_ext)
+            if hover_idx < len(tmc_list):
+                self.hover_ann.set_text(tmc_list[hover_idx])
+            else:
+                self.hover_ann.set_text('')
+            self.hover_ann.set_visible(True)
+            event.canvas.draw()
+        else:
+            self.hover_ann.set_visible(False)
+            event.canvas.draw()
+
+    def hover_datetime(self, event, convert_func):
+        if event.xdata is not None and event.ydata is not None:
+            # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
+            # self.hover_ann.set_x(event.xdata)
+            # self.hover_ann.set_y(event.ydata)
+            self.hover_ann.set_position((event.xdata, event.ydata))
+            # '{:1.1f} mi'.format(mile_post)
+            # print('{:1.2f} minutes'.format(event.ydata) + '\n' + convert_func(event.xdata, None))
+            self.hover_ann.set_text('{:1.2f} minutes'.format(event.ydata) + '\n' + convert_func(event.xdata, None))
             self.hover_ann.set_visible(True)
             event.canvas.draw()
         else:
@@ -541,3 +577,4 @@ def convert_xval_to_month(x, pos, first_year, first_month):
         return ''
     x = int(x)
     return str(first_year + ((first_month + x) // 12)) + '-' + calendar.month_abbr[((first_month + x) % 12) + 1]
+
