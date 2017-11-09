@@ -14,7 +14,10 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 import calendar
 from datetime import datetime, timedelta
 from math import floor
-
+from chart_defaults import TT_RED_BEFORE, TT_RED, TT_BLUE_BEFORE, TT_BLUE, BEFORE_LW, SB_BLUE, SB_RED
+from numpy import histogram as np_hist
+from numpy import append as np_append
+from math import ceil
 
 FIG_TYPE_TT_TREND_LINE = 0
 FIG_TYPE_TT_TREND_BAR = 1
@@ -23,11 +26,20 @@ FIG_TYPE_SPD_HEAT_MAP_FACILITY = 3
 FIG_TYPE_PCT_CONG_DAY = 4
 FIG_TYPE_PCT_CONG_TMC = 5
 
+FIG_TYPE_EXTRA_TIME = 100
+FIG_TYPE_SPD_BAND = 101
+FIG_TYPE_TT_CDF = 102
+FIG_TYPE_SPD_FREQ = 103
+
+NONE = -1
+AFTER = 0
+BEFORE = 1
+
 
 class MplChart(FigureCanvas):
     """Ultimately, this is a QWidget (as well as a FigureCanvasAgg, etc.)."""
 
-    def __init__(self, parent=None, fig_type=0, panel=None, region=0, region2=-1, is_subset=False, width=5, height=4, dpi=100, **kwargs):
+    def __init__(self, parent=None, fig_type=0, panel=None, region=AFTER, region2=NONE, is_subset=False, width=5, height=4, dpi=100, **kwargs):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         self.axes = self.fig.add_subplot(111)
         self.fig_type = fig_type
@@ -41,7 +53,7 @@ class MplChart(FigureCanvas):
         if panel is not None:
             self.panel = panel
             self.fig_title_str = self.panel.project.get_name()
-        # self.fig.suptitle(self.fig_title_str)
+
         self.region = region
         self.region2 = region2
         self.is_subset = is_subset
@@ -114,7 +126,9 @@ class MplChart(FigureCanvas):
             self.axes.legend_ = None
         else:
             # self.axes.legend()
-            if self.fig_type is FIG_TYPE_TT_TREND_BAR and not self.panel.plot_dfs[0].empty:
+            if self.fig_type is not FIG_TYPE_TT_TREND_BAR:
+                self.axes.legend()
+            elif self.fig_type is FIG_TYPE_TT_TREND_BAR and not self.panel.plot_dfs[0].empty:
                 self.axes.legend()
         self.draw()
 
@@ -159,6 +173,14 @@ class MplChart(FigureCanvas):
             self.compute_speed_heatmap()
         elif self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY:
             self.compute_speed_tmc_heatmap()
+        elif self.fig_type == FIG_TYPE_EXTRA_TIME:
+            self.compute_extra_time_area()
+        elif self.fig_type == FIG_TYPE_SPD_BAND:
+            self.compute_speed_band()
+        elif self.fig_type == FIG_TYPE_TT_CDF:
+            self.compute_tt_cdf()
+        elif self.fig_type == FIG_TYPE_SPD_FREQ:
+            self.compute_speed_freq()
 
     def update_figure(self):
         self.axes.cla()
@@ -191,7 +213,7 @@ class MplChart(FigureCanvas):
             self.axes.plot(x, tt_md_pct95_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-95th Pct')
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
-                            + '(' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+                            + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.set_ylabel('Travel Time (Minutes)')
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
@@ -207,7 +229,7 @@ class MplChart(FigureCanvas):
         width = 0.35
         if self.show_am:
             tt_am_mean_dir1 = self.panel.plot_dfs[0]['mean']
-            # tt_am_pct5_dir1 = self.app.plot_dfs[0]['percentile_5']
+            # tt_am_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5']
             tt_am_pct95_dir1 = self.panel.plot_dfs[0]['percentile_95']
             x = [el for el in range(len(tt_am_mean_dir1))]
             self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
@@ -216,7 +238,7 @@ class MplChart(FigureCanvas):
                     label='AM-95th Pct')
         if self.show_pm:
             tt_pm_mean_dir1 = self.panel.plot_dfs[0]['meanpm']
-            # tt_pm_pct5_dir1 = self.app.plot_dfs[0]['percentile_5pm']
+            # tt_pm_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5pm']
             tt_pm_pct95_dir1 = self.panel.plot_dfs[0]['percentile_95pm']
             x = [el for el in range(len(tt_pm_mean_dir1))]
             offset = 0
@@ -228,7 +250,7 @@ class MplChart(FigureCanvas):
                     bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
         if self.show_mid:
             tt_md_mean_dir1 = self.panel.plot_dfs[0]['meanmid']
-            # tt_md_pct5_dir1 = self.app.plot_dfs[0]['percentile_5mid']
+            # tt_md_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5mid']
             tt_md_pct95_dir1 = self.panel.plot_dfs[0]['percentile_95mid']
             x = [el for el in range(len(tt_md_mean_dir1))]
             offset = 0
@@ -356,6 +378,197 @@ class MplChart(FigureCanvas):
         tmc_list.reverse()
         self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list))
 
+    def compute_extra_time_area(self):
+        day_type = self.panel.day_select
+        offset = 9
+        # tmc_list = self.panel.project.get_tmc(as_list=True)
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs[day_type]
+        data_after = self.panel.plot_dfs[day_type + offset]
+
+        if self.region == AFTER:
+            data1 = data_after
+            data2 = data_before
+        else:
+            data1 = data_before
+            data2 = data_after
+
+        index = data1['mean'][tmc1].index
+        self.axes.stackplot(index,
+                            data1['mean'][tmc1].values,
+                            data1['extra_time'][tmc1].values,
+                            labels=['After-Average', 'After-95th Pct'],
+                            colors=[TT_BLUE, TT_RED])
+        if self.region2 != NONE:
+            index2 = data2['mean'][tmc1].index
+            self.axes.plot(index2, data2['mean'][tmc1].values,
+                           color=TT_BLUE_BEFORE,
+                           linestyle='--',
+                           lw=BEFORE_LW,
+                           label='Before-Average')
+            self.axes.plot(index2, data2['percentile_95'][tmc1].values,
+                           color=TT_RED_BEFORE,
+                           linestyle='--',
+                           lw=BEFORE_LW,
+                           label='Before-95th Pct')
+        title_str = 'Extra Time: ' + self.panel.project.get_name()
+        title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
+        title_str = title_str + '\n'
+        if self.region2 != 0:
+            title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
+        elif self.region == BEFORE:
+            title_str = title_str + 'Period 1: ' + self.panel.period1
+        else:
+            title_str = title_str + 'Period 2: ' + self.panel.period2
+        self.axes.set_title(title_str)
+        self.axes.set_xlabel('Time of Day')
+        self.axes.set_ylabel('Travel Time Minutes')
+        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
+        self.axes.legend()
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.fig.tight_layout()
+
+    def compute_speed_band(self):
+        day_type = self.panel.day_select
+        offset = 9
+        # tmc_list = self.panel.project.get_tmc(as_list=True)
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs2[day_type]
+        data_after = self.panel.plot_dfs2[day_type + offset]
+
+        if self.region == AFTER:
+            data1 = data_after
+            data2 = data_before
+        else:
+            data1 = data_before
+            data2 = data_after
+
+        index = data1['mean'][tmc1].index
+        self.axes.fill_between(index,
+                               data1['percentile_5'][tmc1].values,
+                               data1['mean'][tmc1].values,
+                               color=SB_BLUE)
+        self.axes.fill_between(index,
+                               data1['mean'][tmc1].values,
+                               data1['percentile_95'][tmc1].values,
+                               color=SB_BLUE)
+        self.axes.plot(index, data1['percentile_5'][tmc1].values, color=SB_BLUE, label='5th Percentile')
+        self.axes.plot(index, data1['mean'][tmc1].values, color=SB_RED, label='Average')
+        self.axes.plot(index, data1['percentile_95'][tmc1].values, color=SB_BLUE, label='95th Percentile')
+        if self.region2 != NONE:
+            index2 = data2['mean'][tmc1].index
+            self.axes.plot(index2, data2['mean'][tmc1].values,
+                           color=TT_RED_BEFORE,
+                           linestyle='--',
+                           lw=BEFORE_LW,
+                           label='Before-Average')
+            self.axes.plot(index2, data2['percentile_5'][tmc1].values,
+                           color=TT_BLUE_BEFORE,
+                           linestyle='--',
+                           lw=BEFORE_LW,
+                           label='Before-95th Pct')
+        title_str = 'Speed Band: ' + self.panel.project.get_name()
+        title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
+        title_str = title_str + '\n'
+        if self.region2 != 0:
+            title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
+        elif self.region == BEFORE:
+            title_str = title_str + 'Period 1: ' + self.panel.period1
+        else:
+            title_str = title_str + 'Period 2: ' + self.panel.period2
+        self.axes.set_title(title_str)
+        self.axes.set_xlabel('Time of Day')
+        self.axes.set_ylabel('Speed (mph)')
+        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
+        self.axes.legend()
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.fig.tight_layout()
+
+    def compute_tt_cdf(self):
+        day_type = self.panel.day_select
+        offset = 9
+        # tmc_list = self.panel.project.get_tmc(as_list=True)
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs3[day_type]
+        data_after = self.panel.plot_dfs3[day_type + offset]
+
+        if self.region == AFTER:
+            data1 = data_after
+            data2 = data_before
+        else:
+            data1 = data_before
+            data2 = data_after
+
+        # Before Data  # if self.region2 != NONE:
+        max_y2 = len(data2['travel_time_minutes'][tmc1])
+        self.axes.plot(data2['travel_time_minutes'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
+        # After Data
+        max_y = len(data1['travel_time_minutes'][tmc1])
+        self.axes.plot(data1['travel_time_minutes'][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
+
+        title_str = 'Travel Time Distribution: ' + self.panel.project.get_name()
+        title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
+        title_str = title_str + '\n'
+        if self.region2 != 0:
+            title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
+        elif self.region == BEFORE:
+            title_str = title_str + 'Period 1: ' + self.panel.period1
+        else:
+            title_str = title_str + 'Period 2: ' + self.panel.period2
+        self.axes.set_title(title_str)
+        self.axes.set_xlabel('Travel Time Minutes')
+        self.axes.set_ylabel('Distribution')
+        self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
+        self.axes.legend()
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.fig.tight_layout()
+
+    def compute_speed_freq(self):
+        bin_extend = 10
+        day_type = self.panel.day_select
+        offset = 9
+        # tmc_list = self.panel.project.get_tmc(as_list=True)
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs3[day_type]
+        data_after = self.panel.plot_dfs3[day_type + offset]
+
+        if self.region == AFTER:
+            data1 = data_after
+            data2 = data_before
+        else:
+            data1 = data_before
+            data2 = data_after
+
+        # Before Data # if self.region2 != NONE:
+        max_speed2 = int(ceil(max(data2['speed'][tmc1].values)))
+        y2, x2 = np_hist(data2['speed'][tmc1].values, bins=[el for el in range(max_speed2 + bin_extend)])
+        y2 = np_append(y2, [0])
+        sum_y2 = sum(y2)
+        self.axes.plot(x2, y2/sum(y2), color=TT_BLUE, label='Before')
+        # After Data
+        max_speed = int(ceil(max(data1['speed'][tmc1].values)))
+        y, x = np_hist(data1['speed'][tmc1].values, bins=[el for el in range(max_speed + bin_extend)])
+        y = np_append(y, [0])
+        sum_y = sum(y)
+        self.axes.plot(x, y/sum(y), color=SB_RED, label='After')
+
+        title_str = 'Speed Frequency: ' + self.panel.project.get_name()
+        title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
+        title_str = title_str + '\n'
+        if self.region2 != 0:
+            title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
+        elif self.region == BEFORE:
+            title_str = title_str + 'Period 1: ' + self.panel.period1
+        else:
+            title_str = title_str + 'Period 2: ' + self.panel.period2
+        self.axes.set_title(title_str)
+        self.axes.set_xlabel('Speed (mph)')
+        self.axes.set_ylabel('% Frequency')
+        self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
+        self.axes.legend()
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.fig.tight_layout()
+
     def hover_tmc(self, event, tmc_list):
         if event.xdata is not None and event.ydata is not None:
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
@@ -363,7 +576,7 @@ class MplChart(FigureCanvas):
             self.hover_ann.set_y(int(event.ydata))
             hover_idx = floor(event.ydata*len(tmc_list) / self.tmc_ext)
             if hover_idx < len(tmc_list):
-                self.hover_ann.set_text(tmc_list[hover_idx])
+                self.hover_ann.set_text(tmc_list[hover_idx] + '\n' + self.f_x_to_day(event.xdata, None))
             else:
                 self.hover_ann.set_text('')
             self.hover_ann.set_visible(True)

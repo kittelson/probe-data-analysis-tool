@@ -40,14 +40,12 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.selected_tmc_name = facility_tmcs['tmc'][0]
         self.selected_tmc_len = facility_tmcs['miles'][0]
         self.dfs = [self.project.database.get_data(), None, None]
-        self.tt_comp = None
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.peak_period_str = 'Peak Period '
         self.ap_start = convert_time_to_ap(8, 0, 5)
         self.ap_end = convert_time_to_ap(9, 0, 5)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
-        self.plot_tt = self.tt_comp
         if options is not None:
             self.options = options
         else:
@@ -348,7 +346,6 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.selected_tmc_name = facility_tmcs['tmc'][0]
         self.selected_tmc_len = facility_tmcs['miles'][0]
         self.dfs = [self.project.database.get_data(), None, None]
-        self.tt_comp = None
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.peak_period_str = 'Peak Period '
@@ -359,7 +356,6 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.ap_start3 = convert_time_to_ap(15, 0, 5)
         self.ap_end3 = convert_time_to_ap(19, 0, 5)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
-        self.plot_tt = self.tt_comp
         if options is not None:
             self.options = options
         else:

@@ -1,17 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="BookmarkManager">
-    <bookmark url="file://$PROJECT_DIR$/chart_defaults.py" line="65" mnemonic="9" />
+    <bookmark url="file://$PROJECT_DIR$/chart_defaults.py" line="76" mnemonic="9" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="853c6873-bad2-4a6b-83bc-3775a05ce9ba" name="Default" comment="">
-      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/mainwindow.py" />
+      <change type="NEW" beforePath="" afterPath="$PROJECT_DIR$/Stage2GridPanel.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/chart_defaults.py" afterPath="$PROJECT_DIR$/chart_defaults.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/fhwa_spl.py" afterPath="$PROJECT_DIR$/fhwa_spl.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mpl_charts.py" afterPath="$PROJECT_DIR$/mpl_charts.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/mpl_panels.py" afterPath="$PROJECT_DIR$/mpl_panels.py" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/offline_viz.py" afterPath="$PROJECT_DIR$/offline_viz.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/stat_func.py" afterPath="$PROJECT_DIR$/stat_func.py" />
       <change type="MODIFICATION" beforePath="$PROJECT_DIR$/templates/map3.html" afterPath="$PROJECT_DIR$/templates/map3.html" />
+      <change type="MODIFICATION" beforePath="$PROJECT_DIR$/test/testbed.py" afterPath="$PROJECT_DIR$/test/testbed.py" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -23,11 +26,11 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="default_target" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="375">
-      <file leaf-file-name="fhwa_spl.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="fhwa_spl.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/fhwa_spl.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="-319">
-              <caret line="151" column="54" lean-forward="true" selection-start-line="151" selection-start-column="54" selection-end-line="151" selection-end-column="54" />
+            <state relative-caret-position="269">
+              <caret line="157" column="19" lean-forward="true" selection-start-line="157" selection-start-column="19" selection-end-line="157" selection-end-column="19" />
               <folding>
                 <element signature="e#223#233#0" expanded="true" />
               </folding>
@@ -35,48 +38,34 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="testbed2.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/testbed2.py">
+      <file leaf-file-name="Stage2GridPanel.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/Stage2GridPanel.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="42">
-              <caret line="10" column="9" lean-forward="false" selection-start-line="10" selection-start-column="9" selection-end-line="10" selection-end-column="9" />
+            <state relative-caret-position="5733">
+              <caret line="277" column="67" lean-forward="false" selection-start-line="277" selection-start-column="67" selection-end-line="277" selection-end-column="67" />
               <folding>
-                <element signature="e#0#19#0" expanded="true" />
+                <element signature="e#0#27#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="offline_viz.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/offline_viz.py">
+      <file leaf-file-name="chart_defaults.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/chart_defaults.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1911">
-              <caret line="122" column="43" lean-forward="true" selection-start-line="122" selection-start-column="43" selection-end-line="122" selection-end-column="43" />
+            <state relative-caret-position="651">
+              <caret line="31" column="8" lean-forward="false" selection-start-line="31" selection-start-column="8" selection-end-line="31" selection-end-column="8" />
               <folding />
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="mpl_panels.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/mpl_panels.py">
+      <file leaf-file-name="DataHelper.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/DataHelper.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1406">
-              <caret line="115" column="68" lean-forward="true" selection-start-line="115" selection-start-column="68" selection-end-line="115" selection-end-column="68" />
-              <folding>
-                <element signature="e#328#355#0" expanded="true" />
-              </folding>
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="mpl_charts.py" pinned="false" current-in-tab="true">
-        <entry file="file://$PROJECT_DIR$/mpl_charts.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="419">
-              <caret line="367" column="42" lean-forward="false" selection-start-line="367" selection-start-column="42" selection-end-line="367" selection-end-column="42" />
-              <folding>
-                <element signature="e#287#314#0" expanded="true" />
-              </folding>
+            <state relative-caret-position="315">
+              <caret line="16" column="29" lean-forward="false" selection-start-line="16" selection-start-column="29" selection-end-line="16" selection-end-column="29" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -84,31 +73,9 @@
       <file leaf-file-name="loader.html" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/loader.html">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="231">
-              <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="testbed.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/test/testbed.py">
-          <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="1050">
-              <caret line="50" column="58" lean-forward="false" selection-start-line="50" selection-start-column="58" selection-end-line="50" selection-end-column="58" />
-              <folding />
-            </state>
-          </provider>
-        </entry>
-      </file>
-      <file leaf-file-name="fhwa_spl_flask.py" pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/fhwa_spl_flask.py">
-          <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="378">
-              <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
-              <folding>
-                <element signature="e#82#122#0" expanded="true" />
-              </folding>
+              <caret line="18" column="37" lean-forward="false" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
+              <folding />
             </state>
           </provider>
         </entry>
@@ -116,9 +83,45 @@
       <file leaf-file-name="stat_func.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/stat_func.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="490">
-              <caret line="274" column="0" lean-forward="true" selection-start-line="274" selection-start-column="0" selection-end-line="274" selection-end-column="0" />
+            <state relative-caret-position="7266">
+              <caret line="348" column="15" lean-forward="false" selection-start-line="348" selection-start-column="15" selection-end-line="348" selection-end-column="15" />
               <folding />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="testbed2.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/test/testbed2.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="1701">
+              <caret line="89" column="23" lean-forward="false" selection-start-line="89" selection-start-column="23" selection-end-line="89" selection-end-column="23" />
+              <folding>
+                <element signature="e#0#19#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mpl_charts.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mpl_charts.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="11193">
+              <caret line="545" column="24" lean-forward="false" selection-start-line="545" selection-start-column="24" selection-end-line="545" selection-end-column="24" />
+              <folding>
+                <element signature="e#287#314#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="mpl_panels.py" pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/mpl_panels.py">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="5754">
+              <caret line="279" column="8" lean-forward="false" selection-start-line="279" selection-start-column="8" selection-end-line="279" selection-end-column="29" />
+              <folding>
+                <element signature="e#328#355#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
@@ -128,43 +131,43 @@
   <component name="FileTemplateManagerImpl">
     <option name="RECENT_TEMPLATES">
       <list>
-        <option value="Python Script" />
         <option value="HTML File" />
+        <option value="Python Script" />
       </list>
     </option>
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>SpatialGridPanel</find>
-      <find>class Proj</find>
-      <find>update_plot_data</find>
-      <find>pushButton.</find>
-      <find>pushButton_2</find>
-      <find>pushButton_first</find>
-      <find>pushButton_fir</find>
-      <find>pushButton_sec_chart</find>
-      <find>pushButton_first_chart</find>
-      <find>Load Temp</find>
-      <find>Time /</find>
-      <find>S</find>
-      <find>range</find>
-      <find>update_date_range_tree</find>
-      <find>pushButton_6</find>
-      <find>add_date_range</find>
-      <find>FIG_TYPE_TT_TREND_BAR</find>
-      <find>print</find>
-      <find>hover_tmc</find>
-      <find>convert_x_to_day</find>
-      <find>f_x_to_day</find>
-      <find>f_x_to_month</find>
-      <find>ChartPanelOptionsDlg</find>
-      <find>chart1_options_action</find>
-      <find>hover</find>
-      <find>mpl_connect</find>
-      <find>hover_ann</find>
-      <find>bbox</find>
-      <find>create Ext</find>
-      <find>self.ui.create_charts_button.click</find>
+      <find>region2</find>
+      <find>date</find>
+      <find>dateEdit_start</find>
+      <find>tmc_subset</find>
+      <find>check_wkdy</find>
+      <find>connect_check_boxes</find>
+      <find>options</find>
+      <find>chart_options</find>
+      <find>f_speed_fre</find>
+      <find>f_extra_time</find>
+      <find>FIG_TYPE_EXTRA_TIME</find>
+      <find>compute_speed_ba</find>
+      <find>plot_dfs</find>
+      <find>update_chart_types</find>
+      <find>0.5</find>
+      <find>0.002</find>
+      <find>FIG_TYPE_TT_CDF</find>
+      <find>np_hist</find>
+      <find>TT_BLUE</find>
+      <find>Facility Speeds</find>
+      <find>Trends</find>
+      <find>connect_combo_boxes</find>
+      <find>facility_len_subset</find>
+      <find>hover_</find>
+      <find>hover_tm</find>
+      <find>tmc</find>
+      <find>cb_tmc_select</find>
+      <find>3, 31</find>
+      <find>pushButton_TM</find>
+      <find>pushButton_tmc_subset</find>
     </findStrings>
     <replaceStrings>
       <replace>h_layout</replace>
@@ -187,6 +190,8 @@
       <replace>&quot;TMC&quot;</replace>
       <replace>&quot;Travel Time&quot;</replace>
       <replace>&quot;Time of Day&quot;</replace>
+      <replace>f_tt_cdf</replace>
+      <replace>f_speed_freq</replace>
     </replaceStrings>
     <dirStrings>
       <dir>C:\Users\ltrask\PycharmProjects\NPMRDS_Data_Tool\test</dir>
@@ -229,24 +234,26 @@
         <option value="$PROJECT_DIR$/fhwa_spl_flask.py" />
         <option value="$PROJECT_DIR$/templates/map3.html" />
         <option value="$PROJECT_DIR$/test/vega_view.html" />
-        <option value="$PROJECT_DIR$/offline_viz.py" />
         <option value="$PROJECT_DIR$/templates/vis1.json" />
         <option value="$PROJECT_DIR$/test/testbed2.py" />
-        <option value="$PROJECT_DIR$/chart_defaults.py" />
-        <option value="$PROJECT_DIR$/test/testbed.py" />
         <option value="$PROJECT_DIR$/test/loader.html" />
-        <option value="$PROJECT_DIR$/stat_func.py" />
+        <option value="$PROJECT_DIR$/test/testbed.py" />
+        <option value="$PROJECT_DIR$/Stage3GridPanel.py" />
         <option value="$PROJECT_DIR$/mpl_panels.py" />
-        <option value="$PROJECT_DIR$/fhwa_spl.py" />
+        <option value="$PROJECT_DIR$/offline_viz.py" />
+        <option value="$PROJECT_DIR$/chart_defaults.py" />
+        <option value="$PROJECT_DIR$/stat_func.py" />
+        <option value="$PROJECT_DIR$/Stage2GridPanel.py" />
         <option value="$PROJECT_DIR$/mpl_charts.py" />
+        <option value="$PROJECT_DIR$/fhwa_spl.py" />
       </list>
     </option>
   </component>
   <component name="ProjectFrameBounds">
-    <option name="x" value="-9" />
+    <option name="x" value="1911" />
     <option name="y" value="-9" />
     <option name="width" value="1938" />
-    <option name="height" value="1050" />
+    <option name="height" value="1098" />
   </component>
   <component name="ProjectView">
     <navigator currentView="ProjectPane" proportions="" version="1">
@@ -263,6 +270,7 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
+      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <PATH>
@@ -278,27 +286,26 @@
         </subPane>
       </pane>
       <pane id="Scratches" />
-      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="last_opened_file_path" value="$USER_HOME$/Downloads/labeled_points.ipynb" />
+    <property name="last_opened_file_path" value="$USER_HOME$/Downloads/weasyprint.html" />
     <property name="settings.editor.selected.configurable" value="com.jetbrains.python.configuration.PyActiveSdkModuleConfigurable" />
     <property name="DefaultHtmlFileTemplate" value="HTML File" />
   </component>
   <component name="RecentsManager">
-    <key name="MoveFile.RECENT_KEYS">
-      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\templates" />
-      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\test" />
-      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\static" />
-      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL" />
-    </key>
     <key name="CopyFile.RECENT_KEYS">
       <recent name="C:\Users\ltrask\PycharmProjects\NPMRDS_Data_Tool\templates" />
       <recent name="C:\Users\ltrask\PycharmProjects\NPMRDS_Data_Tool" />
       <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL" />
       <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\" />
       <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\scratch" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\templates" />
+      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\test" />
+      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL\static" />
+      <recent name="C:\Users\ltrask\PycharmProjects\FHWA-SPL" />
     </key>
   </component>
   <component name="RunDashboard">
@@ -524,25 +531,26 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
-    <frame x="-9" y="-9" width="1938" height="1050" extended-state="6" />
+    <frame x="1911" y="-9" width="1938" height="1098" extended-state="6" />
+    <editor active="true" />
     <layout>
-      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.18904404" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
-      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
+      <window_info id="Project" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16809882" sideWeight="0.5" order="0" side_tool="false" content_ui="combo" />
+      <window_info id="TODO" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32911393" sideWeight="0.5" order="7" side_tool="false" content_ui="tabs" />
       <window_info id="Event Log" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.50625" order="6" side_tool="true" content_ui="tabs" />
-      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27170238" sideWeight="0.49583334" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.15219842" sideWeight="0.49166667" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Version Control" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.5" order="10" side_tool="false" content_ui="tabs" />
-      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.361894" sideWeight="0.49166667" order="8" side_tool="false" content_ui="tabs" x="1526" y="36" width="1920" height="1032" />
+      <window_info id="Python Console" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.24280782" sideWeight="0.49166667" order="8" side_tool="false" content_ui="tabs" x="1526" y="36" width="1920" height="1032" />
+      <window_info id="Run" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="true" show_stripe_button="true" weight="0.16256684" sideWeight="0.49166667" order="2" side_tool="false" content_ui="tabs" />
       <window_info id="Structure" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
-      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32919955" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
-      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27733934" sideWeight="0.49375" order="3" side_tool="false" content_ui="tabs" />
+      <window_info id="Terminal" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32911393" sideWeight="0.5" order="9" side_tool="false" content_ui="tabs" />
       <window_info id="Favorites" active="false" anchor="left" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="2" side_tool="true" content_ui="tabs" />
+      <window_info id="Debug" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27733934" sideWeight="0.49375" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Data View" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.32975295" sideWeight="0.5" order="3" side_tool="false" content_ui="tabs" />
       <window_info id="Cvs" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="4" side_tool="false" content_ui="tabs" />
       <window_info id="Message" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.33" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Commander" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="0" side_tool="false" content_ui="tabs" />
       <window_info id="Inspection" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.4" sideWeight="0.5" order="5" side_tool="false" content_ui="tabs" />
       <window_info id="Hierarchy" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="2" side_tool="false" content_ui="combo" />
+      <window_info id="Find" active="false" anchor="bottom" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.27157652" sideWeight="0.49583334" order="1" side_tool="false" content_ui="tabs" />
       <window_info id="Ant Build" active="false" anchor="right" auto_hide="false" internal_type="DOCKED" type="DOCKED" visible="false" show_stripe_button="true" weight="0.25" sideWeight="0.5" order="1" side_tool="false" content_ui="tabs" />
     </layout>
   </component>
@@ -558,28 +566,11 @@
           </properties>
         </breakpoint>
       </default-breakpoints>
-      <option name="time" value="6" />
+      <option name="time" value="7" />
     </breakpoint-manager>
     <watches-manager />
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/templates/index.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="147">
-          <caret line="7" column="13" lean-forward="true" selection-start-line="7" selection-start-column="13" selection-end-line="7" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/load_test.html" />
-    <entry file="file://$PROJECT_DIR$/index_load.html" />
-    <entry file="file://$PROJECT_DIR$/index.html" />
-    <entry file="file://$PROJECT_DIR$/templates/index2_2_load.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
-          <caret line="24" column="14" lean-forward="false" selection-start-line="24" selection-start-column="14" selection-end-line="24" selection-end-column="14" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/index2_2.html" />
     <entry file="file://$PROJECT_DIR$/index2.html" />
     <entry file="file://$APPLICATION_HOME_DIR$/helpers/pydev/_pydev_bundle/pydev_monkey_qt.py">
@@ -710,13 +701,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chart_panel_options.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-399">
-          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="10" selection-end-column="3" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/test/vega_view.html" />
     <entry file="file://$PROJECT_DIR$/templates/vis1.json">
       <provider selected="true" editor-type-id="text-editor">
@@ -732,32 +716,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/chart_defaults.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="210">
-          <caret line="61" column="22" lean-forward="false" selection-start-line="61" selection-start-column="4" selection-end-line="61" selection-end-column="22" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/DataHelper.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="441">
-          <caret line="22" column="8" lean-forward="false" selection-start-line="22" selection-start-column="8" selection-end-line="22" selection-end-column="8" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fhwa_spl_flask.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="378">
-          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
-          <folding>
-            <element signature="e#82#122#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/Downloads/labeled_points.ipynb">
       <provider selected="true" editor-type-id="ipnb-editor">
         <state>
@@ -766,82 +724,147 @@
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/svg_tooltip.svg" />
+    <entry file="file://$PROJECT_DIR$/mainwindow.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="0">
+          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/test/testbed.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1050">
-          <caret line="50" column="58" lean-forward="false" selection-start-line="50" selection-start-column="58" selection-end-line="50" selection-end-column="58" />
+        <state relative-caret-position="336">
+          <caret line="16" column="52" lean-forward="true" selection-start-line="16" selection-start-column="52" selection-end-line="16" selection-end-column="52" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/index2_2.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="756">
+          <caret line="36" column="8" lean-forward="false" selection-start-line="36" selection-start-column="8" selection-end-line="36" selection-end-column="30" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Downloads/weasyprint.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="147">
+          <caret line="7" column="31" lean-forward="true" selection-start-line="7" selection-start-column="31" selection-end-line="7" selection-end-column="31" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/Downloads/printMedia.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="63">
+          <caret line="3" column="26" lean-forward="true" selection-start-line="3" selection-start-column="26" selection-end-line="3" selection-end-column="26" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/templates/index2_2_load.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="231">
+          <caret line="24" column="14" lean-forward="false" selection-start-line="24" selection-start-column="14" selection-end-line="24" selection-end-column="14" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fhwa_spl_flask.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="20" column="0" lean-forward="false" selection-start-line="20" selection-start-column="0" selection-end-line="20" selection-end-column="0" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/test/loader.html">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="378">
+          <caret line="18" column="37" lean-forward="false" selection-start-line="18" selection-start-column="37" selection-end-line="18" selection-end-column="37" />
           <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/DataHelper.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="315">
+          <caret line="16" column="29" lean-forward="false" selection-start-line="16" selection-start-column="29" selection-end-line="16" selection-end-column="29" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/chart_panel_options.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-3507">
+          <caret line="8" column="0" lean-forward="false" selection-start-line="8" selection-start-column="0" selection-end-line="10" selection-end-column="3" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/test/testbed2.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="42">
-          <caret line="10" column="9" lean-forward="false" selection-start-line="10" selection-start-column="9" selection-end-line="10" selection-end-column="9" />
+        <state relative-caret-position="1701">
+          <caret line="89" column="23" lean-forward="false" selection-start-line="89" selection-start-column="23" selection-end-line="89" selection-end-column="23" />
           <folding>
             <element signature="e#0#19#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/chart_defaults.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="651">
+          <caret line="31" column="8" lean-forward="false" selection-start-line="31" selection-start-column="8" selection-end-line="31" selection-end-column="8" />
+          <folding />
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/stat_func.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="490">
-          <caret line="274" column="0" lean-forward="true" selection-start-line="274" selection-start-column="0" selection-end-line="274" selection-end-column="0" />
+        <state relative-caret-position="7266">
+          <caret line="348" column="15" lean-forward="false" selection-start-line="348" selection-start-column="15" selection-end-line="348" selection-end-column="15" />
           <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/mainwindow.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="0">
-          <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/test/loader.html">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="231">
-          <caret line="11" column="26" lean-forward="false" selection-start-line="11" selection-start-column="26" selection-end-line="11" selection-end-column="26" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/offline_viz.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1911">
-          <caret line="122" column="43" lean-forward="true" selection-start-line="122" selection-start-column="43" selection-end-line="122" selection-end-column="43" />
-          <folding />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/fhwa_spl.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-319">
-          <caret line="151" column="54" lean-forward="true" selection-start-line="151" selection-start-column="54" selection-end-line="151" selection-end-column="54" />
-          <folding>
-            <element signature="e#223#233#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/mpl_panels.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1406">
-          <caret line="115" column="68" lean-forward="true" selection-start-line="115" selection-start-column="68" selection-end-line="115" selection-end-column="68" />
+        <state relative-caret-position="5754">
+          <caret line="279" column="8" lean-forward="false" selection-start-line="279" selection-start-column="8" selection-end-line="279" selection-end-column="29" />
           <folding>
             <element signature="e#328#355#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/offline_viz.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="507">
+          <caret line="281" column="86" lean-forward="false" selection-start-line="281" selection-start-column="86" selection-end-line="281" selection-end-column="86" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Stage2GridPanel.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="5733">
+          <caret line="277" column="67" lean-forward="false" selection-start-line="277" selection-start-column="67" selection-end-line="277" selection-end-column="67" />
+          <folding>
+            <element signature="e#0#27#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/mpl_charts.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="419">
-          <caret line="367" column="42" lean-forward="false" selection-start-line="367" selection-start-column="42" selection-end-line="367" selection-end-column="42" />
+        <state relative-caret-position="11193">
+          <caret line="545" column="24" lean-forward="false" selection-start-line="545" selection-start-column="24" selection-end-line="545" selection-end-column="24" />
           <folding>
             <element signature="e#287#314#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/fhwa_spl.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="269">
+          <caret line="157" column="19" lean-forward="true" selection-start-line="157" selection-start-column="19" selection-end-line="157" selection-end-column="19" />
+          <folding>
+            <element signature="e#223#233#0" expanded="true" />
           </folding>
         </state>
       </provider>

@@ -18,6 +18,7 @@ from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz_qt import LoadProjectQT
 from offline_viz import FourByFourPanel
+from Stage2GridPanel import Stage2GridPanel
 from mpl_panels import ChartGridPanel, SpatialGridPanel
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
 import sql_helper
@@ -376,11 +377,12 @@ class MainWindow(QMainWindow):
 
     def load_extra_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Extra Time Charts'
-        mpl_widget = FourByFourPanel(self.project)
+        # mpl_widget = FourByFourPanel(self.project)
+        mpl_widget = Stage2GridPanel(self.project)
         new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)
-        self.ui.pushButton_tmc_subset.setEnabled(True)
+        self.ui.pushButton_tmc_subset.setEnabled(False)
 
     def load_time_time_charts(self):
         chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
@@ -445,7 +447,7 @@ class MainWindow(QMainWindow):
             if root_item.child(tmc_idx).checkState(0):
                 cumulative_mi += tmc_list['miles'][tmc_idx]
         self.ui.label_6.setText('{:1.1f}'.format(cumulative_mi))
-        self.ui.pushButton_tmc_subset.setEnabled(True)
+        self.ui.pushButton_tmc_subset.setEnabled(False)
 
     def get_tmc_subset(self):
         tmc_subset = []

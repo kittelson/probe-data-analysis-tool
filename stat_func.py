@@ -64,6 +64,26 @@ def create_et_analysis(data):
     if not data.columns.contains('travel_time_minutes'):
         data['travel_time_minutes'] = data['travel_time_seconds']/60
     time1 = time.time()
+    # et = data.groupby(['AP', 'tmc_code'])['travel_time_minutes'].agg([np.mean, percentile(95), percentile(5)])
+    et = data.groupby(['tmc_code', 'AP'])['travel_time_minutes'].agg([np.mean, percentile(95), percentile(5)])
+    et['extra_time'] = et['percentile_95'] - et['mean']
+    time2 = time.time()
+    print('Extra Time Analysis: ' + str(time2 - time1))
+    return et
+
+
+def create_facility_et_analysis(data):
+    """
+    Function to create tan Extra-Time analysis for a dataframe.  
+    Creates the analyis based on the "instantaneous" travel time across a facility or subset of tmcs included in dataframe.
+    :param data: pandas dataframe with AP, tmc_code, and travel_time (minutes or seconds)
+    :return: pandas data frame with extra time analysis
+    """
+    if data is None:
+        return None
+    if not data.columns.contains('travel_time_minutes'):
+        data['travel_time_minutes'] = data['travel_time_seconds']/60
+    time1 = time.time()
     et = data.groupby(['Date', 'AP', 'tmc_code'])['travel_time_minutes'].agg(np.mean)
     et = et.groupby(['Date', 'AP']).agg(np.sum)
     et = et.groupby(['AP']).agg([np.mean, percentile(95), percentile(5)])  # .groupby(level=0).sum()
@@ -292,6 +312,41 @@ def create_speed_tmc_heatmap(data, period, tmc_index_list):
     imshow_data = df_mat.unstack().values[:, :]
     imshow_data = imshow_data.T
     return imshow_data
+
+
+def create_speed_band(data):
+    """
+    Function to create an Extra-Time analysis for a dataframe.
+    :param data: pandas dataframe with AP, tmc_code, and travel_time (minutes or seconds)
+    :return: pandas data frame with extra time analysis
+    """
+    if data is None:
+        return None
+    time1 = time.time()
+    sb = data.groupby(['tmc_code', 'AP'])['speed'].agg([np.mean, percentile(95), percentile(5)])
+    time2 = time.time()
+    print('Speed Band Analysis: ' + str(time2 - time1))
+    return sb
+
+
+def create_travel_time_cdf(data):
+    if data is None:
+        return None
+    time1 = time.time()
+    tt_cdf = data.groupby('tmc_code').apply(pd.DataFrame.sort_values, 'travel_time_minutes')
+    time2 = time.time()
+    print('TT CDF Analysis: ' + str(time2 - time1))
+    return tt_cdf
+
+
+def create_speed_freq(data):
+    # if data is None:
+    #     return None
+    # time1 = time.time()
+    # speed_freq = data.groupby(['tmc_code', pd.cut(data.speed, [el for el in range(80)])]).size().unstack()
+    # time2 = time.time()
+    # print('Speed Freq Analysis: ' + str(time2 - time1))
+    return None
 
 
 def convert_time_to_ap(start_hour, start_min, ap_increment):

@@ -10,7 +10,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter
-from stat_func import create_et_analysis
+from stat_func import create_facility_et_analysis
 from chart_defaults import TT_RED_BEFORE, TT_RED, TT_BLUE_BEFORE, TT_BLUE, BEFORE_LW, SB_BLUE, SB_RED
 
 
@@ -127,6 +127,7 @@ class ExtraTimeAreaChartCanvas(MyMplCanvas):
             data = self.app.plot_subset_dfs
         else:
             data = self.app.plot_dfs
+        print(data[self.region]['mean'])
         self.axes.stackplot(data[self.region].index,
                             data[self.region]['mean'],
                             data[self.region]['extra_time'],
@@ -233,7 +234,7 @@ class FourByFourPanel(QtWidgets.QWidget):
     def __init__(self, project):
         QtWidgets.QWidget.__init__(self)
 
-        self.f_extra_time = create_et_analysis
+        self.f_extra_time = create_facility_et_analysis
 
         self.init_mode = True
         self.project = project

@@ -59,6 +59,17 @@ class ChartOptions:
         # self.layout = compute_layout()
 
 
+class AnalysisOptions:
+    def __init__(self, speed_band=True, extra_time=True, tt_cdf=True, speed_freq=True, tt_trend=False, congestion_stack=False, **kwargs):
+        self.speed_band = speed_band
+        self.extra_time = extra_time
+        self.tt_cdf = tt_cdf
+        self.speed_frequency = speed_freq
+        self.tt_trend = tt_trend
+        self.congestion_stack = congestion_stack
+
+
+
 def generate_vega_lite(data_frame, f_name=None):
     import json
     # Creating data dictionary

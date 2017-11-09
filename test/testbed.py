@@ -1,68 +1,48 @@
-import matplotlib.pyplot as plt
+import os
+import datetime
 
-fig = plt.figure()
-plot = fig.add_subplot(111)
-annotation = plot.annotate('local max',xy=(3, 1.5), bbox=dict(boxstyle='round,pad=0.5', fc='yellow', alpha=0.5))
-annotation
-# create some curves
-for i in range(4):
-    plot.plot(
-        [i*1,i*2,i*3,i*4],
-        gid=i)
+os.chdir('C:/Users/ltrask/Documents/21383 - NCDOT SPM/Dat')
+files = os.listdir()
 
-def on_plot_hover(event):
-    annotated = False
-    for curve in plot.get_lines():
-        if curve.contains(event)[0]:
-            print("over %s" % curve.get_gid())
-            annotation.set_text(str(curve.get_gid()))
-            print(event.xdata)
-            print(event.ydata)
-            annotation.set_x(event.xdata)
-            annotation.set_y(event.ydata)
-            annotation.set_visible(True)
-            event.canvas.draw()
-            annotated = True
-    if not annotated:
-        annotation.set_visible(False)
-        event.canvas.draw()
+d1 = datetime.datetime(2037, 4, 29)
+d2 = datetime.datetime(2017, 10, 2)
+delta = d1 - d2
 
-fig.canvas.mpl_connect('motion_notify_event', on_plot_hover)
-plt.show()
+for f_name in files:
+    in_dat = open(f_name, 'rb')
+    tokens = f_name.split('_')
+    old_date_dt = datetime.datetime(int(tokens[2]), int(tokens[3]), int(tokens[4]))
+    old_date_str1 = '{d.month}-{d.day}-{d.year}'.format(d=old_date_dt)
+    old_date1 = bytes(old_date_str1, 'utf8')
+    old_date_str2 = old_date_dt.strftime('%Y_%m_%d')
+    old_date2 = bytes(old_date_str2, 'utf8')
+    old_date_str3 = '{d.month}/{d.day}/{d.year}'.format(d=old_date_dt)
+    old_date3 = bytes(old_date_str3, 'utf8')
+    new_date_dt = old_date_dt - delta
+    new_date_str1 = '{d.month}-{d.day}-{d.year}'.format(d=new_date_dt)
+    new_date1 = bytes(new_date_str1, 'utf8')
+    new_date_str2 = new_date_dt.strftime('%Y_%m_%d')
+    new_date2 = bytes(new_date_str2, 'utf8')
+    new_date_str3 = '{d.month}/{d.day}/{d.year}'.format(d=new_date_dt)
+    new_date3 = bytes(new_date_str3, 'utf8')
 
-"""
-==================================
-Modifying the coordinate formatter
-==================================
-
-Show how to modify the coordinate formatter to report the image "z"
-value of the nearest pixel given x and y
-"""
-import numpy as np
-import matplotlib.pyplot as plt
-from mpldatacursor import datacursor
+    out_dat = open(f_name.replace(old_date_str2, new_date_str2), 'wb')
+    for line in in_dat:
+        out_dat.write(line.replace(old_date1, new_date1).replace(old_date2,new_date2).replace(old_date3, new_date3))
+    in_dat.close()
+    out_dat.close()
 
 
-
-X = 10*np.random.rand(5, 3)
-
-fig, ax = plt.subplots()
-px = ax.imshow(X, interpolation='nearest')
-ann = ax.annotate('local max', xy=(2, 1), xytext=(3, 1.5))
-ann.set_visible(True)
-
-def on_plot_hover(event):
-    if event.xdata is not None and event.ydata is not None:
-        print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
-        ann.set_x(int(event.xdata))
-        ann.set_y(int(event.ydata))
-        ann.set_text(X[min(int(event.ydata), 4)][min(int(event.xdata), 2)])
-        event.canvas.draw()
-    else:
-        ann.set_visible(False)
-
-datacursor(px)
-
-fig.canvas.mpl_connect('motion_notify_event', on_plot_hover)
-
-plt.show()
+# f = open('C:/Users/ltrask/Documents/21383 - NCDOT SPM/Dat/ECON_10.10.1.11_2037_04_29_1415.dat', 'rb')
+# line_idx = 0
+# while line_idx < 6:
+#     print(f.readline())
+#     line_idx += 1
+# f.close()
+#
+# f = open('C:/Users/ltrask/Documents/21383 - NCDOT SPM/Dat/ECON_10.10.1.11_2037_04_29_1415_fix.dat', 'rb')
+# line_idx = 0
+# while line_idx < 6:
+#     print(f.readline())
+#     line_idx += 1
+# f.close()
