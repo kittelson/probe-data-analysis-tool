@@ -193,6 +193,7 @@ class MainWindow(QMainWindow):
             lat = tmc_list['start_latitude'][0]
             lon = tmc_list['start_longitude'][0]
             m = folium.Map(location=[lat, lon])
+            create_plots = True
             if create_plots:
                 df = self.project.database.get_data()
                 tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
@@ -226,7 +227,8 @@ class MainWindow(QMainWindow):
                     [[row['start_latitude'], row['start_longitude']], [row['end_latitude'], row['end_longitude']]],
                     weight=3,
                     color='black',
-                    # popup='TMC ID: ' + row['tmc'] + '\n' + 'Road/Route: ' + row['road'] + ' ' + row['direction'] + '\n' + 'Name/Intersection: ' + row['intersection']
+                    # popup='TMC ID: ' + row['tmc'] + '\n' + 'Road/Route: ' + row['road'] + ' ' + row['direction'] + '\n' + 'Name/Intersection: ' + row['intersection'],
+                    # popup='TMC ID: ' + row['tmc'] + ', ' + row['direction'] + ', ' + row['intersection']
                     popup=pu
                 )
                 pl.add_to(m)

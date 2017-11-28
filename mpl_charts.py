@@ -85,6 +85,7 @@ class MplChart(FigureCanvas):
         # self.f_x_to_day = lambda x, pos: convert_x_to_day(x, pos, self.project.database.get_first_date(as_datetime=True))
         self.f_x_to_day = lambda x, pos: convert_x_to_day(x, pos, start_date)
         self.f_x_to_tmc = lambda x, pos: convert_x_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True))
+        self.f_x_to_mile = lambda x, pos: convert_x_to_mile(x, pos, self.panel.project.get_tmc(as_list=True), self.panel.facility_len)
         self.f_y_to_time = lambda y, pos: convert_xval_to_time(y, pos, 5)
 
         self.color_bar1 = None
@@ -304,7 +305,7 @@ class MplChart(FigureCanvas):
         # self.axes.set_xlabel('Date')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title('Facility Speeds over Time')
+        self.axes.set_title('Daily Congestion over Time')
         self.axes.legend()
         self.fig.tight_layout()
 
@@ -330,12 +331,13 @@ class MplChart(FigureCanvas):
                             data[bin_list[4]],
                             labels=bin_labels,
                             colors=cl)
-        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_tmc))
+        # self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_tmc))
+        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_mile))
         self.axes.xaxis.set_major_locator(MaxNLocator(integer=True, min_n_ticks=0))
-        self.axes.set_xlabel('TMC ID')
+        self.axes.set_xlabel('Milepost')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title(self.panel.project.get_name() + ' - Facility Speeds by TMC')
+        self.axes.set_title('Average Hourly Congestion by TMC')
         self.axes.legend()
         self.fig.tight_layout()
 
@@ -743,7 +745,9 @@ def convert_x_to_day(x, pos, start_date):
     #     return ''
     # new_date = start_date + timedelta(days=int(x))
     new_date = start_date + timedelta(days=x)
-    return new_date.strftime('%m/%d/%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
+    # return new_date.strftime('%m/%d/%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
+    # return new_date.strftime('%m/%d') + '\n' + new_date.strftime('%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
+    return new_date.strftime('%m/%d/%y') + '\n' + calendar.day_abbr[new_date.weekday()]
 
 
 def convert_x_to_tmc(x, pos, tmc_list):
@@ -751,6 +755,13 @@ def convert_x_to_tmc(x, pos, tmc_list):
         return tmc_list[int(x)]
     else:
         return 0
+
+
+def convert_x_to_mile(x, pos, tmc_list, facilit_len):
+    if x >= 0 and x < len(tmc_list):
+        return '{:1.1f} mi'.format(x/len(tmc_list) * facilit_len)
+    else:
+        return ''
 
 
 def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):

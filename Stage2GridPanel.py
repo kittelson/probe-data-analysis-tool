@@ -213,7 +213,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
 
     def create_charts(self):
         self.chart11 = MplChart(self, fig_type=self.chart_options.chart_type[0][0], panel=self, region=0, region2=1)
-        self.chart21 = MplChart(self, fig_type=self.chart_options.chart_type[1][0], panel=self, region=0, region2=1)
+        self.chart21 = MplChart(self, fig_type=self.chart_options.chart_type[1][0], panel=self, region=0, region2=-1)
         self.chart12 = MplChart(self, fig_type=self.chart_options.chart_type[0][1], panel=self, region=0, region2=1)
         self.chart22 = MplChart(self, fig_type=self.chart_options.chart_type[1][1], panel=self, region=0, region2=1)
 

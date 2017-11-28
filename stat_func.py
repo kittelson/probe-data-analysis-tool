@@ -277,7 +277,9 @@ def create_pct_congested_tmc(data, speed_bins, times=None, dates=None, tmc_index
     if dates is not None and len(dates) == 2:
         data = data[(data['Date'] >= dates[0]) & (data['Date'] <= dates[1])]
     if times is not None and len(times) == 2:
-        ap_start, ap_end = convert_hour_to_ap(times[0].hour, times[0].minute, times[1].hour, times[1].minute)
+        # ap_start, ap_end = convert_hour_to_ap(times[0].hour, times[0].minute, times[1].hour, times[1].minute)
+        ap_start = times[0]
+        ap_end = times[1]
         data = data[(data['AP'] >= ap_start) & (data['AP'] < ap_end)]
     # data[bin_list[0]] = data['speed'] <= speed_bins[0]
     data[bin_list[0]] = (data['speed'] >= speed_bins[0]) & (data['speed'] <= speed_bins[1])
@@ -290,7 +292,7 @@ def create_pct_congested_tmc(data, speed_bins, times=None, dates=None, tmc_index
     tmc_gp1['bin_sum'] = tmc_gp1[bin_list].sum(axis=1)
     tmc_gp1 = tmc_gp1[bin_list].div(tmc_gp1['bin_sum'], axis=0)
     if tmc_index_list is not None:
-        tmc_gp1 = tmc_gp1.reindex(tmc_index_list, level=1)
+        tmc_gp1 = tmc_gp1.reindex(tmc_index_list)
     return tmc_gp1
 
 

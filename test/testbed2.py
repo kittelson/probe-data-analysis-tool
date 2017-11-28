@@ -51,15 +51,16 @@ path2 = '_20140301_20170930'
 tmc_path = 'TMC_Identification.csv'
 data_path = path1 + str(cs_idx) + path2 + '.csv'
 
-tmc = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + tmc_path)
-df = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + data_path)
+# tmc = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + tmc_path)
+# df = pd.read_csv(path + path1 + str(cs_idx) + path2 + '/' + data_path)
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I495_VA_NB_Ext13Mi_20130701_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I495_VA_NB_Ext13Mi_20130701_20170131/I495_VA_NB_Ext13Mi_20130701_20170131.csv')
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_NB_Extended_20140901_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_NB_Extended_20140901_20170131/TX161_TX_NB_Extended_20140901_20170131.csv')
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/TX161_TX_SB_Extended_20140901_20170131.csv')
-
+tmc = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/' + tmc_path)
+df = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/I95_PA_15Min_2016_AllDays.csv')
 df = df[df.travel_time_minutes.notnull()]
 
 dirs = tmc['direction'].unique()
@@ -98,6 +99,25 @@ if len(dirs) > 1:
     df_dir2['Hour'] = df_dir2['AP'] // 12
     time2 = time.time()
     print('df_dir2 Creation: '+str(time2-time1))
+
+month_idx = 3
+
+df_dir11 = df_dir1[df_dir1['Month'].isin([month_idx])]
+df_dir11 = df_dir11[df_dir11['weekday'].isin([0, 1, 2, 3, 4])]
+# df_dir11 = df_dir11[df_dir11['weekday'].isin([1, 2, 3])]
+sc1 = df_dir11.groupby(['AP', 'tmc_code'])['speed'].agg(np.mean)
+sc1 = sc1.reindex(tmc['tmc'], level=1)
+sc1_mat = sc1.unstack().values[:, :, np.newaxis]
+np.savetxt('dir1_' + calendar.month_abbr[month_idx] + '.csv', sc1_mat, delimiter=',')
+
+if len(dirs) > 1:
+    df_dir22 = df_dir2[df_dir2['Month'].isin([month_idx])]
+    df_dir22 = df_dir22[df_dir22['weekday'].isin([0, 1, 2, 3, 4])]
+    # df_dir22 = df_dir22[df_dir22['weekday'].isin([1, 2, 3])]
+    sc2 = df_dir22.groupby(['AP', 'tmc_code'])['speed'].agg(np.mean)
+    sc2 = sc2.reindex(tmc['tmc'], level=1)
+    sc2_mat = sc2.unstack().values[:, :, np.newaxis]
+    np.savetxt('dir2_' + calendar.month_abbr[month_idx] + '.csv', sc2_mat, delimiter=',')
 
 # tmc1 = df_dir1[df_dir1['tmc_code'].isin([tmc['tmc'][tmc_1_idx]])]
 # test1 = tmc1.groupby(['Date', 'AP'])['speed'].agg(np.mean)

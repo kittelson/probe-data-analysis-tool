@@ -282,7 +282,7 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.ap_end = self.ap_start + 60 / self.project.data_res
         self.plot_dfs = [create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
                          create_pct_congested_sp(filtered_df, self.speed_bins),
-                         create_pct_congested_tmc(filtered_df, self.speed_bins),
+                         create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
                          create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
                          create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
 
