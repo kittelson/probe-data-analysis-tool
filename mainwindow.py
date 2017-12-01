@@ -247,7 +247,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_7 = QtWidgets.QVBoxLayout(self.scrollAreaWidgetContents)
         self.verticalLayout_7.setContentsMargins(1, 1, 1, 1)
         self.verticalLayout_7.setObjectName("verticalLayout_7")
-        self.webView_minimap = QtWebKitWidgets.QWebView(self.scrollAreaWidgetContents)
+        # self.webView_minimap = QtWebKitWidgets.QWebView(self.scrollAreaWidgetContents)
+        self.webView_minimap = QtWebKitWidgets.QWebEngineView(self.scrollAreaWidgetContents)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -321,7 +322,8 @@ class Ui_MainWindow(object):
         self.verticalLayout_10 = QtWidgets.QVBoxLayout(self.tab_3)
         self.verticalLayout_10.setContentsMargins(0, 0, 0, 0)
         self.verticalLayout_10.setObjectName("verticalLayout_10")
-        self.webView_map = QtWebKitWidgets.QWebView(self.tab_3)
+        # self.webView_map = QtWebKitWidgets.QWebView(self.tab_3)
+        self.webView_map = QtWebKitWidgets.QWebEngineView(self.tab_3)
         self.webView_map.setUrl(QtCore.QUrl("about:blank"))
         self.webView_map.setObjectName("webView_map")
         self.verticalLayout_10.addWidget(self.webView_map)
@@ -428,4 +430,4 @@ class Ui_MainWindow(object):
         self.actionHelp.setText(_translate("MainWindow", "Help"))
         self.actionAbout.setText(_translate("MainWindow", "About"))
 
-from PyQt5 import QtWebKitWidgets
+from PyQt5 import QtWebEngineWidgets as QtWebKitWidgets

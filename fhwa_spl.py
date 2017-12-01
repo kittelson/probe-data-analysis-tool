@@ -9,20 +9,21 @@ Has leftover code defining the FlaskThread for potential future web/d3js visuali
 import sys
 import os
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
-from PyQt5.QtWebKitWidgets import QWebView
+# from PyQt5.QtWebKitWidgets import QWebView
+from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QVBoxLayout
-from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog
+from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox
 from PyQt5.QtGui import QColor
-# from mw_test import Ui_MainWindow
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz_qt import LoadProjectQT
-from offline_viz import FourByFourPanel
-from Stage2GridPanel import Stage2GridPanel
-from mpl_panels import ChartGridPanel, SpatialGridPanel
+from offline_viz import FourByFourPanel  # _Undo
+from Stage2GridPanel import Stage2GridPanel  # _Undo
+from DQGridPanel import DataQualityGridPanel  # _Undo
+from mpl_panels import ChartGridPanel, SpatialGridPanel  # _Undo
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
-import sql_helper
-from chart_defaults import generate_vega_lite
+# import sql_helper
+# from chart_defaults import generate_vega_lite  # _Undo
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -52,6 +53,7 @@ class MainWindow(QMainWindow):
         self.chart_panel_spatial = None
         self.chart_panel1 = None
         self.chart_panel2 = None
+        self.stage2panel = None
 
         #self.web = QWebView()
         #self.container = ConnectionContainer()
@@ -184,58 +186,60 @@ class MainWindow(QMainWindow):
         # self.ui.webView.page().mainFrame().evaluateJavaScript('transitionStacked()')
         self.ui.webView_map.page().mainFrame().evaluateJavaScript('transitionStacked()')
 
-    def load_map_chart(self, create_plots=True):
+    def load_map_chart(self, create_plots=False):
         if self.project is not None:
-            import folium
-            import json
-            from numpy import mean
-            tmc_list = self.project.get_tmc()
-            lat = tmc_list['start_latitude'][0]
-            lon = tmc_list['start_longitude'][0]
-            m = folium.Map(location=[lat, lon])
-            create_plots = True
-            if create_plots:
-                df = self.project.database.get_data()
-                tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
-            else:
-                tt_hour = None
-            for index, row in tmc_list.iterrows():
-                if create_plots:
-                    # df = self.project.database.get_data()
-                    # tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
-                    if row['tmc'] in tt_hour:
-                        vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())
-                        pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
-                    else:
-                        pu = row['tmc'] + ': No Travel Time Data Available'
-                else:
-                    vis_str = json.load(open('templates/vis1.json'))
-                    pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
-
-                folium.Marker(
-                    location=[row['start_latitude'], row['start_longitude']],
-                    popup=row['tmc'] + ' Start',
-                    # popup=pu,
-                    icon=folium.Icon(icon='cloud')
-                ).add_to(m)
-                folium.Marker(
-                    location=[row['end_latitude'], row['end_longitude']],
-                    popup=row['tmc'] + ' End',
-                    icon=folium.Icon(icon='cloud')
-                ).add_to(m)
-                pl = folium.PolyLine(
-                    [[row['start_latitude'], row['start_longitude']], [row['end_latitude'], row['end_longitude']]],
-                    weight=3,
-                    color='black',
-                    # popup='TMC ID: ' + row['tmc'] + '\n' + 'Road/Route: ' + row['road'] + ' ' + row['direction'] + '\n' + 'Name/Intersection: ' + row['intersection'],
-                    # popup='TMC ID: ' + row['tmc'] + ', ' + row['direction'] + ', ' + row['intersection']
-                    popup=pu
-                )
-                pl.add_to(m)
-            m.save('templates/map3.html')
-            f_name = os.path.realpath('templates/map3.html')
-            self.ui.webView_map.load(QUrl('file:///'+f_name))
-            self.ui.webView_minimap.load(QUrl('file:///' + f_name))
+            pass
+            # import folium
+            # import json
+            # from numpy import mean
+            # tmc_list = self.project.get_tmc()
+            # lat = tmc_list['start_latitude'][0]
+            # lon = tmc_list['start_longitude'][0]
+            # m = folium.Map(location=[lat, lon])
+            # # create_plots = True
+            # if create_plots:
+            #     df = self.project.database.get_data()
+            #     tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
+            # else:
+            #     tt_hour = None
+            # for index, row in tmc_list.iterrows():
+            #     if create_plots:
+            #         # df = self.project.database.get_data()
+            #         # tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
+            #         if row['tmc'] in tt_hour:
+            #             # vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())  # _Undo
+            #             pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
+            #         else:
+            #             pu = row['tmc'] + ': No Travel Time Data Available'
+            #     else:
+            #         vis_str = json.load(open('templates/vis1.json'))
+            #         pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
+            #
+            #     folium.Marker(
+            #         location=[row['start_latitude'], row['start_longitude']],
+            #         popup=row['tmc'] + ' Start',
+            #         # popup=pu,
+            #         icon=folium.Icon(icon='cloud')
+            #     ).add_to(m)
+            #     folium.Marker(
+            #         location=[row['end_latitude'], row['end_longitude']],
+            #         popup=row['tmc'] + ' End',
+            #         icon=folium.Icon(icon='cloud')
+            #     ).add_to(m)
+            #     pl = folium.PolyLine(
+            #         [[row['start_latitude'], row['start_longitude']], [row['end_latitude'], row['end_longitude']]],
+            #         weight=3,
+            #         color='black',
+            #         # popup='TMC ID: ' + row['tmc'] + '\n' + 'Road/Route: ' + row['road'] + ' ' + row['direction'] + '\n' + 'Name/Intersection: ' + row['intersection'],
+            #         # popup='TMC ID: ' + row['tmc'] + ', ' + row['direction'] + ', ' + row['intersection']
+            #         popup=pu
+            #     )
+            #     pl.add_to(m)
+            # m.save('templates/map3.html')
+            # f_name = os.path.realpath('templates/map3.html')
+            # print(f_name.replace('\\', '/'))
+            # self.ui.webView_map.load(QUrl('file:///'+f_name.replace('\\', '/')))
+            # self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
 
     def toggle_floating_map(self):
         # index = self.tab.indexOf(self.ui.webView_3)
@@ -365,53 +369,56 @@ class MainWindow(QMainWindow):
         self.update_date_range_tree()
 
     def load_data_density_charts(self, chart_panel_name):
-        temp_widget = QWidget(self)
-        v_layout = QVBoxLayout(temp_widget)
-        v_layout.addWidget(QLabel('Placeholder for data "density" chart panel.  This will provide basic information about the dataset, as well as '
-                                  'show charts giving a glimpse at the availability of data in the dataset.'))
-        new_tab_index = self.ui.tabWidget.addTab(temp_widget, chart_panel_name)
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        # temp_widget = QWidget(self)
+        # v_layout = QVBoxLayout(temp_widget)
+        # v_layout.addWidget(QLabel('Placeholder for data "density" chart panel.  This will provide basic information about the dataset, as well as '
+        #                           'show charts giving a glimpse at the availability of data in the dataset.'))
+        reply = QMessageBox.question(self, 'Project Data', "Load project data density charts?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        if reply == QMessageBox.Yes:
+            dq_chart_panel = DataQualityGridPanel(self.project)
+            new_tab_index = self.ui.tabWidget.addTab(dq_chart_panel, chart_panel_name)
+            self.ui.tabWidget.setCurrentIndex(new_tab_index)
 
     def load_mpl_charts(self, chart_panel_name):
-        mpl_widget = FourByFourPanel(self.project)
-        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        mpl_widget = FourByFourPanel(self.project)  # _Undo
+        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)  # _Undo
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
+        # pass   # _Undo
 
     def load_extra_time_charts(self):
-        chart_panel_name = self.project.get_name() + ' Extra Time Charts'
-        # mpl_widget = FourByFourPanel(self.project)
-        mpl_widget = Stage2GridPanel(self.project)
-        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)
-        self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)
-        self.ui.pushButton_tmc_subset.setEnabled(False)
+        chart_panel_name = self.project.get_name() + ' Extra Time Charts'  # _Undo
+        self.stage2panel = Stage2GridPanel(self.project)  # _Undo
+        new_tab_index = self.ui.tabWidget.addTab(self.stage2panel, chart_panel_name)  # _Undo
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
+        self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)  # _Undo
+        self.ui.pushButton_tmc_subset.setEnabled(False)  # _Undo
+        # pass   # _Undo
 
     def load_time_time_charts(self):
-        chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
-        # self.chart_panel1 = TwoByTwoPanelTimeTime(self.project, options=self.project.chart_panel1_opts)
-        self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)
-        self.chart1_options_action.setEnabled(True)
-        new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1, chart_panel_name)
-
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)
-        self.ui.pushButton_first_chart.setDisabled(True)
-        self.ui.toolBox.setCurrentIndex(2)
-        pass
+        chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'  # _Undo
+        self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)  # _Undo
+        self.chart1_options_action.setEnabled(True)  # _Undo
+        new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1, chart_panel_name)  # _Undo
+          # _Undo
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
+        self.ui.pushButton_first_chart.setDisabled(True)  # _Undo
+        self.ui.toolBox.setCurrentIndex(2)  # _Undo
+        # pass
 
     def load_spatial_charts(self):
         chart_panel_name = self.project.get_name() + ' Spatial Exploration Charts'
         self.chart_panel_spatial = SpatialGridPanel(self.project, options=self.project.chart_panel1_opts)
-        # self.chart1_options_action.setEnabled(True)
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel_spatial, chart_panel_name)
 
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
-        # self.ui.pushButton_first_chart.setDisabled(True)
         self.ui.pushButton_first_chart.setDisabled(True)
         self.ui.toolBox.setCurrentIndex(1)
+        # pass
 
     def create_chart_panel1(self):
-        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
-        cp1_dlg.show()
+        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)  # _Undo
+        cp1_dlg.show()  # _Undo
+        # pass
 
     def edit_chart1_options(self):
         cp1_dlg = ChartPanelOptionsDlg(self, self.update_chart_panel1)
@@ -428,9 +435,9 @@ class MainWindow(QMainWindow):
         cumulative_mi = 0
         for index, row in subset_tmc.iterrows():
             tmc_item = QTreeWidgetItem(self.ui.treeWidget_2)
-            tmc_item.setFlags(tmc_item.flags() | Qt.ItemIsUserCheckable)
+            # tmc_item.setFlags(tmc_item.flags() | Qt.ItemIsUserCheckable)
             # tmc_item.setCheckState(0, Qt.Checked)
-            tmc_item.setCheckState(0, Qt.Unchecked)
+            # tmc_item.setCheckState(0, Qt.Unchecked)
             tmc_item.setText(0, row['tmc'])
             tmc_item.setText(1, row['intersection'])
             tmc_item.setText(2, row['direction'][0] + 'B')
@@ -439,7 +446,17 @@ class MainWindow(QMainWindow):
             tmc_item.setText(4, '{:1.1f}'.format(cumulative_mi))
 
         if is_init:
-            self.ui.treeWidget_2.itemChanged.connect(self.handle_tmc_item_check)
+            # self.ui.treeWidget_2.itemChanged.connect(self.handle_tmc_item_check)
+            self.ui.treeWidget_2.itemSelectionChanged.connect(self.handle_tmc_item_select)
+
+    def handle_tmc_item_select(self):
+        getSelected = self.ui.treeWidget_2.selectedItems()
+        if getSelected:
+            baseNode = getSelected[0]
+            getChildNode = baseNode.text(0)
+            # print(getChildNode)
+            if self.stage2panel is not None:
+                self.stage2panel.select_tmc(getChildNode)
 
     def handle_tmc_item_check(self):
         cumulative_mi = 0
@@ -471,7 +488,8 @@ class Project:
         self._data_file_name = None
         self.database = None
         self._date_ranges = []
-        self.chart_panel1_opts = ChartOptions()
+        self.chart_panel1_opts = ChartOptions()  # _Undo
+        # self.chart_panel1_opts = None  # _Delete
         self.data_res = 5
 
     def set_name(self, new_name):

@@ -49,6 +49,107 @@ class ProjectLoadThread(QThread):
         self.countChanged.emit(-1)
 
 
+class DQDataLoadThread(QThread):
+    """
+    Loads and extracts the data with a QT progress bar
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    countChanged = pyqtSignal(int)
+    progress_helper = None
+
+    def __init__(self, chart_panel, funcs):
+        QThread.__init__(self)
+        self.chart_panel = chart_panel
+        self.funcs = funcs
+
+    def set_progress_helper(self, progress_helper):
+        self.progress_helper = progress_helper
+        self.progress_helper.set_emitter(self.countChanged)
+
+    def run(self):
+        plot_dfs = compute_data_quality(self.funcs, progress_tracker=self.progress_helper)
+        self.chart_panel.plot_dfs_dq = plot_dfs
+        self.countChanged.emit(-1)
+
+
+class Stage2LoadThread(QThread):
+    """
+    Loads and extracts the data with a QT progress bar
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    countChanged = pyqtSignal(int)
+    progress_helper = None
+
+    def __init__(self, chart_panel, dialog, func_dict):
+        QThread.__init__(self)
+        print('here0.25')
+        self.dialog = dialog
+        self.chart_panel = chart_panel
+        self.func_dict = func_dict
+
+    def set_progress_helper(self, progress_helper):
+        self.progress_helper = progress_helper
+        self.progress_helper.set_emitter(self.countChanged)
+
+    def run(self):
+        stage2_dfs = compute_stage2(self.func_dict, dialog=self.dialog, progress_tracker=self.progress_helper)
+        self.chart_panel.plot_dfs = stage2_dfs[0]
+        self.chart_panel.plot_dfs2 = stage2_dfs[1]
+        self.chart_panel.plot_dfs3 = stage2_dfs[2]
+        self.chart_panel.plot_dfs4 = stage2_dfs[3]
+        self.countChanged.emit(-1)
+
+
+class SpatialLoadThread(QThread):
+    """
+    Loads and extracts the data with a QT progress bar
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    countChanged = pyqtSignal(int)
+    progress_helper = None
+
+    def __init__(self, chart_panel, funcs):
+        QThread.__init__(self)
+        self.chart_panel = chart_panel
+        self.funcs = funcs
+
+    def set_progress_helper(self, progress_helper):
+        self.progress_helper = progress_helper
+        self.progress_helper.set_emitter(self.countChanged)
+
+    def run(self):
+        spatial_dfs = compute_spatial_charts(self.funcs, progress_tracker=self.progress_helper)
+        self.chart_panel.plot_dfs_temp = spatial_dfs
+        self.countChanged.emit(-1)
+
+
+class TemporalLoadThread(QThread):
+    """
+    Loads and extracts the data with a QT progress bar
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    countChanged = pyqtSignal(int)
+    progress_helper = None
+
+    def __init__(self, chart_panel, funcs):
+        QThread.__init__(self)
+        self.chart_panel = chart_panel
+        self.funcs = funcs
+
+    def set_progress_helper(self, progress_helper):
+        self.progress_helper = progress_helper
+        self.progress_helper.set_emitter(self.countChanged)
+
+    def run(self):
+        temporal_dfs = compute_temporal_charts(self.funcs, progress_tracker=self.progress_helper)
+        self.chart_panel.plot_dfs = temporal_dfs
+        self.countChanged.emit(-1)
+
+
 class LoadProjectQT(QDialog):
     """
     Dialog with a Progress Bar marking the progress of loading the data.
@@ -145,6 +246,252 @@ def load_project_data(project, progress_tracker=None):
     db.set_available_months(m)
 
     return db
+
+
+class LoadDataQualityQT(QDialog):
+    """
+    Dialog with a Progress Bar marking the progress of loading the data.
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    def __init__(self, chart_panel, mainwindow, funcs):
+        super().__init__(mainwindow)
+        self.chart_panel = chart_panel
+        self.progress_helper = ProgressHelper()
+        self.funcs = funcs
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Initializing...')
+        self.progress = QProgressBar(self)
+        self.progress_helper.set_bar(self.progress)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setRange(0, 0)
+        self.progress.setTextVisible(False)
+        self.show()
+
+        self.calc = DQDataLoadThread(self.chart_panel, self.funcs)
+        self.calc.set_progress_helper(self.progress_helper)
+        self.calc.countChanged.connect(self.on_count_changed)
+        self.calc.start()
+
+    def on_count_changed(self, value):
+        if value < 0:
+            self.accept()
+            self.chart_panel.plot_data_updated()
+        elif value == 1:
+            self.setWindowTitle("Analyzing data...")
+            self.progress.setValue(value)
+        else:
+            self.progress.setValue(value)
+
+
+class LoadStage2QT(QDialog):
+    """
+    Dialog with a Progress Bar marking the progress of loading the data.
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    def __init__(self, chart_panel, mainwindow, func_dict):
+        super().__init__(mainwindow)
+        self.chart_panel = chart_panel
+        self.progress_helper = ProgressHelper()
+        self.func_dict = func_dict
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Initializing...')
+        self.progress = QProgressBar(self)
+        self.progress_helper.set_bar(self.progress)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setRange(0, 0)
+        self.progress.setTextVisible(False)
+        self.show()
+
+        self.calc = Stage2LoadThread(self.chart_panel, self, self.func_dict)
+        self.calc.set_progress_helper(self.progress_helper)
+        self.calc.countChanged.connect(self.on_count_changed)
+        self.calc.start()
+
+    def on_count_changed(self, value):
+        if value < 0:
+            self.accept()
+            self.chart_panel.plot_data_updated()
+        elif value == 1:
+            self.setWindowTitle("Computing analysis...")
+            self.progress.setValue(value)
+        else:
+            self.progress.setValue(value)
+
+
+def compute_data_quality(funcs, progress_tracker=None):
+    if progress_tracker is not None:
+        progress_tracker.bar.setTextVisible(True)
+        progress_tracker.bar.setMaximum(5)
+
+    chart_data = []
+    progress = 0
+    if progress_tracker is not None:
+        chart_data.append(funcs[0]())
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data.append(funcs[1]())
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data.append(funcs[2]())
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data_sub = []
+        chart_data_sub.append(funcs[3]())
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data_sub.append(funcs[4]())
+        chart_data.append(chart_data_sub)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+
+    return chart_data
+
+
+def compute_stage2(func_dict, dialog=None, progress_tracker=None):
+    print('here0.5')
+    if progress_tracker is not None:
+        progress_tracker.bar.setTextVisible(True)
+
+    chart_data = []
+    for func_type, func_list in func_dict.items():
+        # if dialog is not None:
+        #     print("Computing " + func_type + " analysis...")
+        #     dialog.setWindowTitle("Computing " + func_type + " analysis...")
+        if progress_tracker is not None:
+            progress_tracker.bar.setMaximum(len(func_list))
+        sub_chart_data = []
+        progress = 0
+        progress_tracker.emitter.emit(progress)
+        if progress_tracker is not None:
+            for func in func_list:
+                sub_chart_data.append(func())
+                progress += 1
+                progress_tracker.emitter.emit(progress)
+            chart_data.append(sub_chart_data)
+
+    return chart_data
+
+
+def compute_spatial_charts(func_list, progress_tracker=None):
+    if progress_tracker is not None:
+        progress_tracker.bar.setTextVisible(True)
+        progress_tracker.bar.setMaximum(len(func_list)+1)
+
+    chart_data = []
+    progress = 0
+    if progress_tracker is not None:
+        for f in func_list:
+            if f is not None:
+                chart_data.append(f())
+            else:
+                chart_data.append(None)
+            progress += 1
+            progress_tracker.emitter.emit(progress)
+
+    return chart_data
+
+
+class LoadSpatialQT(QDialog):
+    """
+    Dialog with a Progress Bar marking the progress of loading the data.
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    def __init__(self, chart_panel, mainwindow, funcs):
+        super().__init__(mainwindow)
+        self.chart_panel = chart_panel
+        self.progress_helper = ProgressHelper()
+        self.funcs = funcs
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Initializing...')
+        self.progress = QProgressBar(self)
+        self.progress_helper.set_bar(self.progress)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setRange(0, 0)
+        self.progress.setTextVisible(False)
+        self.show()
+
+        self.calc = SpatialLoadThread(self.chart_panel, self.funcs)
+        self.calc.set_progress_helper(self.progress_helper)
+        self.calc.countChanged.connect(self.on_count_changed)
+        self.calc.start()
+
+    def on_count_changed(self, value):
+        if value < 0:
+            self.accept()
+            self.chart_panel.plot_data_updated()
+        elif value == 1:
+            self.setWindowTitle("Analyzing TMCs...")
+            self.progress.setValue(value)
+            pass
+        else:
+            self.progress.setValue(value)
+
+
+def compute_temporal_charts(func_list, progress_tracker=None):
+    if progress_tracker is not None:
+        progress_tracker.bar.setTextVisible(True)
+        progress_tracker.bar.setMaximum(5)
+
+    chart_data = []
+    progress = 0
+    if progress_tracker is not None:
+        for f in func_list:
+            if f is not None:
+                chart_data.append(f())
+            else:
+                chart_data.append(None)
+            progress += 1
+            progress_tracker.emitter.emit(progress)
+
+    return chart_data
+
+
+class LoadTemporalQT(QDialog):
+    """
+    Dialog with a Progress Bar marking the progress of loading the data.
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    def __init__(self, chart_panel, mainwindow, funcs):
+        super().__init__(mainwindow)
+        self.chart_panel = chart_panel
+        self.progress_helper = ProgressHelper()
+        self.funcs = funcs
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Initializing...')
+        self.progress = QProgressBar(self)
+        self.progress_helper.set_bar(self.progress)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setRange(0, 0)
+        self.progress.setTextVisible(False)
+        self.show()
+
+        self.calc = TemporalLoadThread(self.chart_panel, self.funcs)
+        self.calc.set_progress_helper(self.progress_helper)
+        self.calc.countChanged.connect(self.on_count_changed)
+        self.calc.start()
+
+    def on_count_changed(self, value):
+        if value < 0:
+            self.accept()
+            self.chart_panel.plot_data_updated()
+        elif value == 1:
+            self.setWindowTitle("Analyzing data...")
+            self.progress.setValue(value)
+        else:
+            self.progress.setValue(value)
+
 
 def extract_vals(date_str):
     # print(date_str)

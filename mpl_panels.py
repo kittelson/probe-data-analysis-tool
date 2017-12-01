@@ -13,6 +13,7 @@ from stat_func import create_timetime_analysis, create_tt_trend_analysis, conver
 from chart_defaults import ChartOptions
 from mpl_charts import MplChart, FIG_TYPE_SPD_HEAT_MAP_FACILITY
 from datetime import datetime, timedelta
+from viz_qt import LoadSpatialQT, LoadTemporalQT
 
 
 class ChartGridPanel(QtWidgets.QWidget):
@@ -95,13 +96,13 @@ class ChartGridPanel(QtWidgets.QWidget):
 
         self.plot_dfs = []
         self.update_plot_data()
-        self.create_charts()
-        self.add_charts_to_layouts()
-        self.v_layout.addWidget(self.chart_panel)
-        self.v_layout.addWidget(self.check_bar_day)
-        self.update_chart_visibility()
-        self.init_mode = False
-        self.no_compute = False
+        # self.create_charts()
+        # self.add_charts_to_layouts()
+        # self.v_layout.addWidget(self.chart_panel)
+        # self.v_layout.addWidget(self.check_bar_day)
+        # self.update_chart_visibility()
+        # self.init_mode = False
+        # self.no_compute = False
 
     def create_charts(self):
         self.chart11 = MplChart(self, fig_type=self.options.chart_type[0][0], panel=self, region=0)
@@ -235,7 +236,7 @@ class ChartGridPanel(QtWidgets.QWidget):
 
             if len(self.plot_days) > 0:
                 self.update_plot_data()
-                self.update_figures()
+                # self.update_figures()
 
     def check_peak_func(self):
         if not (self.init_mode or self.no_compute):
@@ -280,11 +281,33 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.selected_tmc_len = dir_tmc['miles'][selected_tmc]
         self.ap_start = self.cb_peak_hour_select.currentIndex() * 3
         self.ap_end = self.ap_start + 60 / self.project.data_res
-        self.plot_dfs = [create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
-                         create_pct_congested_sp(filtered_df, self.speed_bins),
-                         create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
-                         create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
-                         create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
+        # self.plot_dfs = [create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
+        #                  create_pct_congested_sp(filtered_df, self.speed_bins),
+        #                  create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
+        #                  create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
+        #                  create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
+
+        func_list = [lambda: create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
+                     lambda: create_pct_congested_sp(filtered_df, self.speed_bins),
+                     lambda: create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
+                     lambda: create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
+                     lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
+
+        LoadTemporalQT(self, self.project.main_window, func_list)
+
+    def plot_data_updated(self):
+        if self.init_mode is True:
+            self.create_charts()
+            self.add_charts_to_layouts()
+            self.v_layout.addWidget(self.chart_panel)
+            self.v_layout.addWidget(self.check_bar_day)
+            self.update_chart_visibility()
+            self.init_mode = False
+            self.no_compute = False
+        else:
+            self.update_chart_types()
+            self.update_figures()
+            self.update_chart_visibility()
 
     def update_figures(self):
         if self.chart11 is not None:
@@ -304,9 +327,9 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.options = self.project.chart_panel1_opts
         self.speed_bins = self.options.speed_bins.copy()
         self.update_plot_data()
-        self.update_chart_types()
-        self.update_figures()
-        self.update_chart_visibility()
+        # self.update_chart_types()
+        # self.update_figures()
+        # self.update_chart_visibility()
 
     def update_chart_visibility(self):
         self.chart11.setVisible(True)
@@ -339,6 +362,7 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.grid_layout = QtWidgets.QGridLayout(self.chart_panel)
 
         self.init_mode = True
+        self.no_compute = True
 
         self.project = project
         facility_tmcs = self.project.get_tmc()  # Gets the tmc list for the selected direction(s)
@@ -422,17 +446,18 @@ class SpatialGridPanel(QtWidgets.QWidget):
         # self.h_layout.addWidget(self.check_sun)
         self.connect_check_boxes()
         self.connect_combo_boxes()
-        self.plot_dfs = []
+        self.plot_dfs = [None, None, None, None, None, None, None]
+        self.plot_dfs_temp = []
         self.update_plot_data()
-        self.create_charts()
-        self.add_charts_to_layouts()
-
-        self.v_layout.addWidget(self.chart_panel)
-        self.v_layout.addWidget(self.check_bar_day)
-        self.update_chart_visibility()
-
-        self.init_mode = False
-        self.no_compute = False
+        # self.create_charts()
+        # self.add_charts_to_layouts()
+        #
+        # self.v_layout.addWidget(self.chart_panel)
+        # self.v_layout.addWidget(self.check_bar_day)
+        # self.update_chart_visibility()
+        #
+        # self.init_mode = False
+        # self.no_compute = False
 
     def create_charts(self):
         self.chart11 = MplChart(self, fig_type=FIG_TYPE_SPD_HEAT_MAP_FACILITY, panel=self, show_am=True, show_mid=False, show_pm=False)
@@ -487,24 +512,69 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.ap_start3 = self.cb_peak_hour_start3.currentIndex() * 3
         self.ap_end3 = self.cb_peak_hour_end3.currentIndex() * 3
 
+        # if fig_num == 0:
+        #     df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
+        #     df_md = self.plot_dfs[5]
+        #     df_pm = self.plot_dfs[6]
+        # elif fig_num == 1:
+        #     df_am = self.plot_dfs[4]
+        #     df_md = create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc'])
+        #     df_pm = self.plot_dfs[6]
+        # elif fig_num == 2:
+        #     df_am = self.plot_dfs[4]
+        #     df_md = self.plot_dfs[5]
+        #     df_pm = create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])
+        # else:
+        #     df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
+        #     df_md = create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc'])
+        #     df_pm = create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])
+        # self.plot_dfs = [None, None, None, None,
+        #                  df_am, df_md, df_pm]
+
         if fig_num == 0:
-            df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
-            df_md = self.plot_dfs[5]
-            df_pm = self.plot_dfs[6]
+            func_list = [None, None, None, None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc']),
+                         None,
+                         None]
         elif fig_num == 1:
-            df_am = self.plot_dfs[4]
-            df_md = create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc'])
-            df_pm = self.plot_dfs[6]
+            func_list = [None, None, None, None,
+                         None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc']),
+                         None]
         elif fig_num == 2:
-            df_am = self.plot_dfs[4]
-            df_md = self.plot_dfs[5]
-            df_pm = create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])
+            func_list = [None, None, None, None,
+                         None,
+                         None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])]
         else:
-            df_am = create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc'])
-            df_md = create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc'])
-            df_pm = create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])
-        self.plot_dfs = [None, None, None, None,
-                         df_am, df_md, df_pm]
+            func_list = [None, None, None, None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc']),
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc']),
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])]
+
+        LoadSpatialQT(self, self.project.main_window, func_list)
+
+    def plot_data_updated(self):
+
+        if self.plot_dfs_temp[4] is not None:
+            self.plot_dfs[4] = self.plot_dfs_temp[4]
+        if self.plot_dfs_temp[5] is not None:
+            self.plot_dfs[5] = self.plot_dfs_temp[5]
+        if self.plot_dfs_temp[6] is not None:
+            self.plot_dfs[6] = self.plot_dfs_temp[6]
+        if self.init_mode is True:
+            self.create_charts()
+            self.add_charts_to_layouts()
+
+            self.v_layout.addWidget(self.chart_panel)
+            self.v_layout.addWidget(self.check_bar_day)
+            self.update_chart_visibility()
+
+            self.init_mode = False
+            self.no_compute = False
+        else:
+            self.update_figures()
+            self.update_chart_visibility()
 
     def update_figures(self):
         if self.chart11 is not None:
@@ -525,9 +595,8 @@ class SpatialGridPanel(QtWidgets.QWidget):
         # self.options = self.project.chart_panel1_opts
         # self.speed_bins = self.options.speed_bins.copy()
         self.update_plot_data(fig_num=fig_num)
-        # self.update_chart_types()
-        self.update_figures()
-        self.update_chart_visibility()
+        # self.update_figures()
+        # self.update_chart_visibility()
 
     def update_chart_visibility(self):
         if not self.init_mode:

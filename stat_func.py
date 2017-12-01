@@ -341,6 +341,16 @@ def create_travel_time_cdf(data):
     return tt_cdf
 
 
+def create_speed_cdf(data):
+    if data is None:
+        return None
+    time1 = time.time()
+    sp_cdf = data.groupby('tmc_code').apply(pd.DataFrame.sort_values, 'speed')
+    time2 = time.time()
+    print('Speed CDF Analysis: ' + str(time2 - time1))
+    return sp_cdf
+
+
 def create_speed_freq(data):
     # if data is None:
     #     return None
@@ -349,6 +359,42 @@ def create_speed_freq(data):
     # time2 = time.time()
     # print('Speed Freq Analysis: ' + str(time2 - time1))
     return None
+
+
+def create_dq_weekday(data):
+    num_tmc = len(data['tmc_code'].unique())
+    td_facility_Wkdy = data.groupby(['weekday', 'Date']).agg(['count'])['speed'] / ((12 * 24) * num_tmc)
+    td1_facility_Wkdy = td_facility_Wkdy.groupby(['weekday']).agg(np.mean)
+    return td1_facility_Wkdy
+
+
+def create_dq_time_of_day(data):
+    num_tmc = len(data['tmc_code'].unique())
+    num_dates = len(data['Date'].unique())
+    td_facility_ToD = data.groupby(['Hour']).agg(['count'])
+    td1_facility_ToD = td_facility_ToD['speed']['count'] / (12 * num_dates * num_tmc)
+    return td1_facility_ToD
+
+
+def create_dq_tmc(data, tmc_index=None):
+    num_tmc = len(data['tmc_code'].unique())
+    num_dates = len(data['Date'].unique())
+    td_facility_TMC = data.groupby(['tmc_code']).agg(['count'])
+    td1_facility_TMC = td_facility_TMC['speed']['count'] / ((12 * 24) * num_dates)
+    if tmc_index is not None:
+        td1_facility_TMC = td1_facility_TMC.reindex(tmc_index['tmc'])
+    return td1_facility_TMC
+
+
+def create_dq_study_period(data, day_list=None):
+    num_tmc = len(data['tmc_code'].unique())
+    if day_list is not None:
+        wd = data[data['weekday'].isin(day_list)].groupby(['Year', 'Month', 'Date']).agg(['count'])['speed'] / ((12 * 24) * num_tmc)
+    else:
+        wd = data.groupby(['Year', 'Month', 'Date']).agg(['count'])['speed'] / ((12 * 24) * num_tmc)
+    wdv = wd.groupby(['Year', 'Month']).agg(np.mean)
+    y_wd = wdv.values.reshape((wdv.shape[0],))
+    return y_wd
 
 
 def convert_time_to_ap(start_hour, start_min, ap_increment):

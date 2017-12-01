@@ -14,9 +14,11 @@ from matplotlib.ticker import FuncFormatter, MaxNLocator
 import calendar
 from datetime import datetime, timedelta
 from math import floor
-from chart_defaults import TT_RED_BEFORE, TT_RED, TT_BLUE_BEFORE, TT_BLUE, BEFORE_LW, SB_BLUE, SB_RED
+from chart_defaults import TT_RED_BEFORE, TT_RED, TT_BLUE_BEFORE, TT_BLUE, BEFORE_LW, SB_BLUE, SB_RED, create_dq_cmap
 from numpy import histogram as np_hist
 from numpy import append as np_append
+from numpy import pi as np_pi
+from numpy import linspace as np_linspace
 from math import ceil
 
 FIG_TYPE_TT_TREND_LINE = 0
@@ -26,10 +28,15 @@ FIG_TYPE_SPD_HEAT_MAP_FACILITY = 3
 FIG_TYPE_PCT_CONG_DAY = 4
 FIG_TYPE_PCT_CONG_TMC = 5
 
-FIG_TYPE_EXTRA_TIME = 100
-FIG_TYPE_SPD_BAND = 101
-FIG_TYPE_TT_CDF = 102
-FIG_TYPE_SPD_FREQ = 103
+FIG_TYPE_EXTRA_TIME = 200
+FIG_TYPE_SPD_BAND = 201
+FIG_TYPE_TT_CDF = 202
+FIG_TYPE_SPD_FREQ = 203
+
+FIG_DQ_WKDY = 100
+FIG_DQ_TOD = 101
+FIG_DQ_TMC = 102
+FIG_DQ_SP = 103
 
 NONE = -1
 AFTER = 0
@@ -41,7 +48,8 @@ class MplChart(FigureCanvas):
 
     def __init__(self, parent=None, fig_type=0, panel=None, region=AFTER, region2=NONE, is_subset=False, width=5, height=4, dpi=100, **kwargs):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        self.axes = self.fig.add_subplot(111)
+        is_polar = fig_type == FIG_DQ_TOD
+        self.axes = self.fig.add_subplot(111, polar=is_polar)
         self.fig_type = fig_type
 
         FigureCanvas.__init__(self, self.fig)
@@ -83,7 +91,8 @@ class MplChart(FigureCanvas):
 
         self.f_x_to_month = lambda x, pos: convert_xval_to_month(x, pos, start_date.year, start_date.month)
         # self.f_x_to_day = lambda x, pos: convert_x_to_day(x, pos, self.project.database.get_first_date(as_datetime=True))
-        self.f_x_to_day = lambda x, pos: convert_x_to_day(x, pos, start_date)
+        self.f_x_to_day = lambda x, pos: convert_x_to_day(x, pos, start_date, two_lines=True)
+        self.f_x_to_day_1l = lambda x, pos: convert_x_to_day(x, pos, start_date, two_lines=False)
         self.f_x_to_tmc = lambda x, pos: convert_x_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True))
         self.f_x_to_mile = lambda x, pos: convert_x_to_mile(x, pos, self.panel.project.get_tmc(as_list=True), self.panel.facility_len)
         self.f_y_to_time = lambda y, pos: convert_xval_to_time(y, pos, 5)
@@ -117,8 +126,9 @@ class MplChart(FigureCanvas):
 
         scale = 1.1
         self.zp = ZoomPan()
-        figZoom = self.zp.zoom_factory(self.axes, self, base_scale=scale)
-        figPan = self.zp.pan_factory(self.axes, self)
+        if self.fig_type != FIG_DQ_TOD:
+            figZoom = self.zp.zoom_factory(self.axes, self, base_scale=scale)
+            figPan = self.zp.pan_factory(self.axes, self)
         self.set_x_bounds(self.axes.get_xlim()[0], self.axes.get_xlim()[1], make_default=True)
         self.set_y_bounds(self.axes.get_ylim()[0], self.axes.get_ylim()[1], make_default=True)
 
@@ -179,9 +189,18 @@ class MplChart(FigureCanvas):
         elif self.fig_type == FIG_TYPE_SPD_BAND:
             self.compute_speed_band()
         elif self.fig_type == FIG_TYPE_TT_CDF:
-            self.compute_tt_cdf()
+            # self.compute_tt_cdf()
+            self.compute_speed_cdf()
         elif self.fig_type == FIG_TYPE_SPD_FREQ:
             self.compute_speed_freq()
+        elif self.fig_type == FIG_DQ_WKDY:
+            self.compute_dq_wkdy()
+        elif self.fig_type == FIG_DQ_TOD:
+            self.compute_dq_tod()
+        elif self.fig_type == FIG_DQ_TMC:
+            self.compute_dq_tmc()
+        elif self.fig_type == FIG_DQ_SP:
+            self.compute_dq_sp()
 
     def update_figure(self):
         self.axes.cla()
@@ -215,6 +234,8 @@ class MplChart(FigureCanvas):
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
                             + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.set_ylabel('Travel Time (Minutes)')
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
@@ -266,6 +287,8 @@ class MplChart(FigureCanvas):
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
                             + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.set_ylabel('Travel Time (Minutes)')
         if not self.panel.plot_dfs[0].empty:
             self.axes.legend()
@@ -306,6 +329,8 @@ class MplChart(FigureCanvas):
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
         self.axes.set_title('Daily Congestion over Time')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.legend()
         self.fig.tight_layout()
 
@@ -338,12 +363,15 @@ class MplChart(FigureCanvas):
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
         self.axes.set_title('Average Hourly Congestion by TMC')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.legend()
         self.fig.tight_layout()
 
     def compute_speed_heatmap(self):
         imshow_data = self.panel.plot_dfs[3]
-        im = self.axes.imshow(imshow_data, cmap='RdYlGn')
+        dq_cm = create_dq_cmap()
+        im = self.axes.imshow(imshow_data, cmap=dq_cm)
         if self.color_bar1 is not None:
             self.color_bar1.remove()
         self.color_bar1 = self.fig.colorbar(im, ax=self.axes, shrink=0.8)
@@ -351,6 +379,8 @@ class MplChart(FigureCanvas):
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
         self.axes.yaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
         self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
 
     def compute_speed_tmc_heatmap(self):
         if self.show_am:
@@ -365,7 +395,8 @@ class MplChart(FigureCanvas):
         num_tmc, num_days = imshow_data.shape
         self.tmc_ext = num_days / 5
         cb_shrink = 0.95
-        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
+        dq_cm = create_dq_cmap()
+        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap=dq_cm)
         if self.color_bar2 is not None:
             self.color_bar2.remove()
         self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink)
@@ -379,6 +410,8 @@ class MplChart(FigureCanvas):
         tmc_list = self.panel.project.get_tmc(as_list=True).tolist()
         tmc_list.reverse()
         self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list))
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
 
     def compute_extra_time_area(self):
         day_type = self.panel.day_select
@@ -423,6 +456,8 @@ class MplChart(FigureCanvas):
         else:
             title_str = title_str + 'Period 2: ' + self.panel.period2
         self.axes.set_title(title_str)
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.set_xlabel('Time of Day')
         self.axes.set_ylabel('Travel Time Minutes')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
@@ -479,6 +514,8 @@ class MplChart(FigureCanvas):
         else:
             title_str = title_str + 'Period 2: ' + self.panel.period2
         self.axes.set_title(title_str)
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.set_xlabel('Time of Day')
         self.axes.set_ylabel('Speed (mph)')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
@@ -525,6 +562,47 @@ class MplChart(FigureCanvas):
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
         self.fig.tight_layout()
 
+    def compute_speed_cdf(self):
+        day_type = self.panel.day_select
+        offset = 9
+        # tmc_list = self.panel.project.get_tmc(as_list=True)
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs3[day_type]
+        data_after = self.panel.plot_dfs3[day_type + offset]
+
+        if self.region == AFTER:
+            data1 = data_after
+            data2 = data_before
+        else:
+            data1 = data_before
+            data2 = data_after
+
+        # Before Data  # if self.region2 != NONE:
+        max_y2 = len(data2['speed'][tmc1])
+        self.axes.plot(data2['speed'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
+        # After Data
+        max_y = len(data1['speed'][tmc1])
+        self.axes.plot(data1['speed'][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
+
+        title_str = 'Speed Distribution: ' + self.panel.project.get_name()
+        title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
+        title_str = title_str + '\n'
+        if self.region2 != 0:
+            title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
+        elif self.region == BEFORE:
+            title_str = title_str + 'Period 1: ' + self.panel.period1
+        else:
+            title_str = title_str + 'Period 2: ' + self.panel.period2
+        self.axes.set_title(title_str)
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        self.axes.set_xlabel('Speed (mph)')
+        self.axes.set_ylabel('Distribution')
+        self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
+        self.axes.legend()
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.fig.tight_layout()
+
     def compute_speed_freq(self):
         bin_extend = 10
         day_type = self.panel.day_select
@@ -564,12 +642,116 @@ class MplChart(FigureCanvas):
         else:
             title_str = title_str + 'Period 2: ' + self.panel.period2
         self.axes.set_title(title_str)
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
         self.axes.set_xlabel('Speed (mph)')
         self.axes.set_ylabel('% Frequency')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
         self.axes.legend()
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
         self.fig.tight_layout()
+
+    def compute_dq_wkdy(self):
+        data = self.panel.plot_dfs_dq[0]
+        self.axes.set_yticks([0.5, 0.8])
+        self.axes.set_yticklabels(['50%', '80%'])
+        self.axes.set_title('Data Quality by Day of Week')
+        self.axes.set_ylim(0, 1)
+        self.axes.set_xticks([el for el in range(data.shape[0])])
+        self.axes.set_xticklabels([calendar.day_abbr[el] for el in range(data.shape[0])], rotation='vertical')
+        y_values = data.values.reshape(data.shape[0], )
+        self.axes.plot([el for el in range(len(y_values))], [0.8 for el in range(len(y_values))], label='80%', c='green', ls=':')
+        self.axes.plot([el for el in range(len(y_values))], [0.5 for el in range(len(y_values))], label='50%', c='firebrick', ls=':')
+        self.axes.legend()
+        bars1 = self.axes.bar([el for el in range(data.shape[0])], y_values)
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        # Use custom colors and opacity
+        dq_cm = create_dq_cmap()
+        for r, bar in zip(y_values, bars1):
+            # bar.set_facecolor(plt.cm.RdYlGn(r / 10.))
+            bar.set_facecolor(dq_cm(r))
+            bar.set_alpha(0.8)
+
+    def compute_dq_tod(self):
+        data = self.panel.plot_dfs_dq[1]
+        radii = data.values
+        N = len(radii)
+        bottom = 0
+        width = (2 * np_pi) / N
+        theta = np_linspace(0.0, 2 * np_pi, N, endpoint=False)
+        self.axes.set_theta_zero_location('N')
+        self.axes.set_theta_direction(-1)
+        self.axes.set_xticklabels(['12am', '3am', '6am', '9am', '12pm', '3pm', '6pm', '9pm'])
+        # ax2.get_yaxis().set_visible(False)
+        self.axes.set_yticks([0.5, 0.8])
+        self.axes.set_yticklabels(['50%', '80%'])
+        self.axes.set_title('Data Quality by Time of Day')
+        self.axes.set_ylim(0, 1)
+        bars2 = self.axes.bar(theta, radii, width=width, bottom=bottom)
+        # Use custom colors and opacity
+        dq_cm = create_dq_cmap()
+        for r, bar in zip(radii, bars2):
+            bar.set_facecolor(dq_cm(r))
+            bar.set_alpha(0.8)
+
+    def compute_dq_tmc(self):
+        data = self.panel.plot_dfs_dq[2]
+        num_tmc = len(data.values)
+        self.axes.set_yticks([0.5, 0.8])
+        self.axes.set_yticklabels(['50%', '80%'])
+        self.axes.set_title('Data Quality by TMC')
+        self.axes.set_ylim(0, 1)
+        self.axes.plot([el for el in range(num_tmc)], [0.8 for el in range(num_tmc)], label='80%', c='green', ls=':')
+        self.axes.plot([el for el in range(num_tmc)], [0.5 for el in range(num_tmc)], label='50%', c='firebrick', ls=':')
+        self.axes.legend()
+        bars3 = self.axes.bar([el for el in range(num_tmc)], data.values)
+        self.axes.set_xticks([el for el in range(num_tmc)])
+        self.axes.set_xticklabels(data.index.tolist(), rotation='vertical')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        # Use custom colors and opacity
+        dq_cm = create_dq_cmap()
+        for r, bar in zip(data.values, bars3):
+            bar.set_facecolor(dq_cm(r))
+            bar.set_alpha(0.8)
+
+    def compute_dq_sp(self):
+        self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y)))
+        y_wd = self.panel.plot_dfs_dq[3][0]  # Weekday data
+        y_we = self.panel.plot_dfs_dq[3][1]  # Weekend data
+        x_labels = []
+        start_date = self.panel.project.database.get_first_date(as_datetime=True)
+        year = start_date.year
+        month = start_date.month
+        for i in range(len(y_wd)):
+            x_labels.append(str(month) + '/' + str(year))
+            month += 1
+            if month > 12:
+                month = 1
+                year += 1
+        self.axes.set_xticks([el for el in range(len(y_wd))])
+        self.axes.set_xticklabels(x_labels, rotation='vertical')
+        self.axes.set_title('Monthly Data Quality over Time')
+        self.axes.set_ylim(0, 1)
+        self.axes.plot([el for el in range(len(y_wd))], y_wd, c='grey', label='Weekdays')
+        self.axes.plot([el for el in range(len(y_we))], y_we, c='grey', ls='--', label='Weekends')
+        self.axes.plot([el for el in range(len(y_wd))], [0.8 for el in range(len(y_wd))], label='80%', c='green', ls=':')
+        self.axes.plot([el for el in range(len(y_wd))], [0.5 for el in range(len(y_wd))], label='50%', c='firebrick', ls=':')
+        self.axes.legend()
+        width = 0.35
+        bars_wd = self.axes.bar([el for el in range(len(y_wd))], y_wd, width, label='Weekdays')
+        bars_we = self.axes.bar([el + width for el in range(len(y_we))], y_we, width, label='Weekends')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        # Use custom colors and opacity
+        dq_cm = create_dq_cmap()
+        for r, bar in zip(y_wd, bars_wd):
+            bar.set_facecolor(dq_cm(r))
+            bar.set_alpha(0.8)
+        for r, bar in zip(y_we, bars_we):
+            bar.set_facecolor(dq_cm(r))
+            bar.set_alpha(0.8)
 
     def hover_tmc(self, event, tmc_list):
         if event.xdata is not None and event.ydata is not None:
@@ -578,7 +760,7 @@ class MplChart(FigureCanvas):
             self.hover_ann.set_y(int(event.ydata))
             hover_idx = floor(event.ydata*len(tmc_list) / self.tmc_ext)
             if hover_idx < len(tmc_list):
-                self.hover_ann.set_text(tmc_list[hover_idx] + '\n' + self.f_x_to_day(event.xdata, None))
+                self.hover_ann.set_text(tmc_list[hover_idx] + '\n' + self.f_x_to_day_1l(event.xdata, None))
             else:
                 self.hover_ann.set_text('')
             self.hover_ann.set_visible(True)
@@ -740,14 +922,18 @@ def create_spacer_line(parent):
     return line
 
 
-def convert_x_to_day(x, pos, start_date):
+def convert_x_to_day(x, pos, start_date, two_lines=True):
     # if int(x) - x != 0:
     #     return ''
     # new_date = start_date + timedelta(days=int(x))
     new_date = start_date + timedelta(days=x)
     # return new_date.strftime('%m/%d/%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
     # return new_date.strftime('%m/%d') + '\n' + new_date.strftime('%Y') + '\n' + calendar.day_abbr[new_date.weekday()]
-    return new_date.strftime('%m/%d/%y') + '\n' + calendar.day_abbr[new_date.weekday()]
+    if two_lines is True:
+        mid_string = '\n'
+    else:
+        mid_string = ' '
+    return new_date.strftime('%m/%d/%y') + mid_string + calendar.day_abbr[new_date.weekday()]
 
 
 def convert_x_to_tmc(x, pos, tmc_list):
