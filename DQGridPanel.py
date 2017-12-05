@@ -50,19 +50,31 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         # Filter Components
         self.day_select = 0
         self.plot_dfs_dq = []
-        print('here-1')
         self.update_plot_data()
-        print('here0')
 
     def plot_data_updated(self):
-        self.create_charts()
-        self.add_charts_to_layouts()
-        self.v_layout.addWidget(self.chart_panel)
-        # self.v_layout.addWidget(self.check_bar_day)
-        self.update_chart_visibility()
-        self.init_mode = False
+        if self.init_mode:
+            self.create_charts()
+            self.add_charts_to_layouts()
+            self.v_layout.addWidget(self.chart_panel)
+            # self.v_layout.addWidget(self.check_bar_day)
+            self.update_chart_visibility()
+            self.init_mode = False
+        else:
+            self.update_figures()
+            # self.chart11.fire_animation()
+            # self.chart12.fire_animation()
+            # self.chart21.fire_animation()
+            # self.chart22.fire_animation()
 
-    def update_plot_data(self, **kwargs):
+    def update_all(self, tmc_id=None):
+        self.update_plot_data(tmc_id=tmc_id)
+        # self.chart11.fire_animation()
+        # self.chart12.fire_animation()
+        # self.chart21.fire_animation()
+        # self.chart22.fire_animation()
+
+    def update_plot_data(self, tmc_id=None, **kwargs):
         # self.plot_dfs_dq = [self.f_dq_weekday(self.dfs[0]),
         #                     self.f_dq_time_of_day(self.dfs[0]),
         #                     self.f_dq_tmc(self.dfs[0], tmc_index=self.project.get_tmc()),
@@ -74,7 +86,9 @@ class DataQualityGridPanel(QtWidgets.QWidget):
                     lambda: self.f_dq_tmc(self.dfs[0], tmc_index=self.project.get_tmc()),
                     lambda: self.f_dq_study_period(self.dfs[0], day_list=[0, 1, 2, 3, 4]),
                     lambda: self.f_dq_study_period(self.dfs[0], day_list=[5, 6])]
-        LoadDataQualityQT(self, self.project.main_window, dq_funcs)
+
+        LoadDataQualityQT(self, self.project.main_window, dq_funcs, data=self.dfs[0], tmc=tmc_id)
+        # LoadDataQualityQT(self, self.project.main_window, dq_funcs)
 
     def create_charts(self):
         self.chart11 = MplChart(self, fig_type=self.chart_options.chart_type[0][0], panel=self)

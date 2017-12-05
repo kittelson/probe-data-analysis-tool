@@ -8,6 +8,7 @@ from DataHelper import Database
 import datetime
 import pandas as pd
 import time
+from numpy import mean as np_mean
 
 
 class ProgressHelper:
@@ -58,17 +59,22 @@ class DQDataLoadThread(QThread):
     countChanged = pyqtSignal(int)
     progress_helper = None
 
-    def __init__(self, chart_panel, funcs):
+    def __init__(self, chart_panel, funcs, data=None, tmc=None):
         QThread.__init__(self)
         self.chart_panel = chart_panel
         self.funcs = funcs
+        self.data = data
+        self.tmc = tmc
 
     def set_progress_helper(self, progress_helper):
         self.progress_helper = progress_helper
         self.progress_helper.set_emitter(self.countChanged)
 
     def run(self):
-        plot_dfs = compute_data_quality(self.funcs, progress_tracker=self.progress_helper)
+        if self.data is None:
+            plot_dfs = compute_data_quality(self.funcs, progress_tracker=self.progress_helper)
+        else:
+            plot_dfs = compute_data_quality2(self.data, tmc=self.tmc, progress_tracker=self.progress_helper)
         self.chart_panel.plot_dfs_dq = plot_dfs
         self.countChanged.emit(-1)
 
@@ -84,7 +90,6 @@ class Stage2LoadThread(QThread):
 
     def __init__(self, chart_panel, dialog, func_dict):
         QThread.__init__(self)
-        print('here0.25')
         self.dialog = dialog
         self.chart_panel = chart_panel
         self.func_dict = func_dict
@@ -254,15 +259,17 @@ class LoadDataQualityQT(QDialog):
     Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
     """
 
-    def __init__(self, chart_panel, mainwindow, funcs):
+    def __init__(self, chart_panel, mainwindow, funcs, data=None, tmc=None):
         super().__init__(mainwindow)
         self.chart_panel = chart_panel
         self.progress_helper = ProgressHelper()
         self.funcs = funcs
+        self.data = data
+        self.tmc = tmc
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Initializing...')
+        self.setWindowTitle('Analyzing data...')
         self.progress = QProgressBar(self)
         self.progress_helper.set_bar(self.progress)
         self.progress.setGeometry(0, 0, 300, 25)
@@ -270,7 +277,7 @@ class LoadDataQualityQT(QDialog):
         self.progress.setTextVisible(False)
         self.show()
 
-        self.calc = DQDataLoadThread(self.chart_panel, self.funcs)
+        self.calc = DQDataLoadThread(self.chart_panel, self.funcs, data=self.data, tmc=self.tmc)
         self.calc.set_progress_helper(self.progress_helper)
         self.calc.countChanged.connect(self.on_count_changed)
         self.calc.start()
@@ -280,7 +287,7 @@ class LoadDataQualityQT(QDialog):
             self.accept()
             self.chart_panel.plot_data_updated()
         elif value == 1:
-            self.setWindowTitle("Analyzing data...")
+            self.setWindowTitle("Computing statistics...")
             self.progress.setValue(value)
         else:
             self.progress.setValue(value)
@@ -353,8 +360,67 @@ def compute_data_quality(funcs, progress_tracker=None):
     return chart_data
 
 
+def compute_data_quality2(data, tmc=None, progress_tracker=None):
+    # if progress_tracker is not None:
+    #     progress_tracker.bar.setTextVisible(True)
+    #     progress_tracker.bar.setMaximum(8)
+
+    chart_data = []
+    progress = 0
+    if progress_tracker is not None:
+        # print(data)
+        if tmc is not None:
+            agg_data = data[data['tmc_code'].isin(tmc)]
+            agg_data = agg_data.groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])['speed'] / 12
+        else:
+            agg_data = data.groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])['speed'] / 12
+        progress_tracker.bar.setTextVisible(True)
+        progress_tracker.bar.setMaximum(8)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        agg_data = agg_data['count'].groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour']).agg([np_mean])['mean']
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        wkdy_data = agg_data.groupby(['weekday']).agg([np_mean])['mean']
+        # print(wkdy_data)
+        chart_data.append(wkdy_data)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        tod_data = agg_data.groupby(['Hour']).agg([np_mean])['mean']
+        # print(tod_data)
+        chart_data.append(tod_data)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        tmc_data = agg_data.groupby(['tmc_code']).agg([np_mean])['mean']
+        if tmc is not None:
+            tmc_data = tmc_data.reindex(tmc)
+        # print(tmc_data)
+        chart_data.append(tmc_data)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        sp_data = agg_data.groupby(['Year', 'Month', 'weekday']).agg([np_mean])['mean']
+        sp_data = sp_data.reset_index()
+        sp_data.rename({"mean":"data_pct"}, axis='columns', inplace=True)
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        # print(sp_data)
+        chart_data_sub = []
+        chart_data_sub.append(sp_data[sp_data['weekday'].isin([0, 1, 2, 3, 4])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
+        chart_data_sub[0].resize((chart_data_sub[0].shape[0],))
+        # print(chart_data_sub[0])
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data_sub.append(sp_data[sp_data['weekday'].isin([5, 6])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
+        chart_data_sub[1].resize((chart_data_sub[1].shape[0],))
+        # print(chart_data_sub[1])
+        progress += 1
+        progress_tracker.emitter.emit(progress)
+        chart_data.append(chart_data_sub)
+
+    return chart_data
+
+
 def compute_stage2(func_dict, dialog=None, progress_tracker=None):
-    print('here0.5')
     if progress_tracker is not None:
         progress_tracker.bar.setTextVisible(True)
 

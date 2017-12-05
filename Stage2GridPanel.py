@@ -202,35 +202,147 @@ class Stage2GridPanel(QtWidgets.QWidget):
         #                   ]
 
         func_dict = dict()
-        func_dict['Extra Time'] = [lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5, 6])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([1])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([2])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([3])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([4])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5])]),
-                                   lambda: self.f_extra_time(before_df[before_df['weekday'].isin([6])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5, 6])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([1])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([2])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([3])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([4])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5])]),
-                                   lambda: self.f_extra_time(after_df[after_df['weekday'].isin([6])])
+        # func_dict['Extra Time'] = [lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5, 6])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([1])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([2])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([3])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([4])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5])]),
+        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([6])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5, 6])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([1])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([2])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([3])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([4])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5])]),
+        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([6])])
+        #                            ]
+        #
+        # func_dict['Speed Band'] = [lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5, 6])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([1])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([2])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([3])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([4])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5])]),
+        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([6])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5, 6])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([1])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([2])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([3])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([4])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5])]),
+        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([6])])
+        #                            ]
+        #
+        # func_dict['Cumulative Distribution'] = [lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5, 6])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([1])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([2])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([3])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([4])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5])]),
+        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([6])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5, 6])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([1])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([2])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([3])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([4])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5])]),
+        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([6])])
+        #                                         ]
+        #
+        # func_dict['Speed Frequency'] = [lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5, 6])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([1])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([2])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([3])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([4])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5])]),
+        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([6])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5, 6])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([1])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([2])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([3])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([4])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5])]),
+        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([6])])
+        #                                 ]
+
+        # import time
+        # from numpy import mean as np_mean
+        # from stat_func import percentile
+        # time1 = time.time()
+        # et = before_df.groupby(['tmc_code', 'AP', 'weekday'])['travel_time_minutes'].agg([np_mean, percentile(95), percentile(5)])
+        # et['extra_time'] = et['percentile_95'] - et['mean']
+        # time2 = time.time()
+        # print('New Method: ' + str(time2-time1))
+
+        # time3 = time.time()
+        wkdy_data_b = before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]
+        wknd_data_b = before_df[before_df['weekday'].isin([5, 6])]
+        mon_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 0]
+        tue_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 1]
+        wed_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 2]
+        thu_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 3]
+        fri_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 4]
+        sat_data_b = wknd_data_b[wknd_data_b['weekday'] == 5]
+        sun_data_b = wknd_data_b[wknd_data_b['weekday'] == 6]
+
+        wkdy_data_a = after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]
+        wknd_data_a = after_df[after_df['weekday'].isin([5, 6])]
+        mon_data_a = wkdy_data_a[wkdy_data_a['weekday'] == 0]
+        tue_data_a = wkdy_data_a[wkdy_data_a['weekday'] == 1]
+        wed_data_a = wkdy_data_a[wkdy_data_a['weekday'] == 2]
+        thu_data_a = wkdy_data_a[wkdy_data_a['weekday'] == 3]
+        fri_data_a = wkdy_data_a[wkdy_data_a['weekday'] == 4]
+        sat_data_a = wknd_data_a[wknd_data_a['weekday'] == 5]
+        sun_data_a = wknd_data_a[wknd_data_a['weekday'] == 6]
+        # time4 = time.time()
+        # print('Day filter: ' + str(time4 - time3))
+
+        func_dict['Extra Time'] = [lambda: self.f_extra_time(wkdy_data_b),
+                                   lambda: self.f_extra_time(wknd_data_b),
+                                   lambda: self.f_extra_time(mon_data_b),
+                                   lambda: self.f_extra_time(tue_data_b),
+                                   lambda: self.f_extra_time(wed_data_b),
+                                   lambda: self.f_extra_time(thu_data_b),
+                                   lambda: self.f_extra_time(fri_data_b),
+                                   lambda: self.f_extra_time(sat_data_b),
+                                   lambda: self.f_extra_time(sun_data_b),
+                                   lambda: self.f_extra_time(wkdy_data_a),
+                                   lambda: self.f_extra_time(wknd_data_a),
+                                   lambda: self.f_extra_time(mon_data_a),
+                                   lambda: self.f_extra_time(tue_data_a),
+                                   lambda: self.f_extra_time(wed_data_a),
+                                   lambda: self.f_extra_time(thu_data_a),
+                                   lambda: self.f_extra_time(fri_data_a),
+                                   lambda: self.f_extra_time(sat_data_a),
+                                   lambda: self.f_extra_time(sun_data_a),
                                    ]
 
-        func_dict['Speed Band'] = [lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5, 6])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([1])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([2])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([3])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([4])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5])]),
-                                   lambda: self.f_speed_band(before_df[before_df['weekday'].isin([6])]),
+        func_dict['Speed Band'] = [lambda: self.f_speed_band(wkdy_data_b),
+                                   lambda: self.f_speed_band(wknd_data_b),
+                                   lambda: self.f_speed_band(mon_data_b),
+                                   lambda: self.f_speed_band(tue_data_b),
+                                   lambda: self.f_speed_band(wed_data_b),
+                                   lambda: self.f_speed_band(thu_data_b),
+                                   lambda: self.f_speed_band(fri_data_b),
+                                   lambda: self.f_speed_band(sat_data_b),
+                                   lambda: self.f_speed_band(sun_data_b),
                                    lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
                                    lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5, 6])]),
                                    lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0])]),
@@ -242,44 +354,44 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                    lambda: self.f_speed_band(after_df[after_df['weekday'].isin([6])])
                                    ]
 
-        func_dict['Cumulative Distribution'] = [lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5, 6])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([1])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([2])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([3])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([4])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5])]),
-                                                lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([6])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5, 6])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([1])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([2])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([3])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([4])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5])]),
-                                                lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([6])])
+        func_dict['Cumulative Distribution'] = [lambda: self.f_tt_cdf(wkdy_data_b),
+                                                lambda: self.f_tt_cdf(wknd_data_b),
+                                                lambda: self.f_tt_cdf(mon_data_b),
+                                                lambda: self.f_tt_cdf(tue_data_b),
+                                                lambda: self.f_tt_cdf(wed_data_b),
+                                                lambda: self.f_tt_cdf(thu_data_b),
+                                                lambda: self.f_tt_cdf(fri_data_b),
+                                                lambda: self.f_tt_cdf(sat_data_b),
+                                                lambda: self.f_tt_cdf(sun_data_b),
+                                                lambda: self.f_tt_cdf(wkdy_data_a),
+                                                lambda: self.f_tt_cdf(wknd_data_a),
+                                                lambda: self.f_tt_cdf(mon_data_a),
+                                                lambda: self.f_tt_cdf(tue_data_a),
+                                                lambda: self.f_tt_cdf(wed_data_a),
+                                                lambda: self.f_tt_cdf(thu_data_a),
+                                                lambda: self.f_tt_cdf(fri_data_a),
+                                                lambda: self.f_tt_cdf(sat_data_a),
+                                                lambda: self.f_tt_cdf(sun_data_a),
                                                 ]
 
-        func_dict['Speed Frequency'] = [lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5, 6])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([1])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([2])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([3])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([4])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5])]),
-                                        lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([6])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5, 6])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([1])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([2])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([3])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([4])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5])]),
-                                        lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([6])])
+        func_dict['Speed Frequency'] = [lambda: self.f_speed_freq(wkdy_data_b),
+                                        lambda: self.f_speed_freq(wknd_data_b),
+                                        lambda: self.f_speed_freq(mon_data_b),
+                                        lambda: self.f_speed_freq(tue_data_b),
+                                        lambda: self.f_speed_freq(wed_data_b),
+                                        lambda: self.f_speed_freq(thu_data_b),
+                                        lambda: self.f_speed_freq(fri_data_b),
+                                        lambda: self.f_speed_freq(sat_data_b),
+                                        lambda: self.f_speed_freq(sun_data_b),
+                                        lambda: self.f_speed_freq(wkdy_data_a),
+                                        lambda: self.f_speed_freq(wknd_data_a),
+                                        lambda: self.f_speed_freq(mon_data_a),
+                                        lambda: self.f_speed_freq(tue_data_a),
+                                        lambda: self.f_speed_freq(wed_data_a),
+                                        lambda: self.f_speed_freq(thu_data_a),
+                                        lambda: self.f_speed_freq(fri_data_a),
+                                        lambda: self.f_speed_freq(sat_data_a),
+                                        lambda: self.f_speed_freq(sun_data_a),
                                         ]
         LoadStage2QT(self, self.project.main_window, func_dict)
 

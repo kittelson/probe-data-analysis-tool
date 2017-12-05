@@ -11,6 +11,7 @@ from PyQt5.QtGui import QCursor
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
+from matplotlib import animation
 import calendar
 from datetime import datetime, timedelta
 from math import floor
@@ -20,6 +21,7 @@ from numpy import append as np_append
 from numpy import pi as np_pi
 from numpy import linspace as np_linspace
 from math import ceil
+from PyQt5.QtCore import QThread
 
 FIG_TYPE_TT_TREND_LINE = 0
 FIG_TYPE_TT_TREND_BAR = 1
@@ -53,6 +55,7 @@ class MplChart(FigureCanvas):
         self.fig_type = fig_type
 
         FigureCanvas.__init__(self, self.fig)
+
         self.setParent(parent)
         self.setFocusPolicy(QtCore.Qt.ClickFocus)
         self.setFocus()
@@ -72,6 +75,13 @@ class MplChart(FigureCanvas):
         self.show_am = True
         self.show_pm = True
         self.show_mid = False
+
+        self.frames = 9
+        self.wkdy_bars = None
+        self.tmc_bars = None
+        self.tod_bars = None
+        self.sp_bars1 = None
+        self.sp_bars2 = None
 
         self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
                                             bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
@@ -131,6 +141,25 @@ class MplChart(FigureCanvas):
             figPan = self.zp.pan_factory(self.axes, self)
         self.set_x_bounds(self.axes.get_xlim()[0], self.axes.get_xlim()[1], make_default=True)
         self.set_y_bounds(self.axes.get_ylim()[0], self.axes.get_ylim()[1], make_default=True)
+
+    def manual_ani_tod(self, event):
+        anim = animation.FuncAnimation(self.fig, self.animate_tod, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        # anim.save('test_anim_file.html')
+        self.draw_idle()
+
+    def manual_ani_wkdy(self, event):
+        anim = animation.FuncAnimation(self.fig, self.animate_wkdy, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        self.draw()
+        # self.draw_idle()
+    def manual_ani_tmc(self, event):
+        anim = animation.FuncAnimation(self.fig, self.animate_tmc, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        self.draw()
+        # self.draw_idle()
+
+    def manual_ani_sp(self, event):
+        anim = animation.FuncAnimation(self.fig, self.animate_sp, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        self.draw()
+        # self.draw_idle()
 
     def toggle_legend(self):
         if self.axes.legend_ is not None:
@@ -195,18 +224,138 @@ class MplChart(FigureCanvas):
             self.compute_speed_freq()
         elif self.fig_type == FIG_DQ_WKDY:
             self.compute_dq_wkdy()
+            # self.fig.canvas.mpl_connect('key_press_event', self.manual_ani_wkdy)
         elif self.fig_type == FIG_DQ_TOD:
             self.compute_dq_tod()
+            # self.fig.canvas.mpl_connect('key_press_event', self.manual_ani_tod)
         elif self.fig_type == FIG_DQ_TMC:
             self.compute_dq_tmc()
+            # self.fig.canvas.mpl_connect('key_press_event', self.manual_ani_tmc)
         elif self.fig_type == FIG_DQ_SP:
             self.compute_dq_sp()
+            # self.fig.canvas.mpl_connect('key_press_event', self.manual_ani_sp)
+
+    def fire_animation(self):
+        print('animation fired')
+        # self.axes.cla()
+        # self.axes.grid(animated=True)
+        if self.fig_type == FIG_DQ_WKDY:
+            # self.compute_dq_wkdy()
+            self.manual_ani_wkdy(None)
+        elif self.fig_type == FIG_DQ_TOD:
+            # self.compute_dq_tod()
+            self.manual_ani_tod(None)
+        elif self.fig_type == FIG_DQ_TMC:
+            # self.compute_dq_tmc(None)
+            self.manual_ani_tmc(None)
+        elif self.fig_type == FIG_DQ_SP:
+            # self.compute_dq_sp()
+            self.manual_ani_sp(None)
+        # pass
+
+    def animate_tod(self, i):
+        # if i < self.frames:
+        print(str(self.fig_type) + ' - ' + str(i))
+        rs = [r for r in self.tod_bars]
+        heights = [h * i / self.frames for h in self.panel.plot_dfs_dq[1].values]
+        for h, r in zip(heights, rs):
+            r.set_height(h)
+        return rs
+        # else:
+        #     self.update_figure()
+        #     return []
+
+    def animate_wkdy(self, i):
+        # if i < self.frames:
+        print(str(self.fig_type) + ' - ' + str(i))
+        rs = [r for r in self.wkdy_bars]
+        # heights = [h + s / 25 for h, s in zip(heights, speeds)]
+        heights = self.panel.plot_dfs_dq[0].values.reshape(self.panel.plot_dfs_dq[0].shape[0], )
+        heights = [h * i / self.frames for h in heights]
+        for h, r in zip(heights, rs):
+            r.set_height(h)
+        return rs
+        # else:
+        #     self.update_figure()
+        #     return []
+
+    def animate_tmc(self, i):
+        # if i < self.frames:
+        print(str(self.fig_type) + ' - ' + str(i))
+        rs = [r for r in self.tmc_bars]
+        # heights = [h + s / 25 for h, s in zip(heights, speeds)]
+        heights = [h* i / self.frames for h in self.panel.plot_dfs_dq[2].values]
+        for h, r in zip(heights, rs):
+            r.set_height(h)
+        return rs
+        # else:
+        #     self.update_figure()
+        #     return []
+
+    def animate_sp(self, i):
+        if i < self.frames:
+            print(str(self.fig_type) + ' - ' + str(i))
+            rs1 = [r for r in self.sp_bars1]
+            rs2 = [r for r in self.sp_bars2]
+            # heights = [h + s / 25 for h, s in zip(heights, speeds)]
+            heights1 = [h * i / self.frames for h in self.panel.plot_dfs_dq[3][0]]
+            heights2 = [h * i / self.frames for h in self.panel.plot_dfs_dq[3][1]]
+            for h, r in zip(heights1, rs1):
+                r.set_height(h)
+            for h, r in zip(heights2, rs2):
+                r.set_height(h)
+            return rs1 + rs2
+        else:
+            self.panel.update_figures()
+            return []
 
     def update_figure(self):
+        # print('updated')
         self.axes.cla()
         self.compute_initial_figure()
 
     def compute_trend_line(self):
+        if self.show_am:
+            tt_am_mean_dir1 = self.panel.plot_dfs[0]['speed']['mean']
+            tt_am_pct5_dir1 = self.panel.plot_dfs[0]['speed']['percentile_5']
+            tt_am_pct95_dir1 = self.panel.plot_dfs[0]['speed']['percentile_95']
+            x = [el for el in range(len(tt_am_mean_dir1))]
+            self.axes.plot(x, tt_am_mean_dir1, color='C0', linestyle='-', lw=2.0, label='AM-Mean')
+            self.axes.plot(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
+            self.axes.plot(x, tt_am_pct95_dir1, color='C0', linestyle='--', lw=1.0, label='AM-95th Pct')
+        if self.show_pm:
+            tt_pm_mean_dir1 = self.panel.plot_dfs[0]['speedpm']['mean']
+            tt_pm_pct5_dir1 = self.panel.plot_dfs[0]['speedpm']['percentile_5']
+            tt_pm_pct95_dir1 = self.panel.plot_dfs[0]['speedpm']['percentile_95']
+            x = [el for el in range(len(tt_pm_mean_dir1))]
+            self.axes.plot(x, tt_pm_mean_dir1, color='C1', linestyle='-', lw=2.0, label='PM-Mean')
+            self.axes.plot(x, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
+            self.axes.plot(x, tt_pm_pct95_dir1, color='C1', linestyle='--', lw=1.0, label='PM-95th Pct')
+        if self.show_mid:
+            tt_md_mean_dir1 = self.panel.plot_dfs[0]['speedmid']['mean']
+            tt_md_pct5_dir1 = self.panel.plot_dfs[0]['speedmid']['percentile_5']
+            tt_md_pct95_dir1 = self.panel.plot_dfs[0]['speedmid']['percentile_95']
+            x = [el for el in range(len(tt_md_mean_dir1))]
+            self.axes.plot(x, tt_md_mean_dir1, color='C2', linestyle='-', lw=2.0, label='Mid-Mean')
+            self.axes.plot(x, tt_md_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-5th Pct')
+            self.axes.plot(x, tt_md_pct95_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-95th Pct')
+
+        self.axes.set_title(self.panel.peak_period_str + 'Speed Trends by Month'
+                            + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        self.axes.set_ylabel('Speed (mph)')
+        self.axes.legend()
+        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
+        self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
+        self.hover_ann.set_visible(False)
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_datetime(event, self.f_x_to_month, label='mph'))
+        self.fig.tight_layout()
+
+    def compute_trend_line_deprecated(self):
         if self.show_am:
             tt_am_mean_dir1 = self.panel.plot_dfs[0]['mean']
             tt_am_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5']
@@ -232,11 +381,14 @@ class MplChart(FigureCanvas):
             self.axes.plot(x, tt_md_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-5th Pct')
             self.axes.plot(x, tt_md_pct95_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-95th Pct')
 
-        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
+        # self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
+        #                     + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.set_title(self.panel.peak_period_str + 'Speed Trends by Month'
                             + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
-        self.axes.set_ylabel('Travel Time (Minutes)')
+        # self.axes.set_ylabel('Travel Time (Minutes)')
+        self.axes.set_ylabel('Speed (mph)')
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
@@ -248,6 +400,53 @@ class MplChart(FigureCanvas):
         self.fig.tight_layout()
 
     def compute_trend_bar(self):
+        width = 0.35
+        if self.show_am:
+            tt_am_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutes']['mean']
+            tt_am_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutes']['percentile_95']
+            x = [el for el in range(len(tt_am_mean_dir1))]
+            self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
+            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
+                    label='AM-95th Pct')
+        if self.show_pm:
+            tt_pm_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutespm']['mean']
+            tt_pm_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutespm']['percentile_95']
+            x = [el for el in range(len(tt_pm_mean_dir1))]
+            offset = 0
+            if self.show_am:
+                offset += width
+            self.axes.bar([el + offset for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
+            self.axes.bar([el + offset for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
+                    bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+        if self.show_mid:
+            tt_md_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutesmid']['mean']
+            tt_md_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutesmid']['percentile_95']
+            x = [el for el in range(len(tt_md_mean_dir1))]
+            offset = 0
+            if self.show_am:
+                offset += width
+            if self.show_pm:
+                offset += width
+            self.axes.bar([el + offset for el in x], tt_md_mean_dir1, width, color='C2', label='Mid-Mean')
+            self.axes.bar([el + offset for el in x], [tt_md_pct95_dir1[i] - tt_md_mean_dir1[i] for i in range(len(tt_md_mean_dir1))], width,
+                    bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
+
+        self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
+                            + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
+        self.axes.spines['top'].set_visible(False)
+        self.axes.spines['right'].set_visible(False)
+        self.axes.set_ylabel('Travel Time (Minutes)')
+        if not self.panel.plot_dfs[0].empty:
+            self.axes.legend()
+        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
+        self.hover_ann.set_visible(False)
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_datetime(event, self.f_x_to_month))
+        self.fig.tight_layout()
+
+    def compute_trend_bar_deprecated(self):
         width = 0.35
         if self.show_am:
             tt_am_mean_dir1 = self.panel.plot_dfs[0]['mean']
@@ -663,12 +862,12 @@ class MplChart(FigureCanvas):
         self.axes.plot([el for el in range(len(y_values))], [0.8 for el in range(len(y_values))], label='80%', c='green', ls=':')
         self.axes.plot([el for el in range(len(y_values))], [0.5 for el in range(len(y_values))], label='50%', c='firebrick', ls=':')
         self.axes.legend()
-        bars1 = self.axes.bar([el for el in range(data.shape[0])], y_values)
+        self.wkdy_bars = self.axes.bar([el for el in range(data.shape[0])], y_values)
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         # Use custom colors and opacity
         dq_cm = create_dq_cmap()
-        for r, bar in zip(y_values, bars1):
+        for r, bar in zip(y_values, self.wkdy_bars):
             # bar.set_facecolor(plt.cm.RdYlGn(r / 10.))
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
@@ -688,10 +887,10 @@ class MplChart(FigureCanvas):
         self.axes.set_yticklabels(['50%', '80%'])
         self.axes.set_title('Data Quality by Time of Day')
         self.axes.set_ylim(0, 1)
-        bars2 = self.axes.bar(theta, radii, width=width, bottom=bottom)
+        self.tod_bars = self.axes.bar(theta, radii, width=width, bottom=bottom)
         # Use custom colors and opacity
         dq_cm = create_dq_cmap()
-        for r, bar in zip(radii, bars2):
+        for r, bar in zip(radii, self.tod_bars):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
@@ -705,14 +904,14 @@ class MplChart(FigureCanvas):
         self.axes.plot([el for el in range(num_tmc)], [0.8 for el in range(num_tmc)], label='80%', c='green', ls=':')
         self.axes.plot([el for el in range(num_tmc)], [0.5 for el in range(num_tmc)], label='50%', c='firebrick', ls=':')
         self.axes.legend()
-        bars3 = self.axes.bar([el for el in range(num_tmc)], data.values)
+        self.tmc_bars = self.axes.bar([el for el in range(num_tmc)], data.values)
         self.axes.set_xticks([el for el in range(num_tmc)])
         self.axes.set_xticklabels(data.index.tolist(), rotation='vertical')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         # Use custom colors and opacity
         dq_cm = create_dq_cmap()
-        for r, bar in zip(data.values, bars3):
+        for r, bar in zip(data.values, self.tmc_bars):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
@@ -740,16 +939,16 @@ class MplChart(FigureCanvas):
         self.axes.plot([el for el in range(len(y_wd))], [0.5 for el in range(len(y_wd))], label='50%', c='firebrick', ls=':')
         self.axes.legend()
         width = 0.35
-        bars_wd = self.axes.bar([el for el in range(len(y_wd))], y_wd, width, label='Weekdays')
-        bars_we = self.axes.bar([el + width for el in range(len(y_we))], y_we, width, label='Weekends')
+        self.sp_bars1 = self.axes.bar([el for el in range(len(y_wd))], y_wd, width, label='Weekdays')
+        self.sp_bars2 = self.axes.bar([el + width for el in range(len(y_we))], y_we, width, label='Weekends')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         # Use custom colors and opacity
         dq_cm = create_dq_cmap()
-        for r, bar in zip(y_wd, bars_wd):
+        for r, bar in zip(y_wd, self.sp_bars1):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
-        for r, bar in zip(y_we, bars_we):
+        for r, bar in zip(y_we, self.sp_bars2):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
@@ -769,7 +968,7 @@ class MplChart(FigureCanvas):
             self.hover_ann.set_visible(False)
             event.canvas.draw()
 
-    def hover_datetime(self, event, convert_func):
+    def hover_datetime(self, event, convert_func, label='minutes'):
         if event.xdata is not None and event.ydata is not None:
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
             # self.hover_ann.set_x(event.xdata)
@@ -777,7 +976,9 @@ class MplChart(FigureCanvas):
             self.hover_ann.set_position((event.xdata, event.ydata))
             # '{:1.1f} mi'.format(mile_post)
             # print('{:1.2f} minutes'.format(event.ydata) + '\n' + convert_func(event.xdata, None))
-            self.hover_ann.set_text('{:1.2f} minutes'.format(event.ydata) + '\n' + convert_func(event.xdata, None))
+            temp_str = '{:1.2f} ' + label
+            # self.hover_ann.set_text('{:1.2f} minutes'.format(event.ydata) + '\n' + convert_func(event.xdata, None))
+            self.hover_ann.set_text(temp_str.format(event.ydata) + '\n' + convert_func(event.xdata, None))
             self.hover_ann.set_visible(True)
             event.canvas.draw()
         else:

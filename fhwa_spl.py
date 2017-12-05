@@ -50,6 +50,7 @@ class MainWindow(QMainWindow):
 
         self.project = None
 
+        self.dq_chart_panel = None
         self.chart_panel_spatial = None
         self.chart_panel1 = None
         self.chart_panel2 = None
@@ -279,17 +280,25 @@ class MainWindow(QMainWindow):
         proj_item.setText(0, project.get_name())
         # proj_item.setFlags(proj_item.flags() | Qt.ItemIsTristate | Qt.ItemIsUserCheckable)
         directions = project.database.get_directions()
+        all_tmc = project.get_tmc(full_list=True)
         for dir in directions:
+            tmc_curr_dir = all_tmc[all_tmc['direction'] == dir]
             child = QTreeWidgetItem(proj_item)
             child.setText(0, dir)
-            child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
-            child.setCheckState(0, Qt.Unchecked)
-            self.ui.pushButton_first_chart.setDisabled(False)
-            self.ui.pushButton_sec_chart.setDisabled(False)
-            self.chart1_load_action.setDisabled(False)
+            # child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
+            # child.setCheckState(0, Qt.Unchecked)
+            for sub_tmc in tmc_curr_dir['tmc']:
+                sub_child = QTreeWidgetItem(child)
+                sub_child.setText(0, sub_tmc)
+
+        self.ui.pushButton_first_chart.setEnabled(True)
+        self.ui.pushButton_sec_chart.setEnabled(True)
+        self.chart1_load_action.setEnabled(True)
         proj_item.setExpanded(True)
-        proj_item.child(0).setCheckState(0, Qt.Checked)
-        self.ui.treeWidget_3.itemChanged.connect(self.setup_tmc_list)
+        # proj_item.child(0).setCheckState(0, Qt.Checked)  # Uncomment to make checkable
+        # self.ui.treeWidget_3.itemChanged.connect(self.setup_tmc_list)  # Uncomment to enable check listening via "itemChanged"
+        self.ui.treeWidget_3.itemSelectionChanged.connect(self.update_dq_chart)
+
 
         # Updating Data Types
         self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
@@ -375,8 +384,8 @@ class MainWindow(QMainWindow):
         #                           'show charts giving a glimpse at the availability of data in the dataset.'))
         reply = QMessageBox.question(self, 'Project Data', "Load project data density charts?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
-            dq_chart_panel = DataQualityGridPanel(self.project)
-            new_tab_index = self.ui.tabWidget.addTab(dq_chart_panel, chart_panel_name)
+            self.dq_chart_panel = DataQualityGridPanel(self.project)
+            new_tab_index = self.ui.tabWidget.addTab(self.dq_chart_panel, chart_panel_name)
             self.ui.tabWidget.setCurrentIndex(new_tab_index)
 
     def load_mpl_charts(self, chart_panel_name):
@@ -427,6 +436,39 @@ class MainWindow(QMainWindow):
     def update_chart_panel1(self):
         if self.chart_panel1 is not None:
             self.chart_panel1.options_updated()
+
+    def update_dq_chart(self):
+        all_direction_list = self.project.database.get_directions()
+        get_selected = self.ui.treeWidget_3.selectedItems()
+        if get_selected:
+            is_facility = False
+            is_project = False
+            base_node = get_selected[0]
+            get_child_node = base_node.text(0)
+            if get_child_node in all_direction_list:
+                is_facility = True
+            elif get_child_node == self.project.get_name():
+                is_project = True
+            if is_project:
+                self.dq_chart_panel.update_all(tmc_id=self.project.get_tmc(as_list=True, full_list=True))
+                print('project selected')
+                pass
+            else:
+                if self.dq_chart_panel is not None:
+                    if is_facility:
+                        print(get_child_node + ' selected')
+                        # self.dq_chart_panel.update_plot_data(tmc_id=None)
+                        self.dq_chart_panel.update_all(tmc_id=self.project.get_tmc(as_list=True))
+                        pass
+                    else:
+                        print(get_child_node + ' selected')
+                        # self.dq_chart_panel.update_plot_data(tmc_id=get_child_node)
+                        self.dq_chart_panel.update_all(tmc_id=[get_child_node])
+                        pass
+        else:
+            # do nothing as no node is selected
+            pass
+
 
     def setup_tmc_list(self, is_init=False):
         subset_tmc = self.project.get_tmc()
@@ -523,11 +565,27 @@ class Project:
         return self._date_ranges[index]
 
     def get_selected_directions(self):
+        # direction_list = []
+        # root = self.main_window.ui.treeWidget_3.invisibleRootItem()
+        # for ti in range(root.child(0).childCount()):
+        #     if root.child(0).child(ti).checkState(0):
+        #         direction_list.append(root.child(0).child(ti).text(0))
+
+        all_direction_list = self.database.get_directions()
         direction_list = []
-        root = self.main_window.ui.treeWidget_3.invisibleRootItem()
-        for ti in range(root.child(0).childCount()):
-            if root.child(0).child(ti).checkState(0):
-                direction_list.append(root.child(0).child(ti).text(0))
+        get_selected = self.main_window.ui.treeWidget_3.selectedItems()
+        if get_selected:
+            base_node = get_selected[0]
+            get_child_node = base_node.text(0)
+            if get_child_node in all_direction_list:
+                direction_list.append(get_child_node)
+            elif get_child_node == self._project_name:
+                direction_list.append(all_direction_list[0])
+            else:
+                direction_list.append(base_node.parent().text(0))
+        else:
+            direction_list.append(all_direction_list[0])
+
         return direction_list
 
     def get_tmc(self, full_list=False, as_list=False):

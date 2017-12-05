@@ -9,7 +9,7 @@ Interacts the with ChartOptions object of the project that is created/edited by 
 """
 from PyQt5 import QtWidgets
 from stat_func import create_pct_congested_sp, create_pct_congested_tmc, create_speed_heatmap, create_speed_tmc_heatmap
-from stat_func import create_timetime_analysis, create_tt_trend_analysis, convert_time_to_ap
+from stat_func import create_timetime_analysis, create_tt_trend_analysis, convert_time_to_ap, create_speed_trend_analysis, create_trend_analysis
 from chart_defaults import ChartOptions
 from mpl_charts import MplChart, FIG_TYPE_SPD_HEAT_MAP_FACILITY
 from datetime import datetime, timedelta
@@ -287,7 +287,7 @@ class ChartGridPanel(QtWidgets.QWidget):
         #                  create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
         #                  create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
 
-        func_list = [lambda: create_tt_trend_analysis(tmc_df),  # create_timetime_analysis(filtered_df),
+        func_list = [lambda: create_trend_analysis(tmc_df),  # create_speed_trend_analysis(tmc_df),  # lambda: create_tt_trend_analysis(tmc_df),
                      lambda: create_pct_congested_sp(filtered_df, self.speed_bins),
                      lambda: create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
                      lambda: create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
