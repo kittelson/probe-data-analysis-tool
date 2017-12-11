@@ -281,7 +281,7 @@ def create_speed_trend_analysis(data, tmc_id=None):
     return plot_df_dir1
 
 
-def create_trend_analysis(data, tmc_id=None):
+def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_id=None):
     """
     Function to create a travel time trend over time analysis.
     :param data: Pandas dataframe of travel time data
@@ -290,9 +290,15 @@ def create_trend_analysis(data, tmc_id=None):
     """
     if data is None:
         return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
+    # am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
+    # pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
+    # md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
+    am_ap_start = am_ap[0]
+    am_ap_end = am_ap[1]
+    pm_ap_start = pm_ap[0]
+    pm_ap_end = pm_ap[1]
+    md_ap_start = mid_ap[0]
+    md_ap_end = mid_ap[1]
     if tmc_id is not None:
         tmc_data = data[data['tmc_code'].isin(tmc_id)]
     else:
@@ -346,12 +352,14 @@ def create_tt_compare(data_before, data_after):
     return deltas
 
 
-def create_pct_congested_sp(data, speed_bins, dates=[]):
+def create_pct_congested_sp(data, speed_bins, dates=None, aps=None):
 
     bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
     # Potential data filtering her
-    if len(dates) == 2:
+    if dates is not None and len(dates) == 2:
         data = data[(data['Date'] >= dates[0]) & (data['Date'] <= dates[1])]
+    if aps is not None and len(aps) == 2:
+        data = data[(data['AP'] >= aps[0]) & (data['AP'] < aps[1])]
     # Aggregating data
     # data[bin_list[0]] = data['speed'] <= speed_bins[0]
     data[bin_list[0]] = (data['speed'] >= speed_bins[0]) & (data['speed'] <= speed_bins[1])

@@ -16,15 +16,19 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.f_tt_cdf = create_speed_cdf
         self.f_speed_freq = create_speed_freq
 
-        self.chart11 = None
-        self.chart21 = None
-        self.chart12 = None
-        self.chart22 = None
+        self.chart_et = None
+        self.chart_sb_before = None
+        self.chart_sb_after = None
+        self.chart_speed_freq = None
+        self.chart_cdf = None
+
         self.panel_col1 = QtWidgets.QWidget(self)
         self.panel_col2 = QtWidgets.QWidget(self)
         self.chart_panel = QtWidgets.QWidget(self)
         self.v_layout = QtWidgets.QVBoxLayout(self)
         self.grid_layout = QtWidgets.QGridLayout(self.chart_panel)
+
+        self.panel2 = None
 
         self.init_mode = True
         self.no_compute = True
@@ -61,7 +65,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.chart_options.chart_type[0][0] = FIG_TYPE_EXTRA_TIME
         self.chart_options.chart_type[0][1] = FIG_TYPE_TT_CDF
         self.chart_options.chart_type[1][0] = FIG_TYPE_SPD_BAND
-        self.chart_options.chart_type[1][1] = FIG_TYPE_SPD_FREQ
+        self.chart_options.chart_type[1][1] = FIG_TYPE_SPD_BAND  # FIG_TYPE_SPD_FREQ
 
         # Filter Components
         self.cb_tmc_select = QtWidgets.QComboBox()
@@ -116,6 +120,13 @@ class Stage2GridPanel(QtWidgets.QWidget):
         # self.update_chart_visibility()
         # self.init_mode = False
         # self.no_compute = False
+
+    def create_second_panel(self):
+        self.panel2 = QtWidgets.QWidget()
+        v_layout = QtWidgets.QVBoxLayout(self.panel2)
+        v_layout.addWidget(self.chart_cdf)
+        v_layout.addWidget(self.chart_speed_freq)
+        self.project.main_window.ui.tabWidget.addTab(self.panel2, '2 - Speed CDF/Frequency')
 
     def update_plot_data(self, **kwargs):
         # self.plot_dfs = [self.f_extra_time(df[df['weekday'].isin(self.plot_days)]) for df in self.dfs]
@@ -401,58 +412,59 @@ class Stage2GridPanel(QtWidgets.QWidget):
             self.add_charts_to_layouts()
             self.v_layout.addWidget(self.chart_panel)
             self.v_layout.addWidget(self.check_bar_day)
-            self.update_chart_visibility()
+            # self.update_chart_visibility()
+            self.create_second_panel()
             self.init_mode = False
             self.no_compute = False
 
     def create_charts(self):
-        self.chart11 = MplChart(self, fig_type=self.chart_options.chart_type[0][0], panel=self, region=0, region2=1)
-        self.chart21 = MplChart(self, fig_type=self.chart_options.chart_type[1][0], panel=self, region=0, region2=-1)
-        self.chart12 = MplChart(self, fig_type=self.chart_options.chart_type[0][1], panel=self, region=0, region2=1)
-        self.chart22 = MplChart(self, fig_type=self.chart_options.chart_type[1][1], panel=self, region=0, region2=1)
+        self.chart_et = MplChart(self, fig_type=FIG_TYPE_EXTRA_TIME, panel=self, region=0, region2=1)
+        self.chart_sb_before = MplChart(self, fig_type=FIG_TYPE_SPD_BAND, panel=self, region=1, region2=-1)
+        self.chart_sb_after = MplChart(self, fig_type=FIG_TYPE_SPD_BAND, panel=self, region=0, region2=-1)
+
+        self.chart_speed_freq = MplChart(self, fig_type=FIG_TYPE_SPD_FREQ, panel=self, region=0, region2=1)
+        self.chart_cdf = MplChart(self, fig_type=FIG_TYPE_TT_CDF, panel=self, region=0, region2=1)
+
 
     def update_figures(self):
-        if self.chart11 is not None:
-            self.chart11.update_figure()
-            self.chart11.draw()
-        if self.chart21 is not None:
-            self.chart21.update_figure()
-            self.chart21.draw()
-        if self.chart12 is not None:
-            self.chart12.update_figure()
-            self.chart12.draw()
-        if self.chart22 is not None:
-            self.chart22.update_figure()
-            self.chart22.draw()
+        if self.chart_et is not None:
+            self.chart_et.update_figure()
+            self.chart_et.draw()
+        if self.chart_sb_before is not None:
+            self.chart_sb_before.update_figure()
+            self.chart_sb_before.draw()
+        if self.chart_sb_after is not None:
+            self.chart_sb_after.update_figure()
+            self.chart_sb_after.draw()
+        if self.chart_speed_freq is not None:
+            self.chart_speed_freq.update_figure()
+            self.chart_speed_freq.draw()
+        if self.chart_cdf is not None:
+            self.chart_cdf.update_figure()
+            self.chart_cdf.draw()
 
-    def update_chart_visibility(self):
-        self.chart11.setVisible(True)
-        self.chart12.setVisible(self.chart_options.num_cols > 1)
-        self.chart21.setVisible(self.chart_options.num_rows > 1)
-        self.chart22.setVisible(self.chart_options.num_rows > 1 and self.chart_options.num_cols > 1)
+    # def update_chart_visibility(self):
+    #     self.chart_et.setVisible(True)
+    #     self.chart_speed_freq.setVisible(True)
+    #     # self.chart12.setVisible(self.chart_options.num_cols > 1)
+    #     self.chart_sb_before.setVisible(self.chart_options.num_rows > 1)
+    #     self.chart_sb_after.setVisible(self.chart_options.num_rows > 1 and self.chart_options.num_cols > 1)
 
     def add_charts_to_layouts(self):
         # Chart 1
-        self.grid_layout.addWidget(self.chart11, 0, 0)
+        self.grid_layout.addWidget(self.chart_et, 0, 0, 1, 2)
         # Chart 2
-        self.grid_layout.addWidget(self.chart12, 0, 1)
+        # self.grid_layout.addWidget(self.chart12, 0, 1)
         # Chart 3
-        self.grid_layout.addWidget(self.chart21, 1, 0)
+        self.grid_layout.addWidget(self.chart_sb_before, 1, 0)
         # Chart 4
-        self.grid_layout.addWidget(self.chart22, 1, 1)
+        self.grid_layout.addWidget(self.chart_sb_after, 1, 1)
 
     def options_updated(self):
         self.chart_options = self.project.chart_panel1_opts
         # self.update_plot_data()
-        self.update_chart_types()
         self.update_figures()
-        self.update_chart_visibility()
-
-    def update_chart_types(self):
-        self.chart11.set_fig_type(self.chart_options.chart_type[0][0])
-        self.chart12.set_fig_type(self.chart_options.chart_type[0][1])
-        self.chart21.set_fig_type(self.chart_options.chart_type[1][0])
-        self.chart22.set_fig_type(self.chart_options.chart_type[1][1])
+        # self.update_chart_visibility()
 
     def connect_radio_buttons(self):
         self.check_wkdy.setChecked(True)

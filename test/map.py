@@ -3,7 +3,7 @@ import sys
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
-from PyQt5.QtWebKitWidgets import *
+from PyQt5.QtWebEngineWidgets import *
 
 
 class MainWindow(QMainWindow):
@@ -23,8 +23,8 @@ class FormWidget(QWidget):
         self.__layout()
 
     def __controls(self):
-        self.browser = QWebView()
-        self.browser.load(QUrl('file:///C:/Users/ltrask/PycharmProjects/NPMRDS_Data_Tool/test/map3.html'))
+        self.browser = QWebEngineView()
+        self.browser.load(QUrl('file:///C:/Users/ltrask/PycharmProjects/NPMRDS_Data_Tool/test/map2.html'))
 
     def __layout(self):
         self.vbox = QVBoxLayout()

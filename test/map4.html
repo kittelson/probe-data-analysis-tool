@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<head>    
+    <meta http-equiv="content-type" content="text/html; charset=UTF-8" />
+    <script>L_PREFER_CANVAS = false; L_NO_TOUCH = false; L_DISABLE_3D = false;</script>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet@1.2.0/dist/leaflet.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.1/jquery.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.2.0/dist/leaflet.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.2.0/css/bootstrap-theme.min.css" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.3/css/font-awesome.min.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Leaflet.awesome-markers/2.0.2/leaflet.awesome-markers.css" />
+    <link rel="stylesheet" href="https://rawgit.com/python-visualization/folium/master/folium/templates/leaflet.awesome.rotate.css" />
+    <style>html, body {width: 100%;height: 100%;margin: 0;padding: 0;}</style>
+    <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
+    
+    <style> #map_facility {
+        position : relative;
+        width : 100.0%;
+        height: 100.0%;
+        left: 0.0%;
+        top: 0.0%;
+        }
+    </style>
+        
+</head>
+<body>
+    <div class="folium-map" id="map_facility" ></div>
+</body>
+<script>    
+    var bounds = null;
+
+    var map_facility = L.map(
+                          'map_facility',
+                          {center: [33.96012,-77.93851],
+                          zoom: 10,
+                          maxBounds: bounds,
+                          layers: [],
+                          worldCopyJump: false,
+                          crs: L.CRS.EPSG3857
+                         });
+
+
+    var tile_layer_facility = L.tileLayer(
+        'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+        {
+          "attribution": null,
+          "detectRetina": false,
+          "maxZoom": 18,
+          "minZoom": 1,
+          "noWrap": false,
+          "subdomains": "abc"
+        }
+    ).addTo(map_facility);
+
+    var marker_1 = L.marker(
+                [33.96012,-77.93851],
+                {
+                    icon: new L.Icon.Default()
+                }
+    ).addTo(map_facility);
+
+    var popup_1 = L.popup({maxWidth: '300'});
+
+     var html_1 = $('<div id="html_1" style="width: 100.0%; height: 100.0%;">Test</div>')[0];
+     popup_1.setContent(html_1);
+     marker_1.bindPopup(popup_1);
+
+     var marker_2 = L.marker(
+                [33.96094,-77.93511],
+                {
+                    icon: new L.Icon.Default()
+                }
+    ).addTo(map_facility);
+
+    var popup_2 = L.popup({maxWidth: '300'});
+
+     var html_2 = $('<div id="html_2" style="width: 100.0%; height: 100.0%;">Test</div>')[0];
+     popup_2.setContent(html_2);
+     marker_2.bindPopup(popup_2);
+
+     var poly_line_1 = L.polyline(
+                    [[33.96012,-77.93851], [33.96094,-77.93511]],
+                    {
+                      "bubblingMouseEvents": true,
+                      "color": "black",
+                      "dashArray": null,
+                      "dashOffset": null,
+                      "fill": false,
+                      "fillColor": "black",
+                      "fillOpacity": 0.2,
+                      "fillRule": "evenodd",
+                      "lineCap": "round",
+                      "lineJoin": "round",
+                      "noClip": false,
+                      "opacity": 1.0,
+                      "smoothFactor": 1.0,
+                      "stroke": true,
+                      "weight": 3
+                    }).addTo(map_facility);
+        
+</script>

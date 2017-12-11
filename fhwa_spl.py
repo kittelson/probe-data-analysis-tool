@@ -12,7 +12,7 @@ from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 # from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QVBoxLayout
-from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox
+from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox, QTabBar, QStyleOptionTab
 from PyQt5.QtGui import QColor
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
@@ -20,10 +20,12 @@ from viz_qt import LoadProjectQT
 from offline_viz import FourByFourPanel  # _Undo
 from Stage2GridPanel import Stage2GridPanel  # _Undo
 from DQGridPanel import DataQualityGridPanel  # _Undo
-from mpl_panels import ChartGridPanel, SpatialGridPanel  # _Undo
+# from mpl_panels import ChartGridPanel, SpatialGridPanel  # _Undo
+from Stage1Panel import Stage1GridPanel, SpatialGridPanel
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
 # import sql_helper
 # from chart_defaults import generate_vega_lite  # _Undo
+from jinja2 import Environment, PackageLoader, FileSystemLoader
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -52,10 +54,14 @@ class MainWindow(QMainWindow):
 
         self.dq_chart_panel = None
         self.chart_panel_spatial = None
-        self.chart_panel1 = None
+        self.chart_panel1_3 = None
+        self.chart_panel1_4 = None
         self.chart_panel2 = None
         self.stage2panel = None
 
+        self.map_exists = False
+        self.minimap_exists = False
+        self.map_tmc_to_pl_index = dict()
         #self.web = QWebView()
         #self.container = ConnectionContainer()
 
@@ -96,7 +102,8 @@ class MainWindow(QMainWindow):
 
         load_map_action = QAction('&Load Map', self)
         load_map_action.setToolTip('Load Web Map of TMC locations')
-        load_map_action.triggered.connect(self.load_map_chart)
+        load_map_action.triggered.connect(self.load_map)
+        # load_map_action.triggered.connect(self.load_map_chart)
         self.ui.menuAnalyze.addAction(load_map_action)
 
         toggle_floating_map_action = QAction('&Toggle Floating Map', self)
@@ -137,6 +144,8 @@ class MainWindow(QMainWindow):
         self.chart1_options_action.setEnabled(False)
         self.ui.menuChartOptions.addAction(self.chart1_options_action)
 
+        self.ui.tabWidget.currentChanged.connect(self.tab_select_changed)
+
         self.ui.add_range_button.clicked.connect(self.add_date_range)
         self.ui.del_range_button.clicked.connect(self.del_date_range)
 
@@ -158,10 +167,12 @@ class MainWindow(QMainWindow):
 
         self.ui.pushButton_tmc_subset.setEnabled(False)
 
+        # self.ui.trend_label_am
+
         self.show()
 
     # def load_finished(self):
-    #     self.ui.webView.page().mainFrame().addToJavaScriptWindowObject("container", self.container)
+    #     self.ui.webView_map.page().mainFrame().addToJavaScriptWindowObject("container", self.container)
 
     # def load_browser(self):
     #     print('Action Triggered')
@@ -176,6 +187,12 @@ class MainWindow(QMainWindow):
     #     print(f_name[0])
     #     self.ui.webView_2.load(QUrl('file:///' + f_name[0]))  # 'file:///C:/Users/ltrask/PycharmProjects/BrowserTest/index.html'
 
+    def tab_select_changed(self):
+        if self.ui.tabWidget.currentIndex() > 1 and self.ui.tabWidget.currentIndex() < 6:
+            self.ui.toolBox.setCurrentIndex(self.ui.tabWidget.currentIndex() - 2)
+        elif self.ui.tabWidget.currentIndex() >= 6:
+            self.ui.toolBox.setCurrentIndex(5)
+
     def load_flask_chart(self):
         # Example of how to load a chart via Flask
         # self.ui.webView_3.load(QUrl(ROOT_URL))
@@ -185,11 +202,11 @@ class MainWindow(QMainWindow):
         # Not In Use, but example of how to fire javascript function
         print('action triggered')
         # self.ui.webView.page().mainFrame().evaluateJavaScript('transitionStacked()')
-        self.ui.webView_map.page().mainFrame().evaluateJavaScript('transitionStacked()')
+        # self.ui.webView_map.page().runJavaScript()
+        # self.ui.webView_map.page().mainFrame().evaluateJavaScript('placeTMC(38.8016796, -77.5148428, test)')
 
     def load_map_chart(self, create_plots=False):
         if self.project is not None:
-            pass
             # import folium
             # import json
             # from numpy import mean
@@ -198,23 +215,25 @@ class MainWindow(QMainWindow):
             # lon = tmc_list['start_longitude'][0]
             # m = folium.Map(location=[lat, lon])
             # # create_plots = True
-            # if create_plots:
-            #     df = self.project.database.get_data()
-            #     tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
-            # else:
-            #     tt_hour = None
+            # # if create_plots:
+            # #     df = self.project.database.get_data()
+            # #     tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
+            # # else:
+            # #     tt_hour = None
             # for index, row in tmc_list.iterrows():
             #     if create_plots:
-            #         # df = self.project.database.get_data()
-            #         # tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
+            #         df = self.project.database.get_data()
+            #         tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
             #         if row['tmc'] in tt_hour:
             #             # vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())  # _Undo
             #             pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
             #         else:
             #             pu = row['tmc'] + ': No Travel Time Data Available'
             #     else:
-            #         vis_str = json.load(open('templates/vis1.json'))
-            #         pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
+            #         # vis_str = json.load(open('templates/vis1.json'))
+            #         # pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
+            #         vis_str = json.load(open('templates/vis2.json'))
+            #         pu = folium.Popup(max_width=300).add_child(folium.Vega(vis_str, width=300, height=275))
             #
             #     folium.Marker(
             #         location=[row['start_latitude'], row['start_longitude']],
@@ -241,6 +260,56 @@ class MainWindow(QMainWindow):
             # print(f_name.replace('\\', '/'))
             # self.ui.webView_map.load(QUrl('file:///'+f_name.replace('\\', '/')))
             # self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
+            pass
+
+    def load_map(self):
+        f_name = os.path.realpath('templates/map_gen.html')
+        self.ui.webView_map.loadFinished.connect(self.map_loaded)
+        self.ui.webView_map.load(QUrl('file:///' + f_name.replace('\\', '/')))
+
+    def map_loaded(self):
+        self.map_exists = True
+        self.load_minimap()
+
+    def load_minimap(self):
+        f_name = os.path.realpath('templates/map_gen.html')
+        self.ui.webView_minimap.loadFinished.connect(self.minimap_loaded)
+        self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
+
+    def minimap_loaded(self):
+        self.minimap_exists = True
+        self.add_tmcs_to_map()
+
+    def add_tmcs_to_map(self):
+        # self.ui.webView_map.page().runJavaScript('placeTMC(38.8016796, -77.5148428, 38.834382, -77.449292, \'Test Point\')')
+        self.map_tmc_to_pl_index = dict()
+        for index, tmc_info in self.project.get_tmc().iterrows():
+            self.map_tmc_to_pl_index[tmc_info['tmc']] = index
+            # if index == 0:
+                # self.ui.webView_map.page().runJavaScript(
+                #     'updateCenter(' + str(tmc_info['start_latitude']) + ',' + str(tmc_info['start_longitude']) + ')')
+                # self.ui.webView_minimap.page().runJavaScript(
+                #     'updateCenter(' + str(tmc_info['start_latitude']) + ',' + str(tmc_info['start_longitude']) + ')')
+            js_string = 'placeTMC('
+            js_string = js_string + str(tmc_info['start_latitude']) + ','
+            js_string = js_string + str(tmc_info['start_longitude']) + ','
+            js_string = js_string + str(tmc_info['end_latitude']) + ','
+            js_string = js_string + str(tmc_info['end_longitude']) + ','
+            js_string = js_string + ' \'' + tmc_info['tmc'] + '\''
+            js_string = js_string + ')'
+            # print(js_string)
+            self.ui.webView_map.page().runJavaScript(js_string)
+            self.ui.webView_minimap.page().runJavaScript(js_string)
+        self.ui.webView_map.page().runJavaScript('updateBounds(-1)')
+        self.ui.webView_minimap.page().runJavaScript('updateBounds(-1)')
+
+    def highlight_tmc(self, tmc_idx):
+        js_string = 'highlightTMC(' + str(tmc_idx) + ')'
+        if self.map_exists:
+            # self.ui.webView_map.page().runJavaScript(js_string)
+            pass
+        if self.minimap_exists:
+            self.ui.webView_minimap.page().runJavaScript(js_string)
 
     def toggle_floating_map(self):
         # index = self.tab.indexOf(self.ui.webView_3)
@@ -252,7 +321,7 @@ class MainWindow(QMainWindow):
             self.ui.tab_3.show()
         else:
             self.ui.tab_3.setWindowFlags(Qt.Widget)
-            self.ui.tabWidget.insertTab(1, self.ui.tab_3, 'Web Panel')
+            self.ui.tabWidget.insertTab(1, self.ui.tab_3, 'Facility Map')
             # self.ui.tabWidget.addTab(self.ui.tab_3, 'Web Panel')
             pass
 
@@ -301,11 +370,11 @@ class MainWindow(QMainWindow):
 
 
         # Updating Data Types
-        self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
-        self.ui.listWidget_4.addItem('End Date: ' + project.database.get_last_date())
-        self.ui.listWidget_4.addItem('Weekdays: ' + project.database.get_available_weekdays(as_string=True))
-        self.ui.listWidget_4.addItem('Weekends: ' + project.database.get_available_weekends(as_string=True))
-        self.ui.listWidget_4.addItem('Months: ' + project.database.get_available_months(as_string=True))
+        # self.ui.listWidget_4.addItem('Start Date: ' + project.database.get_first_date())
+        # self.ui.listWidget_4.addItem('End Date: ' + project.database.get_last_date())
+        # self.ui.listWidget_4.addItem('Weekdays: ' + project.database.get_available_weekdays(as_string=True))
+        # self.ui.listWidget_4.addItem('Weekends: ' + project.database.get_available_weekends(as_string=True))
+        # self.ui.listWidget_4.addItem('Months: ' + project.database.get_available_months(as_string=True))
 
         # Updating analysis types
         # Updating date ranges
@@ -321,7 +390,7 @@ class MainWindow(QMainWindow):
         # Setting up tmc list
         self.setup_tmc_list(is_init=True)
 
-        self.load_data_density_charts('Data Quality/Density')
+        self.load_data_density_charts('1.1 - Data Availability')
 
     def open_file(self):
         f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "CSV files (*.csv)")
@@ -382,7 +451,7 @@ class MainWindow(QMainWindow):
         # v_layout = QVBoxLayout(temp_widget)
         # v_layout.addWidget(QLabel('Placeholder for data "density" chart panel.  This will provide basic information about the dataset, as well as '
         #                           'show charts giving a glimpse at the availability of data in the dataset.'))
-        reply = QMessageBox.question(self, 'Project Data', "Load project data density charts?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+        reply = QMessageBox.question(self, 'Data Quality Analysis', "Conduct analysis of sample size and data availability?", QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
         if reply == QMessageBox.Yes:
             self.dq_chart_panel = DataQualityGridPanel(self.project)
             new_tab_index = self.ui.tabWidget.addTab(self.dq_chart_panel, chart_panel_name)
@@ -395,7 +464,7 @@ class MainWindow(QMainWindow):
         # pass   # _Undo
 
     def load_extra_time_charts(self):
-        chart_panel_name = self.project.get_name() + ' Extra Time Charts'  # _Undo
+        chart_panel_name = '2 - Extra Time/Speed Bands'
         self.stage2panel = Stage2GridPanel(self.project)  # _Undo
         new_tab_index = self.ui.tabWidget.addTab(self.stage2panel, chart_panel_name)  # _Undo
         self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
@@ -404,18 +473,22 @@ class MainWindow(QMainWindow):
         # pass   # _Undo
 
     def load_time_time_charts(self):
-        chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'  # _Undo
-        self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)  # _Undo
-        self.chart1_options_action.setEnabled(True)  # _Undo
-        new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1, chart_panel_name)  # _Undo
-          # _Undo
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
-        self.ui.pushButton_first_chart.setDisabled(True)  # _Undo
-        self.ui.toolBox.setCurrentIndex(2)  # _Undo
-        # pass
+        # chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
+        chart_panel_name = '1.3 - Temporal Scoping'
+        # self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)
+        self.chart_panel1_3 = Stage1GridPanel(self.project, panel_type=3, options=self.project.chart_panel1_opts)
+        self.chart1_options_action.setEnabled(True)
+        new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1_3, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        self.ui.pushButton_first_chart.setDisabled(True)
+        self.ui.toolBox.setCurrentIndex(2)
+        chart_panel_name_trend = '1.4 - Trend Analysis'
+        self.chart_panel1_4 = Stage1GridPanel(self.project, panel_type=4, options=None)
+        new_tab_index_trend = self.ui.tabWidget.addTab(self.chart_panel1_4, chart_panel_name_trend)
 
     def load_spatial_charts(self):
-        chart_panel_name = self.project.get_name() + ' Spatial Exploration Charts'
+        # chart_panel_name = self.project.get_name() + ' Spatial Exploration Charts'
+        chart_panel_name = '1.2 - Spatial Scoping'
         self.chart_panel_spatial = SpatialGridPanel(self.project, options=self.project.chart_panel1_opts)
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel_spatial, chart_panel_name)
 
@@ -434,8 +507,8 @@ class MainWindow(QMainWindow):
         cp1_dlg.show()
 
     def update_chart_panel1(self):
-        if self.chart_panel1 is not None:
-            self.chart_panel1.options_updated()
+        if self.chart_panel1_3 is not None:
+            self.chart_panel1_3.options_updated()
 
     def update_dq_chart(self):
         all_direction_list = self.project.database.get_directions()
@@ -457,11 +530,13 @@ class MainWindow(QMainWindow):
                 if self.dq_chart_panel is not None:
                     if is_facility:
                         print(get_child_node + ' selected')
+                        self.highlight_tmc(-1)
                         # self.dq_chart_panel.update_plot_data(tmc_id=None)
                         self.dq_chart_panel.update_all(tmc_id=self.project.get_tmc(as_list=True))
                         pass
                     else:
                         print(get_child_node + ' selected')
+                        self.highlight_tmc(self.map_tmc_to_pl_index.get(get_child_node))
                         # self.dq_chart_panel.update_plot_data(tmc_id=get_child_node)
                         self.dq_chart_panel.update_all(tmc_id=[get_child_node])
                         pass
@@ -492,13 +567,14 @@ class MainWindow(QMainWindow):
             self.ui.treeWidget_2.itemSelectionChanged.connect(self.handle_tmc_item_select)
 
     def handle_tmc_item_select(self):
-        getSelected = self.ui.treeWidget_2.selectedItems()
-        if getSelected:
-            baseNode = getSelected[0]
-            getChildNode = baseNode.text(0)
+        get_selected = self.ui.treeWidget_2.selectedItems()
+        if get_selected:
+            base_node = get_selected[0]
+            get_child_node = base_node.text(0)
             # print(getChildNode)
+            self.highlight_tmc(self.map_tmc_to_pl_index.get(get_child_node))
             if self.stage2panel is not None:
-                self.stage2panel.select_tmc(getChildNode)
+                self.stage2panel.select_tmc(get_child_node)
 
     def handle_tmc_item_check(self):
         cumulative_mi = 0
@@ -775,6 +851,19 @@ def provide_gui_for(application):
     qt_app.aboutToQuit.connect(web_app.terminate)
     mw = MainWindow()
     return qt_app.exec_()
+
+# class CustomTabBar(QTabBar):
+#
+#     def __init__(self, parent=None):
+#         QTabBar.__init__(parent=parent)
+#
+#     def paintEvent(self, event):
+#         opt = QStyleOptionTab()
+#         opt.
+#         for i in range(self.count()):
+#             self.initStyleOption(opt, i)
+#             if i == 0:
+#                 self.color
 
 
 if __name__ == '__main__':

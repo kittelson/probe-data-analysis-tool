@@ -21,6 +21,7 @@ from numpy import append as np_append
 from numpy import pi as np_pi
 from numpy import linspace as np_linspace
 from math import ceil
+from pandas import DataFrame
 from PyQt5.QtCore import QThread
 
 FIG_TYPE_TT_TREND_LINE = 0
@@ -128,6 +129,11 @@ class MplChart(FigureCanvas):
         self.save_figure_action.setToolTip('Save the chart as an image file (png, jpg, etc.)')
         self.save_figure_action.triggered.connect(self.save_figure)
         self.context_menu.addAction(self.save_figure_action)
+
+        self.export_data_action = QtWidgets.QAction('Export Chart Data', self)
+        self.export_data_action.setToolTip('Save the chart data as a csv file')
+        self.export_data_action.triggered.connect(self.export_data)
+        self.context_menu.addAction(self.export_data_action)
 
         self.reset_axis_action = QtWidgets.QAction('Reset Axis Bounds', self)
         self.reset_axis_action.setToolTip('Reset the x and y bounds of the chart')
@@ -345,6 +351,7 @@ class MplChart(FigureCanvas):
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         self.axes.set_ylabel('Speed (mph)')
+        self.axes.set_ylim(0, 85)
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
@@ -354,6 +361,20 @@ class MplChart(FigureCanvas):
         self.hover_ann.set_visible(False)
         self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_datetime(event, self.f_x_to_month, label='mph'))
         self.fig.tight_layout()
+
+    def export_data(self):
+        if self.fig_type == FIG_TYPE_TT_TREND_LINE:
+            self.export_trend_line()
+        elif self.fig_type == FIG_TYPE_SPD_BAND:
+            self.export_speed_band()
+        else:
+            pass
+
+    def export_trend_line(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'CSV files (*.csv)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            self.panel.plot_dfs[0].to_csv(f_name)
 
     def compute_trend_line_deprecated(self):
         if self.show_am:
@@ -527,7 +548,7 @@ class MplChart(FigureCanvas):
         # self.axes.set_xlabel('Date')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title('Daily Congestion over Time')
+        self.axes.set_title('Percent Congested over Time' + ' (' + convert_xval_to_time(self.panel.ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end, None, 5) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         self.axes.legend()
@@ -570,7 +591,8 @@ class MplChart(FigureCanvas):
     def compute_speed_heatmap(self):
         imshow_data = self.panel.plot_dfs[3]
         dq_cm = create_dq_cmap()
-        im = self.axes.imshow(imshow_data, cmap=dq_cm)
+        # im = self.axes.imshow(imshow_data, cmap=dq_cm)
+        im = self.axes.imshow(imshow_data, cmap='RdYlGn')
         if self.color_bar1 is not None:
             self.color_bar1.remove()
         self.color_bar1 = self.fig.colorbar(im, ax=self.axes, shrink=0.8)
@@ -595,7 +617,8 @@ class MplChart(FigureCanvas):
         self.tmc_ext = num_days / 5
         cb_shrink = 0.95
         dq_cm = create_dq_cmap()
-        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap=dq_cm)
+        # im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap=dq_cm)
+        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
         if self.color_bar2 is not None:
             self.color_bar2.remove()
         self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink)
@@ -706,7 +729,7 @@ class MplChart(FigureCanvas):
         title_str = 'Speed Band: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
         title_str = title_str + '\n'
-        if self.region2 != 0:
+        if self.region2 >= 0:
             title_str = title_str + 'Before/After: ' + self.panel.period1 + ' vs ' + self.panel.period2
         elif self.region == BEFORE:
             title_str = title_str + 'Period 1: ' + self.panel.period1
@@ -717,10 +740,29 @@ class MplChart(FigureCanvas):
         self.axes.spines['right'].set_visible(False)
         self.axes.set_xlabel('Time of Day')
         self.axes.set_ylabel('Speed (mph)')
+        self.axes.set_ylim(0, 85)
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
         self.axes.legend()
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
         self.fig.tight_layout()
+
+    def export_speed_band(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'CSV files (*.csv)',
+                                                                    'CSV files (*.csv)')
+        day_type = self.panel.day_select
+        offset = 9
+        tmc1 = self.panel.selected_tmc_name
+        data_before = self.panel.plot_dfs2[day_type]
+        data_after = self.panel.plot_dfs2[day_type + offset]
+        temp_df = DataFrame()
+        temp_df['mean_before'] = data_before['mean'][tmc1]
+        temp_df['pct95_before'] = data_before['percentile_95'][tmc1]
+        temp_df['pct5_before'] = data_before['percentile_5'][tmc1]
+        temp_df['mean_after'] = data_after['mean'][tmc1]
+        temp_df['pct95_after'] = data_after['percentile_95'][tmc1]
+        temp_df['pct5_after'] = data_after['percentile_5'][tmc1]
+        if f_name:
+            temp_df.to_csv(f_name)
 
     def compute_tt_cdf(self):
         day_type = self.panel.day_select
@@ -854,7 +896,7 @@ class MplChart(FigureCanvas):
         data = self.panel.plot_dfs_dq[0]
         self.axes.set_yticks([0.5, 0.8])
         self.axes.set_yticklabels(['50%', '80%'])
-        self.axes.set_title('Data Quality by Day of Week')
+        self.axes.set_title('% Data Available by Day of Week')
         self.axes.set_ylim(0, 1)
         self.axes.set_xticks([el for el in range(data.shape[0])])
         self.axes.set_xticklabels([calendar.day_abbr[el] for el in range(data.shape[0])], rotation='vertical')
@@ -885,7 +927,7 @@ class MplChart(FigureCanvas):
         # ax2.get_yaxis().set_visible(False)
         self.axes.set_yticks([0.5, 0.8])
         self.axes.set_yticklabels(['50%', '80%'])
-        self.axes.set_title('Data Quality by Time of Day')
+        self.axes.set_title('% Data Available by Time of Day')
         self.axes.set_ylim(0, 1)
         self.tod_bars = self.axes.bar(theta, radii, width=width, bottom=bottom)
         # Use custom colors and opacity
@@ -899,7 +941,7 @@ class MplChart(FigureCanvas):
         num_tmc = len(data.values)
         self.axes.set_yticks([0.5, 0.8])
         self.axes.set_yticklabels(['50%', '80%'])
-        self.axes.set_title('Data Quality by TMC')
+        self.axes.set_title('% Data Available by TMC')
         self.axes.set_ylim(0, 1)
         self.axes.plot([el for el in range(num_tmc)], [0.8 for el in range(num_tmc)], label='80%', c='green', ls=':')
         self.axes.plot([el for el in range(num_tmc)], [0.5 for el in range(num_tmc)], label='50%', c='firebrick', ls=':')
@@ -931,7 +973,7 @@ class MplChart(FigureCanvas):
                 year += 1
         self.axes.set_xticks([el for el in range(len(y_wd))])
         self.axes.set_xticklabels(x_labels, rotation='vertical')
-        self.axes.set_title('Monthly Data Quality over Time')
+        self.axes.set_title('Monthly % Data Available over Time')
         self.axes.set_ylim(0, 1)
         self.axes.plot([el for el in range(len(y_wd))], y_wd, c='grey', label='Weekdays')
         self.axes.plot([el for el in range(len(y_we))], y_we, c='grey', ls='--', label='Weekends')
@@ -1160,7 +1202,6 @@ def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):
 def convert_extent_to_mile(x, pos, facility_len, tmc_ext):
     mile_post = facility_len - x * facility_len / tmc_ext
     return '{:1.1f} mi'.format(mile_post)
-
 
 
 def convert_xval_to_time(x, pos, min_resolution):
