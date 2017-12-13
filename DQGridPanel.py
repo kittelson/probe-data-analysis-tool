@@ -50,14 +50,13 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         # Filter Components
         self.day_select = 0
         self.plot_dfs_dq = []
-        self.update_plot_data()
+        self.update_plot_data(tmc_id=self.project.get_tmc(full_list=True, as_list=True))
 
     def plot_data_updated(self):
         if self.init_mode:
             self.create_charts()
             self.add_charts_to_layouts()
             self.v_layout.addWidget(self.chart_panel)
-            # self.v_layout.addWidget(self.check_bar_day)
             self.update_chart_visibility()
             self.init_mode = False
         else:
@@ -75,12 +74,6 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         # self.chart22.fire_animation()
 
     def update_plot_data(self, tmc_id=None, **kwargs):
-        # self.plot_dfs_dq = [self.f_dq_weekday(self.dfs[0]),
-        #                     self.f_dq_time_of_day(self.dfs[0]),
-        #                     self.f_dq_tmc(self.dfs[0], tmc_index=self.project.get_tmc()),
-        #                     [self.f_dq_study_period(self.dfs[0], day_list=[0, 1, 2, 3, 4]),
-        #                      self.f_dq_study_period(self.dfs[0], day_list=[5, 6])]
-        #                     ]
         dq_funcs = [lambda: self.f_dq_weekday(self.dfs[0]),
                     lambda: self.f_dq_time_of_day(self.dfs[0]),
                     lambda: self.f_dq_tmc(self.dfs[0], tmc_index=self.project.get_tmc()),

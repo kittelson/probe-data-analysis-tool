@@ -592,37 +592,42 @@ class MplChart(FigureCanvas):
         imshow_data = self.panel.plot_dfs[3]
         dq_cm = create_dq_cmap()
         # im = self.axes.imshow(imshow_data, cmap=dq_cm)
-        im = self.axes.imshow(imshow_data, cmap='RdYlGn')
+        im = self.axes.imshow(imshow_data, cmap='RdYlGn', aspect='auto')
         if self.color_bar1 is not None:
             self.color_bar1.remove()
-        self.color_bar1 = self.fig.colorbar(im, ax=self.axes, shrink=0.8)
+        self.color_bar1 = self.fig.colorbar(im, ax=self.axes, shrink=0.8, use_gridspec=True)
         self.color_bar1.set_label('Speed (mph)')
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
         self.axes.yaxis.set_major_formatter(FuncFormatter(self.f_y_to_time))
         self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
+        self.fig.tight_layout()
 
     def compute_speed_tmc_heatmap(self):
+        peak_idx = 4
         if self.show_am:
             hour_str = convert_xval_to_time(self.panel.ap_start1, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end1, None, 5)
             imshow_data = self.panel.plot_dfs[4]
         elif self.show_mid:
             hour_str = convert_xval_to_time(self.panel.ap_start2, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end2, None, 5)
             imshow_data = self.panel.plot_dfs[5]
+            peak_idx = 5
         else:
             hour_str = convert_xval_to_time(self.panel.ap_start3, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end3, None, 5)
             imshow_data = self.panel.plot_dfs[6]
+            peak_idx = 6
         num_tmc, num_days = imshow_data.shape
         self.tmc_ext = num_days / 5
-        cb_shrink = 0.95
+        cb_shrink = 0.8
         dq_cm = create_dq_cmap()
         # im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap=dq_cm)
         im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
         if self.color_bar2 is not None:
             self.color_bar2.remove()
-        self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink)
+        self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink, use_gridspec=True)
         self.color_bar2.set_label('Speed (mph)')
+        # self.color_bar2.set_clim(35, 65)
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
         # f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True), self.tmc_ext)
         f_tmc_label2 = lambda x, pos: convert_extent_to_mile(x, pos, self.panel.facility_len, self.tmc_ext)
@@ -631,7 +636,7 @@ class MplChart(FigureCanvas):
         # self.fig.tight_layout()
         tmc_list = self.panel.project.get_tmc(as_list=True).tolist()
         tmc_list.reverse()
-        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list))
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list, peak_idx))
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
 
@@ -842,7 +847,7 @@ class MplChart(FigureCanvas):
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
         self.axes.legend()
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
 
     def compute_speed_freq(self):
         bin_extend = 10
@@ -890,7 +895,7 @@ class MplChart(FigureCanvas):
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.1%}'.format(y)))
         self.axes.legend()
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
-        self.fig.tight_layout()
+        # self.fig.tight_layout()
 
     def compute_dq_wkdy(self):
         data = self.panel.plot_dfs_dq[0]
@@ -994,14 +999,18 @@ class MplChart(FigureCanvas):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
-    def hover_tmc(self, event, tmc_list):
+    def hover_tmc(self, event, tmc_list, peak_idx):
         if event.xdata is not None and event.ydata is not None:
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
             self.hover_ann.set_x(int(event.xdata))
             self.hover_ann.set_y(int(event.ydata))
             hover_idx = floor(event.ydata*len(tmc_list) / self.tmc_ext)
-            if hover_idx < len(tmc_list):
-                self.hover_ann.set_text(tmc_list[hover_idx] + '\n' + self.f_x_to_day_1l(event.xdata, None))
+            # print(self.panel.plot_dfs[3])
+            if hover_idx < len(tmc_list) and hover_idx >= 0:
+                if floor(event.xdata) < self.panel.plot_dfs[peak_idx].shape[1] and floor(event.xdata) >= 0:
+                    self.hover_ann.set_text(tmc_list[hover_idx]
+                                            + '\n' + self.f_x_to_day_1l(event.xdata, None)
+                                            + '\n' + '{:1.2f} mph'.format(self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)]))
             else:
                 self.hover_ann.set_text('')
             self.hover_ann.set_visible(True)
@@ -1053,14 +1062,15 @@ class ZoomPan:
 
     def zoom_factory(self, ax, mpl_panel, base_scale=2.0):
         def zoom(event):
-            # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-            #     return
+            allow_key_zoom = True
+            if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
+                allow_key_zoom = False
 
             cur_xlim = ax.get_xlim()
             cur_ylim = ax.get_ylim()
 
-            xdata = event.xdata # get event x location
-            ydata = event.ydata # get event y location
+            xdata = event.xdata  # get event x location
+            ydata = event.ydata  # get event y location
 
             if event.button == 'down':
                 # deal with zoom in
@@ -1078,11 +1088,11 @@ class ZoomPan:
             if new_width < 1.0:
                 return
 
-            if event.key is "control":
+            if allow_key_zoom and event.key is "control":
                 if xdata is not None:
                     relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
                     ax.set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
-            elif event.key is "shift":
+            elif allow_key_zoom and event.key is "shift":
                 if ydata is not None:
                     rely = (cur_ylim[1] - ydata) / (cur_ylim[1] - cur_ylim[0])
                     ax.set_ylim([ydata - new_height * (1 - rely), ydata + new_height * (rely)])
@@ -1106,8 +1116,6 @@ class ZoomPan:
                 cursor = QCursor()
                 mpl_panel.context_menu.popup(cursor.pos())
             else:
-                # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                #     return
                 if ax.get_navigate_mode() is None:
                     if event.dblclick:
                         mpl_panel.reset_axis_bounds()

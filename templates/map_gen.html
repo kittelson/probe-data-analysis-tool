@@ -64,6 +64,18 @@ function updateCenter(lat, lon) {
     map_facility.panTo(new L.LatLng(lat, lon));
 }
 
+function clear_map() {
+    while(markers.length > 0) {
+        tmp_marker = markers.pop();
+        map_facility.removeLayer(tmp_marker)
+    }
+
+    while(polylines.length > 0) {
+        tmp_line = polylines.pop();
+        map_facility.removeLayer(tmp_line)
+    }
+}
+
 function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name) {
     var tmp_marker = L.marker([s_lat, s_lon],
                                 {
@@ -95,22 +107,26 @@ function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name) {
                                         "weight": 3
                                     }).addTo(map_facility);
 
+    tmp_polyline.bindPopup(tmp_popup);
+
     tmp_polyline.on('mouseover', function(e) {
                                     var layer = e.target;
                                     layer.setStyle({
-                                    color: 'blue',
-                                    opacity: 1,
-                                    weight: 5
-                                });
-                            });
+                                        color: 'blue',
+                                        opacity: 1,
+                                        weight: 5
+                                        });
+                                    tmp_polyline.openPopup();
+                                    });
     tmp_polyline.on('mouseout', function(e) {
                                     var layer = e.target;
                                     layer.setStyle({
-                                    color: 'black',
-                                    opacity: 1,
-                                    weight: 3
-                                });
-                            });
+                                        color: 'black',
+                                        opacity: 1,
+                                        weight: 3
+                                    });
+                                    tmp_polyline.closePopup();
+                                    });
     polylines.push(tmp_polyline);
 }
 

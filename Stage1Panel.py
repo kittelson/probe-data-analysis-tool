@@ -38,9 +38,9 @@ class Stage1GridPanel(QtWidgets.QWidget):
         self.ap_end = 287
         self.peak_period_str = 'Peak Period '
         self.am_ap_start = convert_time_to_ap(6, 0, 5)
-        self.am_ap_end = convert_time_to_ap(10, 0, 5)
-        self.pm_ap_start = convert_time_to_ap(15, 0, 5)
-        self.pm_ap_end = convert_time_to_ap(19, 0, 5)
+        self.am_ap_end = convert_time_to_ap(9, 0, 5)
+        self.pm_ap_start = convert_time_to_ap(16, 0, 5)
+        self.pm_ap_end = convert_time_to_ap(18, 0, 5)
         self.md_ap_start = convert_time_to_ap(10, 0, 5)
         self.md_ap_end = convert_time_to_ap(16, 0, 5)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']

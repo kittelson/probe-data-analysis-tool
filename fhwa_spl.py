@@ -17,14 +17,14 @@ from PyQt5.QtGui import QColor
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz_qt import LoadProjectQT
-from offline_viz import FourByFourPanel  # _Undo
-from Stage2GridPanel import Stage2GridPanel  # _Undo
-from DQGridPanel import DataQualityGridPanel  # _Undo
-# from mpl_panels import ChartGridPanel, SpatialGridPanel  # _Undo
+from offline_viz import FourByFourPanel
+from Stage2GridPanel import Stage2GridPanel
+from DQGridPanel import DataQualityGridPanel
+# from mpl_panels import ChartGridPanel, SpatialGridPanel
 from Stage1Panel import Stage1GridPanel, SpatialGridPanel
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
 # import sql_helper
-# from chart_defaults import generate_vega_lite  # _Undo
+# from chart_defaults import generate_vega_lite
 from jinja2 import Environment, PackageLoader, FileSystemLoader
 
 PORT = 5000
@@ -167,7 +167,8 @@ class MainWindow(QMainWindow):
 
         self.ui.pushButton_tmc_subset.setEnabled(False)
 
-        # self.ui.trend_label_am
+        for item_idx in range(1, 7):
+            self.ui.toolBox.setItemEnabled(item_idx, False)
 
         self.show()
 
@@ -225,7 +226,7 @@ class MainWindow(QMainWindow):
             #         df = self.project.database.get_data()
             #         tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
             #         if row['tmc'] in tt_hour:
-            #             # vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())  # _Undo
+            #             # vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())
             #             pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
             #         else:
             #             pu = row['tmc'] + ': No Travel Time Data Available'
@@ -280,8 +281,14 @@ class MainWindow(QMainWindow):
         self.minimap_exists = True
         self.add_tmcs_to_map()
 
+    def reset_maps(self):
+        if self.map_exists:
+            self.ui.webView_map.page().runJavaScript('clear_map()')
+        if self.minimap_exists:
+            self.ui.webView_minimap.page().runJavaScript('clear_map()')
+        self.add_tmcs_to_map()
+
     def add_tmcs_to_map(self):
-        # self.ui.webView_map.page().runJavaScript('placeTMC(38.8016796, -77.5148428, 38.834382, -77.449292, \'Test Point\')')
         self.map_tmc_to_pl_index = dict()
         for index, tmc_info in self.project.get_tmc().iterrows():
             self.map_tmc_to_pl_index[tmc_info['tmc']] = index
@@ -298,8 +305,10 @@ class MainWindow(QMainWindow):
             js_string = js_string + ' \'' + tmc_info['tmc'] + '\''
             js_string = js_string + ')'
             # print(js_string)
-            self.ui.webView_map.page().runJavaScript(js_string)
-            self.ui.webView_minimap.page().runJavaScript(js_string)
+            if self.map_exists:
+                self.ui.webView_map.page().runJavaScript(js_string)
+            if self.minimap_exists:
+                self.ui.webView_minimap.page().runJavaScript(js_string)
         self.ui.webView_map.page().runJavaScript('updateBounds(-1)')
         self.ui.webView_minimap.page().runJavaScript('updateBounds(-1)')
 
@@ -458,19 +467,20 @@ class MainWindow(QMainWindow):
             self.ui.tabWidget.setCurrentIndex(new_tab_index)
 
     def load_mpl_charts(self, chart_panel_name):
-        mpl_widget = FourByFourPanel(self.project)  # _Undo
-        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)  # _Undo
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
-        # pass   # _Undo
+        mpl_widget = FourByFourPanel(self.project)
+        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        # pass 
 
     def load_extra_time_charts(self):
         chart_panel_name = '2 - Extra Time/Speed Bands'
-        self.stage2panel = Stage2GridPanel(self.project)  # _Undo
-        new_tab_index = self.ui.tabWidget.addTab(self.stage2panel, chart_panel_name)  # _Undo
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)  # _Undo
-        self.ui.toolBox.setCurrentIndex(self.ui.toolBox.currentIndex()+1)  # _Undo
-        self.ui.pushButton_tmc_subset.setEnabled(False)  # _Undo
-        # pass   # _Undo
+        self.stage2panel = Stage2GridPanel(self.project)
+        new_tab_index = self.ui.tabWidget.addTab(self.stage2panel, chart_panel_name)
+        self.ui.tabWidget.setCurrentIndex(new_tab_index)
+        self.ui.toolBox.setItemEnabled(5, True)
+        self.ui.toolBox.setItemEnabled(6, True)
+        self.ui.pushButton_tmc_subset.setEnabled(False)
+        # pass 
 
     def load_time_time_charts(self):
         # chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
@@ -481,6 +491,9 @@ class MainWindow(QMainWindow):
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1_3, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.pushButton_first_chart.setDisabled(True)
+        self.ui.toolBox.setItemEnabled(2, True)
+        self.ui.toolBox.setItemEnabled(3, True)
+        self.ui.toolBox.setItemEnabled(4, True)
         self.ui.toolBox.setCurrentIndex(2)
         chart_panel_name_trend = '1.4 - Trend Analysis'
         self.chart_panel1_4 = Stage1GridPanel(self.project, panel_type=4, options=None)
@@ -494,12 +507,13 @@ class MainWindow(QMainWindow):
 
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.pushButton_first_chart.setDisabled(True)
+        self.ui.toolBox.setItemEnabled(1, True)
         self.ui.toolBox.setCurrentIndex(1)
         # pass
 
     def create_chart_panel1(self):
-        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)  # _Undo
-        cp1_dlg.show()  # _Undo
+        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
+        cp1_dlg.show()
         # pass
 
     def edit_chart1_options(self):
@@ -530,12 +544,20 @@ class MainWindow(QMainWindow):
                 if self.dq_chart_panel is not None:
                     if is_facility:
                         print(get_child_node + ' selected')
+                        old_dir = self.project.direction
+                        new_dir = self.project.get_selected_directions()[0]
+                        if old_dir != new_dir:
+                            self.reset_maps()
                         self.highlight_tmc(-1)
                         # self.dq_chart_panel.update_plot_data(tmc_id=None)
                         self.dq_chart_panel.update_all(tmc_id=self.project.get_tmc(as_list=True))
                         pass
                     else:
                         print(get_child_node + ' selected')
+                        old_dir = self.project.direction
+                        new_dir = self.project.get_selected_directions()[0]
+                        if old_dir != new_dir:
+                            self.reset_maps()
                         self.highlight_tmc(self.map_tmc_to_pl_index.get(get_child_node))
                         # self.dq_chart_panel.update_plot_data(tmc_id=get_child_node)
                         self.dq_chart_panel.update_all(tmc_id=[get_child_node])
@@ -606,9 +628,10 @@ class Project:
         self._data_file_name = None
         self.database = None
         self._date_ranges = []
-        self.chart_panel1_opts = ChartOptions()  # _Undo
+        self.chart_panel1_opts = ChartOptions()
         # self.chart_panel1_opts = None  # _Delete
         self.data_res = 5
+        self.direction = None
 
     def set_name(self, new_name):
         self._project_name = new_name
@@ -661,7 +684,7 @@ class Project:
                 direction_list.append(base_node.parent().text(0))
         else:
             direction_list.append(all_direction_list[0])
-
+        self.direction = direction_list[0]
         return direction_list
 
     def get_tmc(self, full_list=False, as_list=False):

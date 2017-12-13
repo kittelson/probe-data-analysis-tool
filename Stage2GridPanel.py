@@ -68,8 +68,8 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.chart_options.chart_type[1][1] = FIG_TYPE_SPD_BAND  # FIG_TYPE_SPD_FREQ
 
         # Filter Components
-        self.cb_tmc_select = QtWidgets.QComboBox()
-        self.cb_tmc_select.addItems(self.project.get_tmc(as_list=True))
+        # self.cb_tmc_select = QtWidgets.QComboBox()
+        # self.cb_tmc_select.addItems(self.project.get_tmc(as_list=True))
         self.bg_day_select = QtWidgets.QButtonGroup(self)
         self.check_wkdy = QtWidgets.QRadioButton('Weekdays')
         self.check_wknd = QtWidgets.QRadioButton("Weekends")
@@ -91,8 +91,8 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.bg_day_select.addButton(self.check_sun)
         self.check_bar_day = QtWidgets.QWidget(self)
         self.h_layout = QtWidgets.QHBoxLayout(self.check_bar_day)
-        self.h_layout.addWidget(self.cb_tmc_select)
-        self.h_layout.addWidget(create_spacer_line(self))
+        # self.h_layout.addWidget(self.cb_tmc_select)
+        # self.h_layout.addWidget(create_spacer_line(self))
         self.h_layout.addWidget(self.check_wkdy)
         self.h_layout.addWidget(self.check_wknd)
         self.h_layout.addWidget(create_spacer_line(self))
@@ -105,7 +105,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.h_layout.addWidget(self.check_sun)
         # self.connect_check_boxes()
         self.connect_radio_buttons()
-        self.connect_combo_boxes()
+        # self.connect_combo_boxes()
 
         self.day_select = 0
         self.plot_dfs = []
@@ -425,7 +425,6 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.chart_speed_freq = MplChart(self, fig_type=FIG_TYPE_SPD_FREQ, panel=self, region=0, region2=1)
         self.chart_cdf = MplChart(self, fig_type=FIG_TYPE_TT_CDF, panel=self, region=0, region2=1)
 
-
     def update_figures(self):
         if self.chart_et is not None:
             self.chart_et.update_figure()
@@ -488,18 +487,21 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.check_sat.setEnabled(self.available_days.count(5) > 0)
         self.check_sun.setEnabled(self.available_days.count(6) > 0)
 
-    def connect_combo_boxes(self):
-        self.cb_tmc_select.currentIndexChanged.connect(self.tmc_selection_changed)
+    # def connect_combo_boxes(self):
+    #     self.cb_tmc_select.currentIndexChanged.connect(self.tmc_selection_changed)
 
     def tmc_selection_changed(self):
         if not (self.init_mode or self.no_compute):
-            tmc_idx = self.cb_tmc_select.currentIndex()
-            self.selected_tmc_name = self.project.get_tmc()['tmc'][tmc_idx]
-            self.selected_tmc_len = self.project.get_tmc()['miles'][tmc_idx]
+            # tmc_idx = self.cb_tmc_select.currentIndex()
+            # self.selected_tmc_name = self.project.get_tmc()['tmc'][tmc_idx]
+            # self.selected_tmc_len = self.project.get_tmc()['miles'][tmc_idx]
             self.update_figures()
 
     def select_tmc(self, tmc_code):
-        self.cb_tmc_select.setCurrentText(tmc_code)
+        # self.cb_tmc_select.setCurrentText(tmc_code)
+        self.selected_tmc_name = tmc_code
+        tmc = self.project.get_tmc(full_list=True)
+        self.selected_tmc_len = tmc.loc[tmc['tmc'] == tmc_code, 'miles'].iloc[0]
         self.tmc_selection_changed()
 
     def connect_check_boxes(self):
