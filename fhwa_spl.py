@@ -11,9 +11,9 @@ import os
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 # from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QInputDialog, QDialog, QVBoxLayout
-from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox, QTabBar, QStyleOptionTab
-from PyQt5.QtGui import QColor
+from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QDialog, QFormLayout, QDialogButtonBox, QVBoxLayout, QGridLayout
+from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox, QTableWidget, QTableWidgetItem
+from PyQt5.QtGui import QColor, QFont
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
 from viz_qt import LoadProjectQT
@@ -58,6 +58,9 @@ class MainWindow(QMainWindow):
         self.chart_panel1_4 = None
         self.chart_panel2 = None
         self.stage2panel = None
+        self.summary_panel = None
+        self.summ_table1 = None
+        self.summ_table2 = None
 
         self.map_exists = False
         self.minimap_exists = False
@@ -77,6 +80,15 @@ class MainWindow(QMainWindow):
         open_file_action.setToolTip('Open Project File')
         open_file_action.triggered.connect(self.open_sql_project)
         self.ui.menuFile.addAction(open_file_action)
+
+        self.ui.menuFile.addSeparator()
+        self.edit_project_info_action = QAction('&Edit Project Info', self)
+        self.edit_project_info_action.setShortcut('Ctrl+I')
+        self.edit_project_info_action.setToolTip('Edit Project Information')
+        self.edit_project_info_action.triggered.connect(self.edit_project_info)
+        self.ui.menuFile.addAction(self.edit_project_info_action)
+        self.edit_project_info_action.setEnabled(False)
+        self.ui.menuFile.addSeparator()
 
         exit_app_action = QAction('&Exit', self)
         exit_app_action.setShortcut(('Ctrl+Q'))
@@ -139,10 +151,15 @@ class MainWindow(QMainWindow):
         self.ui.menuAnalyze.addAction(self.chart1_load_action)
 
         self.chart1_options_action = QAction('&Chart 1 Options', self)
-        self.chart1_options_action.setToolTip('Congifure the Chart Panel 1 Options')
+        self.chart1_options_action.setToolTip('Configure the Chart Panel 1 Options')
         self.chart1_options_action.triggered.connect(self.edit_chart1_options)
         self.chart1_options_action.setEnabled(False)
         self.ui.menuChartOptions.addAction(self.chart1_options_action)
+
+        # self.create_table_action = QAction('&Create Summary Table', self)
+        # self.create_table_action.setToolTip('Temporary Option')
+        # self.create_table_action.triggered.connect(self.create_summary_table)
+        # self.ui.menuAnalyze.addAction(self.create_table_action)
 
         self.ui.tabWidget.currentChanged.connect(self.tab_select_changed)
 
@@ -165,12 +182,12 @@ class MainWindow(QMainWindow):
         self.ui.create_charts_button.setEnabled(False)
         self.ui.del_range_button.setEnabled(False)
 
-        self.ui.pushButton_tmc_subset.setEnabled(False)
+        self.ui.pushButton_5.clicked.connect(self.generate_summary_table)
 
         for item_idx in range(1, 7):
             self.ui.toolBox.setItemEnabled(item_idx, False)
 
-        self.show()
+        self.showMaximized()
 
     # def load_finished(self):
     #     self.ui.webView_map.page().mainFrame().addToJavaScriptWindowObject("container", self.container)
@@ -337,16 +354,108 @@ class MainWindow(QMainWindow):
     def create_new(self):
         project_dir_name = QFileDialog.getExistingDirectory(self, "Select Project/Data Folder")
         if project_dir_name != '':
-            tokens = project_dir_name.split('/')
-            tmc_file_name = project_dir_name + '/tmc_identification.csv'
-            data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
-            project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
-            if ok:
-                self.ui.label_project_name.setText(project_name)
-                self.project = Project(project_name, project_dir_name, self)
-                self.project.set_tmc_file(tmc_file_name)
-                self.project.set_data_file(data_file_name)
-                self.project.load()
+            # tokens = project_dir_name.split('/')
+            # tmc_file_name = project_dir_name + '/tmc_identification.csv'
+            # data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+            # project_name, ok = QInputDialog.getText(self, 'Project Name', 'Enter a project name:', QLineEdit.Normal, 'New Project')
+            # if ok:
+            #     self.ui.label_project_name.setText(project_name)
+            #     self.project = Project(project_name, project_dir_name, self)
+            #     self.project.set_tmc_file(tmc_file_name)
+            #     self.project.set_data_file(data_file_name)
+            #     self.project.load()
+            dlg = QDialog(self)
+            dlg.setWindowTitle('Enter Project Information')
+            l = QFormLayout(dlg)
+            project_dir_label = QLabel('Project Data Location')
+            project_dir_label.setFont(QFont("Times", weight=QFont.Bold))
+            if len(project_dir_name) > 35:
+                project_dir_label2 = QLabel('..' + project_dir_name[len(project_dir_name) - 35:])
+            else:
+                project_dir_label2 = QLabel(project_dir_name)
+            project_name_label = QLabel('Project Name: ')
+            project_name_label.setFont(QFont("Times", weight=QFont.Bold))
+            project_name_input = QLineEdit('New Project')
+            analyst_label = QLabel('Enter Analyst Name: ')
+            analyst_label.setFont(QFont("Times", weight=QFont.Bold))
+            analyst_input = QLineEdit('--')
+            agency_label = QLabel('Enter Agency: ')
+            agency_label.setFont(QFont("Times", weight=QFont.Bold))
+            agency_input = QLineEdit('FHWA')
+            state_label = QLabel('Enter State: ')
+            state_label.setFont(QFont("Times", weight=QFont.Bold))
+            state_input = QLineEdit('')
+            loc_label = QLabel('Enter Location: ')
+            loc_label.setFont(QFont("Times", weight=QFont.Bold))
+            loc_input = QLineEdit('')
+            l.addRow(project_dir_label, project_dir_label2)
+            l.addRow(project_name_label, project_name_input)
+            l.addRow(analyst_label, analyst_input)
+            l.addRow(agency_label, agency_input)
+            l.addRow(state_label, state_input)
+            l.addRow(loc_label, loc_input)
+            buttons = QDialogButtonBox(Qt.Horizontal, dlg)
+            buttons.addButton(QDialogButtonBox.Ok)
+            buttons.addButton(QDialogButtonBox.Cancel)
+            buttons.accepted.connect(lambda: self.new_project_accepted(dlg, project_dir_name,
+                                                                       project_name_input, analyst_input,
+                                                                       agency_input, state_input, loc_input))
+            buttons.rejected.connect(dlg.close)
+            l.addWidget(buttons)
+            project_name_input.selectAll()
+            dlg.setModal(True)
+            dlg.show()
+
+    def new_project_accepted(self, dlg, project_dir_name, project_name_input, analyst_input, agency_input, state_input, loc_input):
+        tokens = project_dir_name.split('/')
+        tmc_file_name = project_dir_name + '/tmc_identification.csv'
+        data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+        self.edit_project_info_action.setEnabled(True)
+        self.project = Project(project_name_input.text(), project_dir_name, self)
+        self.set_project_info(analyst_input.text(), agency_input.text(), state=state_input.text(), location=loc_input.text())
+        self.project.set_tmc_file(tmc_file_name)
+        self.project.set_data_file(data_file_name)
+        self.project.load()
+        dlg.close()
+
+    def edit_project_info(self):
+        dlg = QDialog(self)
+        dlg.setWindowTitle('Enter Project Information')
+        l = QFormLayout(dlg)
+        project_name_label = QLabel('Project Name: ')
+        project_name_label.setFont(QFont("Times", weight=QFont.Bold))
+        project_name_input = QLineEdit(self.project.get_name())
+        analyst_label = QLabel('Enter Analyst Name: ')
+        analyst_label.setFont(QFont("Times", weight=QFont.Bold))
+        analyst_input = QLineEdit('--')
+        agency_label = QLabel('Enter Agency: ')
+        agency_label.setFont(QFont("Times", weight=QFont.Bold))
+        agency_input = QLineEdit('FHWA')
+        l.addRow(project_name_label, project_name_input)
+        l.addRow(analyst_label, analyst_input)
+        l.addRow(agency_label, agency_input)
+        buttons = QDialogButtonBox(Qt.Horizontal, dlg)
+        buttons.addButton(QDialogButtonBox.Ok)
+        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.accepted.connect(lambda: self.set_project_info(analyst_input.text(), agency_input.text()))
+        buttons.rejected.connect(dlg.close)
+        l.addWidget(buttons)
+        dlg.setModal(True)
+        dlg.show()
+
+    def set_project_info(self, analyst, agency, state=None, location=None):
+        self.project.set_analyst(analyst)
+        self.project.set_agency(agency)
+        if state is not None:
+            self.project.set_state(state)
+        if location is not None:
+            self.project.set_location(location)
+        self.update_project_info()
+
+    def update_project_info(self):
+        self.ui.label_project_name.setText(self.project.get_name())
+        self.ui.label_analyst.setText(self.project.get_analyst())
+        self.ui.label_agency.setText(self.project.get_agency())
 
     def add_project(self, project):
         # Updating Tool Labels
@@ -479,8 +588,153 @@ class MainWindow(QMainWindow):
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.toolBox.setItemEnabled(5, True)
         self.ui.toolBox.setItemEnabled(6, True)
-        self.ui.pushButton_tmc_subset.setEnabled(False)
-        # pass 
+        self.ui.pushButton_5.setEnabled(True)
+        # pass
+
+    def generate_summary_table(self):
+        if self.stage2panel is not None:
+            self.stage2panel.generate_summary_data()
+
+    def create_summary_table(self):
+        if self.summary_panel is None:
+            # Project information panel
+            info_panel = QWidget()
+            l = QGridLayout(info_panel)
+            project_name_label = QLabel('Project Name: ')
+            project_name_label.setFont(QFont("Times", weight=QFont.Bold))
+            project_name_input = QLabel(self.project.get_name())
+            analyst_label = QLabel('Analyst: ')
+            analyst_label.setFont(QFont("Times", weight=QFont.Bold))
+            analyst_input = QLabel(self.project.get_analyst())
+            agency_label = QLabel('Agency: ')
+            agency_label.setFont(QFont("Times", weight=QFont.Bold))
+            agency_input = QLabel(self.project.get_agency())
+            state_label = QLabel('State: ')
+            state_label.setFont(QFont("Times", weight=QFont.Bold))
+            state_input = QLabel(self.project.get_state())
+            loc_label = QLabel('Location: ')
+            loc_label.setFont(QFont("Times", weight=QFont.Bold))
+            loc_input = QLabel(self.project.get_location())
+            # l.addRow(project_dir_label, project_dir_label2)
+            l.addWidget(project_name_label, 0, 0)
+            l.addWidget(project_name_input, 0, 1)
+            l.addWidget(analyst_label, 1, 0)
+            l.addWidget(analyst_input, 1, 1)
+            l.addWidget(agency_label, 2, 0)
+            l.addWidget(agency_input, 2, 1)
+            l.addWidget(state_label, 3, 0)
+            l.addWidget(state_input, 3, 1)
+            l.addWidget(loc_label, 4, 0)
+            l.addWidget(loc_input, 4, 1)
+
+        print('here1')
+        # Summary Table 1
+        if self.summ_table1 is None:
+            self.summ_table1 = QTableWidget()
+        else:
+            self.summ_table1.setRowCount(0)
+        print('here2')
+        self.summ_table1.setRowCount(9)
+        self.summ_table1.setColumnCount(3)
+
+        print('here3')
+        self.summ_table1.setItem(0, 0, QTableWidgetItem('TMC: '))
+        self.summ_table1.setItem(0, 1, QTableWidgetItem(self.project.summary_data().tmc()))
+        self.summ_table1.setItem(0, 2, QTableWidgetItem(self.project.summary_data().tmc()))
+        self.summ_table1.setItem(1, 0, QTableWidgetItem('Start Date:'))
+        self.summ_table1.setItem(1, 1, QTableWidgetItem(self.project.summary_data().start_date(0)))
+        self.summ_table1.setItem(1, 2, QTableWidgetItem(self.project.summary_data().start_date(1)))
+        self.summ_table1.setItem(2, 0, QTableWidgetItem('End Date:'))
+        self.summ_table1.setItem(2, 1, QTableWidgetItem(self.project.summary_data().end_date(0)))
+        self.summ_table1.setItem(2, 2, QTableWidgetItem(self.project.summary_data().end_date(1)))
+        self.summ_table1.setItem(3, 0, QTableWidgetItem('Start Time:'))
+        self.summ_table1.setItem(3, 1, QTableWidgetItem(self.project.summary_data().start_time(0)))
+        self.summ_table1.setItem(3, 2, QTableWidgetItem(self.project.summary_data().start_time(1)))
+        self.summ_table1.setItem(4, 0, QTableWidgetItem('End Time:'))
+        self.summ_table1.setItem(4, 1, QTableWidgetItem(self.project.summary_data().end_time(0)))
+        self.summ_table1.setItem(4, 2, QTableWidgetItem(self.project.summary_data().end_time(1)))
+        self.summ_table1.setItem(5, 0, QTableWidgetItem('Sample Size:'))
+        self.summ_table1.setItem(5, 1, QTableWidgetItem(self.project.summary_data().sample_size(0)))
+        self.summ_table1.setItem(5, 2, QTableWidgetItem(self.project.summary_data().sample_size(1)))
+        self.summ_table1.setItem(6, 0, QTableWidgetItem('Number of Days:'))
+        self.summ_table1.setItem(6, 1, QTableWidgetItem(self.project.summary_data().num_days(0)))
+        self.summ_table1.setItem(6, 2, QTableWidgetItem(self.project.summary_data().num_days(1)))
+        self.summ_table1.setItem(7, 0, QTableWidgetItem('Potential Sample:'))
+        self.summ_table1.setItem(7, 1, QTableWidgetItem(self.project.summary_data().ideal_sample(0)))
+        self.summ_table1.setItem(7, 2, QTableWidgetItem(self.project.summary_data().ideal_sample(1)))
+        self.summ_table1.setItem(8, 0, QTableWidgetItem('% Data Available:'))
+        self.summ_table1.setItem(8, 1, QTableWidgetItem(self.project.summary_data().pct_sample_available(0)))
+        self.summ_table1.setItem(8, 2, QTableWidgetItem(self.project.summary_data().pct_sample_available(1)))
+        self.summ_table1.setHorizontalHeaderItem(0, QTableWidgetItem(''))
+        self.summ_table1.setHorizontalHeaderItem(1, QTableWidgetItem('Period 1'))
+        self.summ_table1.setHorizontalHeaderItem(2, QTableWidgetItem('Period 2'))
+        for i in range(self.summ_table1.rowCount()):
+            for j in range(self.summ_table1.columnCount()):
+                self.summ_table1.item(i, j).setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+
+        print('here4')
+        # Summary Table 2
+        if self.summ_table2 is None:
+            self.summ_table2 = QTableWidget()
+        else:
+            self.summ_table2.setRowCount(0)
+        print('here5')
+        self.summ_table2.setRowCount(6)
+        self.summ_table2.setColumnCount(5)
+        print('here6')
+        self.summ_table2.setItem(0, 0, QTableWidgetItem('Mean - Am Peak (mph):'))
+        self.summ_table2.setItem(0, 1, QTableWidgetItem(self.project.summary_data().am_mean(0)))
+        self.summ_table2.setItem(0, 2, QTableWidgetItem(self.project.summary_data().am_mean(1)))
+        self.summ_table2.setItem(0, 3, QTableWidgetItem(self.project.summary_data().am_mean(2)))
+        self.summ_table2.setItem(0, 4, QTableWidgetItem(self.project.summary_data().am_mean(3)))
+        self.summ_table2.setItem(1, 0, QTableWidgetItem('Mean - Midday (mph):'))
+        self.summ_table2.setItem(1, 1, QTableWidgetItem(self.project.summary_data().md_mean(0)))
+        self.summ_table2.setItem(1, 2, QTableWidgetItem(self.project.summary_data().md_mean(1)))
+        self.summ_table2.setItem(1, 3, QTableWidgetItem(self.project.summary_data().md_mean(2)))
+        self.summ_table2.setItem(1, 4, QTableWidgetItem(self.project.summary_data().md_mean(3)))
+        self.summ_table2.setItem(2, 0, QTableWidgetItem('Mean - PM Peak (mph):'))
+        self.summ_table2.setItem(2, 1, QTableWidgetItem(self.project.summary_data().pm_mean(0)))
+        self.summ_table2.setItem(2, 2, QTableWidgetItem(self.project.summary_data().pm_mean(1)))
+        self.summ_table2.setItem(2, 3, QTableWidgetItem(self.project.summary_data().pm_mean(2)))
+        self.summ_table2.setItem(2, 4, QTableWidgetItem(self.project.summary_data().pm_mean(3)))
+        self.summ_table2.setItem(3, 0, QTableWidgetItem('95th - AM Peak (mph):'))
+        self.summ_table2.setItem(3, 1, QTableWidgetItem(self.project.summary_data().am_95(0)))
+        self.summ_table2.setItem(3, 2, QTableWidgetItem(self.project.summary_data().am_95(1)))
+        self.summ_table2.setItem(3, 3, QTableWidgetItem(self.project.summary_data().pm_mean(2)))
+        self.summ_table2.setItem(3, 4, QTableWidgetItem(self.project.summary_data().pm_mean(3)))
+        self.summ_table2.setItem(4, 0, QTableWidgetItem('95th - Midday (mph):'))
+        self.summ_table2.setItem(4, 1, QTableWidgetItem(self.project.summary_data().md_95(0)))
+        self.summ_table2.setItem(4, 2, QTableWidgetItem(self.project.summary_data().md_95(1)))
+        self.summ_table2.setItem(4, 3, QTableWidgetItem(self.project.summary_data().pm_mean(2)))
+        self.summ_table2.setItem(4, 4, QTableWidgetItem(self.project.summary_data().pm_mean(3)))
+        self.summ_table2.setItem(5, 0, QTableWidgetItem('95th - PM Peak (mph):'))
+        self.summ_table2.setItem(5, 1, QTableWidgetItem(self.project.summary_data().pm_95(0)))
+        self.summ_table2.setItem(5, 2, QTableWidgetItem(self.project.summary_data().pm_95(1)))
+        self.summ_table2.setItem(5, 3, QTableWidgetItem(self.project.summary_data().pm_mean(2)))
+        self.summ_table2.setItem(5, 4, QTableWidgetItem(self.project.summary_data().pm_mean(3)))
+        self.summ_table2.setHorizontalHeaderItem(0, QTableWidgetItem(''))
+        self.summ_table2.setHorizontalHeaderItem(1, QTableWidgetItem('Wkdy Period 1'))
+        self.summ_table2.setHorizontalHeaderItem(2, QTableWidgetItem('Wkdy Period 2'))
+        self.summ_table2.setHorizontalHeaderItem(3, QTableWidgetItem('Wknd Period 1'))
+        self.summ_table2.setHorizontalHeaderItem(4, QTableWidgetItem('Wknd Period 2'))
+        print('here7')
+
+        for i in range(self.summ_table2.rowCount()):
+            for j in range(self.summ_table2.columnCount()):
+                if self.summ_table2.item(i, j) is not None:
+                    self.summ_table2.item(i, j).setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+
+        print('here8')
+        if self.summary_panel is None:
+            self.summary_panel = QWidget()
+            summary_layout = QVBoxLayout(self.summary_panel)
+            summary_layout.addWidget(info_panel)
+            summary_layout.addWidget(self.summ_table1)
+            summary_layout.addWidget(self.summ_table2)
+            new_tab_idx = self.ui.tabWidget.addTab(self.summary_panel, 'Summary Data')
+            self.ui.tabWidget.setCurrentIndex(new_tab_idx)
+        else:
+            self.ui.tabWidget.setCurrentIndex(self.ui.tabWidget.count() - 1)
 
     def load_time_time_charts(self):
         # chart_panel_name = self.project.get_name() + ' Temporal Exploration Charts'
@@ -512,13 +766,16 @@ class MainWindow(QMainWindow):
         # pass
 
     def create_chart_panel1(self):
-        cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
-        cp1_dlg.show()
-        # pass
+        # cp1_dlg = ChartPanelOptionsDlg(self, self.load_time_time_charts)
+        # cp1_dlg.show()
+        self.load_time_time_charts()
+        self.ui.pushButton_sec_chart.setDisabled(True)
+        self.chart1_options_action.setDisabled(False)
 
     def edit_chart1_options(self):
         cp1_dlg = ChartPanelOptionsDlg(self, self.update_chart_panel1)
         cp1_dlg.show()
+
 
     def update_chart_panel1(self):
         if self.chart_panel1_3 is not None:
@@ -566,7 +823,6 @@ class MainWindow(QMainWindow):
             # do nothing as no node is selected
             pass
 
-
     def setup_tmc_list(self, is_init=False):
         subset_tmc = self.project.get_tmc()
         self.ui.treeWidget_2.clear()
@@ -606,7 +862,7 @@ class MainWindow(QMainWindow):
             if root_item.child(tmc_idx).checkState(0):
                 cumulative_mi += tmc_list['miles'][tmc_idx]
         self.ui.label_6.setText('{:1.1f}'.format(cumulative_mi))
-        self.ui.pushButton_tmc_subset.setEnabled(False)
+        # self.ui.pushButton_tmc_subset.setEnabled(False)
 
     def get_tmc_subset(self):
         tmc_subset = []
@@ -623,6 +879,10 @@ class Project:
     def __init__(self, project_name, directory, main_window):
         self.main_window = main_window
         self._project_name = project_name
+        self._project_analyst = ''
+        self._project_agency = ''
+        self._project_state = ''
+        self._project_location = ''
         self._project_dir = directory
         self._tmc_file_name = None
         self._data_file_name = None
@@ -632,12 +892,37 @@ class Project:
         # self.chart_panel1_opts = None  # _Delete
         self.data_res = 5
         self.direction = None
+        self._summary_data = None
 
     def set_name(self, new_name):
         self._project_name = new_name
 
     def get_name(self):
         return self._project_name
+
+    def set_analyst(self, new_analyst):
+        self._project_analyst = new_analyst
+
+    def get_analyst(self):
+        return self._project_analyst
+
+    def get_agency(self):
+        return self._project_agency
+
+    def set_agency(self, new_agency):
+        self._project_agency = new_agency
+
+    def get_state(self):
+        return self._project_state
+
+    def set_state(self, new_state):
+        self._project_state = new_state
+
+    def get_location(self):
+        return self._project_location
+
+    def set_location(self, new_location):
+        self._project_location = new_location
 
     def set_tmc_file(self, new_name):
         self._tmc_file_name = new_name
@@ -705,6 +990,22 @@ class Project:
 
     def loaded(self):
         self.main_window.add_project(self)
+
+    def summary_data(self):
+        return self._summary_data
+
+    def set_summary_data(self, summary):
+        self._summary_data = summary
+
+    def compute_sample_size(self, period_idx, tmc_code):
+        if self.database is not None and len(self._date_ranges) > period_idx and tmc_code in self.get_tmc(full_list=True, as_list=True).tolist():
+            dr1 = self.get_date_range(period_idx)
+            df = self.database.get_data()
+            df_tmc = df[(df['tmc_code'].isin([tmc_code]))]
+            df_period = df_tmc[(df_tmc['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df_tmc['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
+            return df_period['speed'].count()
+        else:
+            return 0
 
 
 class ConnectionContainer(QObject):

@@ -3,7 +3,10 @@ from stat_func import create_et_analysis, create_speed_band, create_travel_time_
 from chart_defaults import ChartOptions, AnalysisOptions
 from mpl_panels import create_spacer_line
 from mpl_charts import MplChart, FIG_TYPE_SPD_BAND, FIG_TYPE_EXTRA_TIME, FIG_TYPE_SPD_FREQ, FIG_TYPE_TT_CDF
-from viz_qt import LoadStage2QT
+from mpl_charts import PEAK_24HR, PEAK_AM, PEAK_PM, PEAK_MID
+from viz_qt import LoadStage2QT, LoadSummaryQT
+from DataHelper import SummaryData
+from numpy import mean, percentile
 
 
 class Stage2GridPanel(QtWidgets.QWidget):
@@ -50,6 +53,13 @@ class Stage2GridPanel(QtWidgets.QWidget):
         tmc = self.project.get_tmc()
         self.selected_tmc_name = tmc['tmc'][0]
         self.selected_tmc_len = tmc['miles'][0]
+        self.selected_peak = PEAK_24HR
+        self.am_ap_start = convert_time_to_ap(6, 0, 5)
+        self.am_ap_end = convert_time_to_ap(9, 0, 5)
+        self.pm_ap_start = convert_time_to_ap(16, 0, 5)
+        self.pm_ap_end = convert_time_to_ap(18, 0, 5)
+        self.md_ap_start = convert_time_to_ap(10, 0, 5)
+        self.md_ap_end = convert_time_to_ap(16, 0, 5)
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         if chart_options is not None:
@@ -112,6 +122,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.plot_dfs2 = []
         self.plot_dfs3 = []
         self.plot_dfs4 = []
+        self.plot_dfs5 = []
         self.update_plot_data()
         # self.create_charts()
         # self.add_charts_to_layouts()
@@ -126,6 +137,68 @@ class Stage2GridPanel(QtWidgets.QWidget):
         v_layout = QtWidgets.QVBoxLayout(self.panel2)
         v_layout.addWidget(self.chart_cdf)
         v_layout.addWidget(self.chart_speed_freq)
+        bg_day_select = QtWidgets.QButtonGroup(self.panel2)
+        self.check_wkdy2 = QtWidgets.QRadioButton('Weekdays')
+        self.check_wknd2 = QtWidgets.QRadioButton("Weekends")
+        self.check_mon2 = QtWidgets.QRadioButton('Mon')
+        self.check_tue2 = QtWidgets.QRadioButton('Tue')
+        self.check_wed2 = QtWidgets.QRadioButton('Wed')
+        self.check_thu2 = QtWidgets.QRadioButton('Thu')
+        self.check_fri2 = QtWidgets.QRadioButton('Fri')
+        self.check_sat2 = QtWidgets.QRadioButton('Sat')
+        self.check_sun2 = QtWidgets.QRadioButton('Sun')
+        bg_day_select.addButton(self.check_wkdy2)
+        bg_day_select.addButton(self.check_wknd2)
+        bg_day_select.addButton(self.check_mon2)
+        bg_day_select.addButton(self.check_tue2)
+        bg_day_select.addButton(self.check_wed2)
+        bg_day_select.addButton(self.check_thu2)
+        bg_day_select.addButton(self.check_fri2)
+        bg_day_select.addButton(self.check_sat2)
+        bg_day_select.addButton(self.check_sun2)
+        bg_peak_select = QtWidgets.QButtonGroup(self.panel2)
+        self.check_24hr2 = QtWidgets.QRadioButton('24-Hour')
+        self.check_am2 = QtWidgets.QRadioButton('AM')
+        self.check_md2 = QtWidgets.QRadioButton('Midday')
+        self.check_pm2 = QtWidgets.QRadioButton('PM')
+        bg_peak_select.addButton(self.check_24hr2)
+        bg_peak_select.addButton(self.check_am2)
+        bg_peak_select.addButton(self.check_md2)
+        bg_peak_select.addButton(self.check_pm2)
+        check_bar_day = QtWidgets.QWidget(self.panel2)
+        h_layout = QtWidgets.QHBoxLayout(check_bar_day)
+        h_layout.addWidget(self.check_wkdy2)
+        h_layout.addWidget(self.check_wknd2)
+        h_layout.addWidget(create_spacer_line(self.panel2))
+        h_layout.addWidget(self.check_mon2)
+        h_layout.addWidget(self.check_tue2)
+        h_layout.addWidget(self.check_wed2)
+        h_layout.addWidget(self.check_thu2)
+        h_layout.addWidget(self.check_fri2)
+        h_layout.addWidget(self.check_sat2)
+        h_layout.addWidget(self.check_sun2)
+        h_layout.addWidget(create_spacer_line(self.panel2))
+        h_layout.addWidget(self.check_24hr2)
+        h_layout.addWidget(self.check_am2)
+        h_layout.addWidget(self.check_md2)
+        h_layout.addWidget(self.check_pm2)
+        # self.connect_radio_buttons()
+        self.check_wkdy2.setChecked(True)
+        self.check_24hr2.setChecked(True)
+        self.check_wkdy2.toggled.connect(lambda: self.toggle_func2(0, self.check_wkdy2))
+        self.check_wknd2.toggled.connect(lambda: self.toggle_func2(1, self.check_wknd2))
+        self.check_mon2.toggled.connect(lambda: self.toggle_func2(2, self.check_mon2))
+        self.check_tue2.toggled.connect(lambda: self.toggle_func2(3, self.check_tue2))
+        self.check_wed2.toggled.connect(lambda: self.toggle_func2(4, self.check_wed2))
+        self.check_thu2.toggled.connect(lambda: self.toggle_func2(5, self.check_thu2))
+        self.check_fri2.toggled.connect(lambda: self.toggle_func2(6, self.check_fri2))
+        self.check_sat2.toggled.connect(lambda: self.toggle_func2(7, self.check_sat2))
+        self.check_sun2.toggled.connect(lambda: self.toggle_func2(8, self.check_sun2))
+        self.check_24hr2.toggled.connect(lambda: self.toggle_func_peak2(PEAK_24HR, self.check_24hr2))
+        self.check_am2.toggled.connect(lambda: self.toggle_func_peak2(PEAK_AM, self.check_am2))
+        self.check_md2.toggled.connect(lambda: self.toggle_func_peak2(PEAK_MID, self.check_md2))
+        self.check_pm2.toggled.connect(lambda: self.toggle_func_peak2(PEAK_PM, self.check_pm2))
+        v_layout.addWidget(check_bar_day)
         self.project.main_window.ui.tabWidget.addTab(self.panel2, '2 - Speed CDF/Frequency')
 
     def update_plot_data(self, **kwargs):
@@ -342,7 +415,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                    lambda: self.f_extra_time(thu_data_a),
                                    lambda: self.f_extra_time(fri_data_a),
                                    lambda: self.f_extra_time(sat_data_a),
-                                   lambda: self.f_extra_time(sun_data_a),
+                                   lambda: self.f_extra_time(sun_data_a)
                                    ]
 
         func_dict['Speed Band'] = [lambda: self.f_speed_band(wkdy_data_b),
@@ -354,15 +427,15 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                    lambda: self.f_speed_band(fri_data_b),
                                    lambda: self.f_speed_band(sat_data_b),
                                    lambda: self.f_speed_band(sun_data_b),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5, 6])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([1])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([2])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([3])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([4])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5])]),
-                                   lambda: self.f_speed_band(after_df[after_df['weekday'].isin([6])])
+                                   lambda: self.f_speed_band(wkdy_data_a),
+                                   lambda: self.f_speed_band(wknd_data_a),
+                                   lambda: self.f_speed_band(mon_data_a),
+                                   lambda: self.f_speed_band(tue_data_a),
+                                   lambda: self.f_speed_band(wed_data_a),
+                                   lambda: self.f_speed_band(thu_data_a),
+                                   lambda: self.f_speed_band(fri_data_a),
+                                   lambda: self.f_speed_band(sat_data_a),
+                                   lambda: self.f_speed_band(sun_data_a)
                                    ]
 
         func_dict['Cumulative Distribution'] = [lambda: self.f_tt_cdf(wkdy_data_b),
@@ -382,7 +455,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                                 lambda: self.f_tt_cdf(thu_data_a),
                                                 lambda: self.f_tt_cdf(fri_data_a),
                                                 lambda: self.f_tt_cdf(sat_data_a),
-                                                lambda: self.f_tt_cdf(sun_data_a),
+                                                lambda: self.f_tt_cdf(sun_data_a)
                                                 ]
 
         func_dict['Speed Frequency'] = [lambda: self.f_speed_freq(wkdy_data_b),
@@ -402,8 +475,65 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                         lambda: self.f_speed_freq(thu_data_a),
                                         lambda: self.f_speed_freq(fri_data_a),
                                         lambda: self.f_speed_freq(sat_data_a),
-                                        lambda: self.f_speed_freq(sun_data_a),
+                                        lambda: self.f_speed_freq(sun_data_a)
                                         ]
+
+        func_dict['Speed CDF Peak'] = [lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 72) & (wkdy_data_b['AP'] < 120)]),  # AM Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 72) & (wknd_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 72) & (mon_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 72) & (tue_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 72) & (wed_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 72) & (thu_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 72) & (fri_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 72) & (sat_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 72) & (sun_data_b['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 72) & (wkdy_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 72) & (wknd_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 72) & (mon_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 72) & (tue_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 72) & (wed_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 72) & (thu_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 72) & (fri_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 72) & (sat_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 72) & (sun_data_a['AP'] < 120)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 120) & (wkdy_data_b['AP'] < 180)]),  # Md Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 120) & (wknd_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 120) & (mon_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 120) & (tue_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 120) & (wed_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 120) & (thu_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 120) & (fri_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 120) & (sat_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 120) & (sun_data_b['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 120) & (wkdy_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 120) & (wknd_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 120) & (mon_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 120) & (tue_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 120) & (wed_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 120) & (thu_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 120) & (fri_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 120) & (sat_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 120) & (sun_data_a['AP'] < 180)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 180) & (wkdy_data_b['AP'] < 228)]),  # PM Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 180) & (wknd_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 180) & (mon_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 180) & (tue_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 180) & (wed_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 180) & (thu_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 180) & (fri_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 180) & (sat_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 180) & (sun_data_b['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 180) & (wkdy_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 180) & (wknd_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 180) & (mon_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 180) & (tue_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 180) & (wed_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 180) & (thu_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 180) & (fri_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 180) & (sat_data_a['AP'] < 228)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 180) & (sun_data_a['AP'] < 228)])
+                                       ]
+
         LoadStage2QT(self, self.project.main_window, func_dict)
 
     def plot_data_updated(self):
@@ -416,6 +546,8 @@ class Stage2GridPanel(QtWidgets.QWidget):
             self.create_second_panel()
             self.init_mode = False
             self.no_compute = False
+            # self.generate_summary_data()
+            # self.project.main_window.create_summary_table()
 
     def create_charts(self):
         self.chart_et = MplChart(self, fig_type=FIG_TYPE_EXTRA_TIME, panel=self, region=0, region2=1)
@@ -441,13 +573,8 @@ class Stage2GridPanel(QtWidgets.QWidget):
         if self.chart_cdf is not None:
             self.chart_cdf.update_figure()
             self.chart_cdf.draw()
-
-    # def update_chart_visibility(self):
-    #     self.chart_et.setVisible(True)
-    #     self.chart_speed_freq.setVisible(True)
-    #     # self.chart12.setVisible(self.chart_options.num_cols > 1)
-    #     self.chart_sb_before.setVisible(self.chart_options.num_rows > 1)
-    #     self.chart_sb_after.setVisible(self.chart_options.num_rows > 1 and self.chart_options.num_cols > 1)
+        # self.generate_summary_data()
+        # self.project.main_window.create_summary_table()
 
     def add_charts_to_layouts(self):
         # Chart 1
@@ -504,112 +631,126 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.selected_tmc_len = tmc.loc[tmc['tmc'] == tmc_code, 'miles'].iloc[0]
         self.tmc_selection_changed()
 
-    def connect_check_boxes(self):
-
-        self.check_wkdy.stateChanged.connect(self.check_weekday)
-        if sum([self.available_days.count(el) for el in range(5)]) > 0:
-            self.check_wkdy.setChecked(True)
-        else:
-            self.check_wkdy.setDisabled(True)
-
-        self.check_wknd.stateChanged.connect(self.check_weekend)
-        if sum([self.available_days.count(el) for el in range(5, 7)]) > 0:
-            self.check_wknd.setChecked(True)
-        else:
-            self.check_wknd.setDisabled(True)
-
-        self.check_mon.stateChanged.connect(self.check_func)
-        if self.available_days.count(0) > 0:
-            self.check_mon.setChecked(True)
-        else:
-            self.check_mon.setDisabled(True)
-
-        self.check_tue.stateChanged.connect(self.check_func)
-        if self.available_days.count(1) > 0:
-            self.check_tue.setChecked(True)
-        else:
-            self.check_tue.setDisabled(True)
-
-        self.check_wed.stateChanged.connect(self.check_func)
-        if self.available_days.count(2) > 0:
-            self.check_wed.setChecked(True)
-        else:
-            self.check_wed.setDisabled(True)
-
-        self.check_thu.stateChanged.connect(self.check_func)
-        if self.available_days.count(3) > 0:
-            self.check_thu.setChecked(True)
-        else:
-            self.check_thu.setDisabled(True)
-
-        self.check_fri.stateChanged.connect(self.check_func)
-        if self.available_days.count(4) > 0:
-            self.check_fri.setChecked(True)
-        else:
-            self.check_fri.setDisabled(True)
-
-        self.check_sat.stateChanged.connect(self.check_func)
-        if self.available_days.count(5) > 0:
-            self.check_sat.setChecked(True)
-        else:
-            self.check_sat.setDisabled(True)
-
-        self.check_sun.stateChanged.connect(self.check_func)
-        if self.available_days.count(6) > 0:
-            self.check_sun.setChecked(True)
-        else:
-            self.check_sun.setDisabled(True)
-
-    def check_weekday(self):
-        self.no_compute = True
-        weekday_checked = self.check_wkdy.isChecked()
-        if self.available_days.count(0) > 0:
-            self.check_mon.setChecked(weekday_checked)
-        if self.available_days.count(1) > 0:
-            self.check_tue.setChecked(weekday_checked)
-        if self.available_days.count(2) > 0:
-            self.check_wed.setChecked(weekday_checked)
-        if self.available_days.count(3) > 0:
-            self.check_thu.setChecked(weekday_checked)
-        if self.available_days.count(4) > 0:
-            self.check_fri.setChecked(weekday_checked)
-        self.no_compute = False
-        self.check_func()
-
-    def check_weekend(self):
-        self.no_compute = True
-        weekend_checked = self.check_wknd.isChecked()
-        if self.available_days.count(5) > 0:
-            self.check_sat.setChecked(weekend_checked)
-        if self.available_days.count(6) > 0:
-            self.check_sun.setChecked(weekend_checked)
-        self.no_compute = False
-        self.check_func()
-
     def toggle_func(self, day_select, button):
         if not (self.init_mode or self.no_compute):
             if button.isChecked():
+                self.no_compute = True
+                if day_select is 0:
+                    self.check_wkdy2.setChecked(True)
+                elif day_select is 1:
+                    self.check_wknd2.setChecked(True)
+                elif day_select is 2:
+                    self.check_mon2.setChecked(True)
+                elif day_select is 3:
+                    self.check_tue2.setChecked(True)
+                elif day_select is 4:
+                    self.check_wed2.setChecked(True)
+                elif day_select is 5:
+                    self.check_thu2.setChecked(True)
+                elif day_select is 6:
+                    self.check_fri2.setChecked(True)
+                elif day_select is 7:
+                    self.check_sat2.setChecked(True)
+                elif day_select is 8:
+                    self.check_sun2.setChecked(True)
+                self.no_compute = False
                 self.day_select = day_select
                 self.update_figures()
 
-    def check_func(self):
+    def toggle_func2(self, day_select, button):
         if not (self.init_mode or self.no_compute):
-            self.plot_days.clear()
-            if self.check_mon.isChecked() is True:
-                self.plot_days.append(0)
-            if self.check_tue.isChecked() is True:
-                self.plot_days.append(1)
-            if self.check_wed.isChecked() is True:
-                self.plot_days.append(2)
-            if self.check_thu.isChecked() is True:
-                self.plot_days.append(3)
-            if self.check_fri.isChecked() is True:
-                self.plot_days.append(4)
-            if self.check_sat.isChecked() is True:
-                self.plot_days.append(5)
-            if self.check_sun.isChecked() is True:
-                self.plot_days.append(6)
+            if button.isChecked():
+                if day_select is 0:
+                    self.check_wkdy.setChecked(True)
+                elif day_select is 1:
+                    self.check_wknd.setChecked(True)
+                elif day_select is 2:
+                    self.check_mon.setChecked(True)
+                elif day_select is 3:
+                    self.check_tue.setChecked(True)
+                elif day_select is 4:
+                    self.check_wed.setChecked(True)
+                elif day_select is 5:
+                    self.check_thu.setChecked(True)
+                elif day_select is 6:
+                    self.check_fri.setChecked(True)
+                elif day_select is 7:
+                    self.check_sat.setChecked(True)
+                elif day_select is 8:
+                    self.check_sun.setChecked(True)
 
-            if len(self.plot_days) > 0:
-                # self.update_plot_data()
+    def toggle_func_peak2(self, peak_select, button):
+        if not (self.init_mode or self.no_compute):
+            if button.isChecked():
+                self.selected_peak = peak_select
                 self.update_figures()
+
+    def generate_summary_data(self):
+        sd = SummaryData(self.project, self.selected_tmc_name)
+        dr1 = self.project.get_date_range(0)
+        dr2 = self.project.get_date_range(1)
+        sd._start_date = [dr1[0], dr2[0]]
+        sd._end_date = [dr1[1], dr2[1]]
+        sd._start_time = ['12:00AM', '12:00AM']
+        sd._end_time = ['11:59PM', '11:59PM']
+        sd._num_days = [dr1[0].daysTo(dr1[1]) + 1, dr2[0].daysTo(dr2[1]) + 1]
+        # sd._sample_size = [self.project.compute_sample_size(0, self.selected_tmc_name), self.project.compute_sample_size(1, self.selected_tmc_name)]
+        # sd._am_mean = [mean(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values)]
+        # sd._md_mean = [mean(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values)]
+        # sd._pm_mean = [mean(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values)]
+        # sd._am_95 = [percentile(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values, 5)]
+        # sd._md_95 = [percentile(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values, 5)]
+        # sd._pm_95 = [percentile(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values, 5)]
+        # self.project.set_summary_data(sd)
+
+        func_summ = dict()
+        func_summ['sample_size'] = [lambda: self.project.compute_sample_size(0, self.selected_tmc_name),
+                                    lambda: self.project.compute_sample_size(1, self.selected_tmc_name)]
+        func_summ['am_mean'] = [lambda: mean(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values)]
+        func_summ['md_mean'] = [lambda: mean(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values)]
+        func_summ['pm_mean'] = [lambda: mean(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values)]
+        func_summ['am_95'] = [lambda: percentile(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values, 5)]
+        func_summ['md_95'] = [lambda: percentile(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values, 5)]
+        func_summ['pm_95'] = [lambda: percentile(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values, 5)]
+
+        LoadSummaryQT(self, self.project.main_window, func_summ, sd)
+
+
+def convert_time_to_ap(start_hour, start_min, ap_increment):
+    return (start_hour * 12) + start_min // ap_increment

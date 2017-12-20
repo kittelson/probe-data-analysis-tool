@@ -284,7 +284,7 @@ class ChartGridPanel(QtWidgets.QWidget):
         #                  create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]
 
         func_list = [lambda: create_trend_analysis(tmc_df, [96, 108], [204, 216], [210, 168]),  # create_speed_trend_analysis(tmc_df),  # lambda: create_tt_trend_analysis(tmc_df),
-                     lambda: create_pct_congested_sp(filtered_df, self.speed_bins),
+                     lambda: create_pct_congested_sp(tmc_df, self.speed_bins),  # filtered_df
                      lambda: create_pct_congested_tmc(filtered_df, self.speed_bins, times=[self.ap_start, self.ap_end], tmc_index_list=dir_tmc['tmc']),
                      lambda: create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
                      lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start, self.ap_end], dir_tmc['tmc'])]

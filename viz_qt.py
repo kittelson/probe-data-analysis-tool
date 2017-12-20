@@ -104,6 +104,7 @@ class Stage2LoadThread(QThread):
         self.chart_panel.plot_dfs2 = stage2_dfs[1]
         self.chart_panel.plot_dfs3 = stage2_dfs[2]
         self.chart_panel.plot_dfs4 = stage2_dfs[3]
+        self.chart_panel.plot_dfs5 = stage2_dfs[4]
         self.countChanged.emit(-1)
 
 
@@ -304,6 +305,7 @@ class LoadStage2QT(QDialog):
         self.chart_panel = chart_panel
         self.progress_helper = ProgressHelper()
         self.func_dict = func_dict
+        self.func_count = 0
         self.initUI()
 
     def initUI(self):
@@ -324,11 +326,15 @@ class LoadStage2QT(QDialog):
         if value < 0:
             self.accept()
             self.chart_panel.plot_data_updated()
-        elif value == 1:
+        elif value == 0:
             self.setWindowTitle("Computing analysis...")
+            self.func_count += 1
+            self.progress.setFormat('{:1.0f}%'.format(100.0 * value / self.progress.maximum()) + ' (' + str(self.func_count) + ' of 5)')
             self.progress.setValue(value)
         else:
+            self.progress.setFormat('{:1.0f}%'.format(100.0 * value / self.progress.maximum()) + ' (' + str(self.func_count) + ' of 5)')
             self.progress.setValue(value)
+
 
 
 def compute_data_quality(funcs, progress_tracker=None):
@@ -368,7 +374,6 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
     chart_data = []
     progress = 0
     if progress_tracker is not None:
-        # print(data)
         if tmc is not None:
             agg_data = data[data['tmc_code'].isin(tmc)]
             agg_data = agg_data.groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])['speed'] / 12
@@ -382,19 +387,16 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
         progress += 1
         progress_tracker.emitter.emit(progress)
         wkdy_data = agg_data.groupby(['weekday']).agg([np_mean])['mean']
-        # print(wkdy_data)
         chart_data.append(wkdy_data)
         progress += 1
         progress_tracker.emitter.emit(progress)
         tod_data = agg_data.groupby(['Hour']).agg([np_mean])['mean']
-        # print(tod_data)
         chart_data.append(tod_data)
         progress += 1
         progress_tracker.emitter.emit(progress)
         tmc_data = agg_data.groupby(['tmc_code']).agg([np_mean])['mean']
         if tmc is not None:
             tmc_data = tmc_data.reindex(tmc)
-        # print(tmc_data)
         chart_data.append(tmc_data)
         progress += 1
         progress_tracker.emitter.emit(progress)
@@ -403,16 +405,13 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
         sp_data.rename({"mean":"data_pct"}, axis='columns', inplace=True)
         progress += 1
         progress_tracker.emitter.emit(progress)
-        # print(sp_data)
         chart_data_sub = []
         chart_data_sub.append(sp_data[sp_data['weekday'].isin([0, 1, 2, 3, 4])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
         chart_data_sub[0].resize((chart_data_sub[0].shape[0],))
-        # print(chart_data_sub[0])
         progress += 1
         progress_tracker.emitter.emit(progress)
         chart_data_sub.append(sp_data[sp_data['weekday'].isin([5, 6])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
         chart_data_sub[1].resize((chart_data_sub[1].shape[0],))
-        # print(chart_data_sub[1])
         progress += 1
         progress_tracker.emitter.emit(progress)
         chart_data.append(chart_data_sub)
@@ -461,6 +460,103 @@ def compute_spatial_charts(func_list, progress_tracker=None):
             progress_tracker.emitter.emit(progress)
 
     return chart_data
+
+
+class LoadSummaryQT(QDialog):
+    """
+    Dialog with a Progress Bar marking the progress of loading the data.
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    def __init__(self, chart_panel, mainwindow, func_dict, summary_data):
+        super().__init__(mainwindow)
+        self.mainwindow = mainwindow
+        self.chart_panel = chart_panel
+        self.progress_helper = ProgressHelper()
+        self.func_dict = func_dict
+        self.summary_data = summary_data
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('Initializing...')
+        self.progress = QProgressBar(self)
+        self.progress_helper.set_bar(self.progress)
+        self.progress.setGeometry(0, 0, 300, 25)
+        self.progress.setRange(0, 0)
+        self.progress.setTextVisible(False)
+        self.show()
+
+        self.calc = SummaryLoadThread(self.chart_panel, self.func_dict, self.summary_data)
+        self.calc.set_progress_helper(self.progress_helper)
+        self.calc.countChanged.connect(self.on_count_changed)
+        self.calc.start()
+
+    def on_count_changed(self, value):
+        if value < 0:
+            self.accept()
+            self.mainwindow.create_summary_table()
+        elif value == 1:
+            self.setWindowTitle("Computing analysis...")
+            self.progress.setValue(value)
+        else:
+            self.progress.setValue(value)
+
+
+class SummaryLoadThread(QThread):
+    """
+    Loads and extracts the data with a QT progress bar
+    Adapted from: https://stackoverflow.com/documentation/pyqt5/9544/introduction-to-progress-bars#t=201709081442594430681
+    """
+
+    countChanged = pyqtSignal(int)
+    progress_helper = None
+
+    def __init__(self, chart_panel, funcs, summary_data):
+        QThread.__init__(self)
+        self.chart_panel = chart_panel
+        self.funcs = funcs
+        self.summary_data = summary_data
+
+    def set_progress_helper(self, progress_helper):
+        self.progress_helper = progress_helper
+        self.progress_helper.set_emitter(self.countChanged)
+
+    def run(self):
+        summary_stats = compute_summary_stats(self.funcs, progress_tracker=self.progress_helper)
+        self.summary_data._sample_size = summary_stats[0]
+        self.summary_data._am_mean = summary_stats[1]
+        self.summary_data._md_mean = summary_stats[2]
+        self.summary_data._pm_mean = summary_stats[3]
+        self.summary_data._am_95 = summary_stats[4]
+        self.summary_data._md_95 = summary_stats[5]
+        self.summary_data._pm_95 = summary_stats[6]
+        self.chart_panel.project.set_summary_data(self.summary_data)
+        self.countChanged.emit(-1)
+
+
+def compute_summary_stats(func_dict, progress_tracker=None):
+    if progress_tracker is not None:
+        progress_tracker.bar.setTextVisible(True)
+
+    total_funcs = 0
+    for func_type, func_list in func_dict.items():
+        if progress_tracker is not None:
+            total_funcs += len(func_list)
+    progress_tracker.bar.setMaximum(total_funcs)
+
+    progress = 0
+    summary_stats = []
+    for func_type, func_list in func_dict.items():
+        sub_summary_stats = []
+        progress_tracker.emitter.emit(progress)
+        if progress_tracker is not None:
+            for func in func_list:
+                sub_summary_stats.append(func())
+                progress += 1
+                progress_tracker.emitter.emit(progress)
+            summary_stats.append(sub_summary_stats)
+
+    return summary_stats
 
 
 class LoadSpatialQT(QDialog):

@@ -41,6 +41,11 @@ FIG_DQ_TOD = 101
 FIG_DQ_TMC = 102
 FIG_DQ_SP = 103
 
+PEAK_24HR = 0
+PEAK_AM = 1
+PEAK_MID = 2
+PEAK_PM = 3
+
 NONE = -1
 AFTER = 0
 BEFORE = 1
@@ -548,7 +553,9 @@ class MplChart(FigureCanvas):
         # self.axes.set_xlabel('Date')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title('Percent Congested over Time' + ' (' + convert_xval_to_time(self.panel.ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end, None, 5) + ')')
+        self.axes.set_title('Percent Congested over Time: ' + convert_xval_to_time(self.panel.ap_start, None, 5)
+                            + '-' + convert_xval_to_time(self.panel.ap_end, None, 5)
+                            + '\n' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         self.axes.legend()
@@ -813,8 +820,27 @@ class MplChart(FigureCanvas):
         offset = 9
         # tmc_list = self.panel.project.get_tmc(as_list=True)
         tmc1 = self.panel.selected_tmc_name
-        data_before = self.panel.plot_dfs3[day_type]
-        data_after = self.panel.plot_dfs3[day_type + offset]
+        # title_preamble = ''
+        if self.panel.selected_peak == PEAK_24HR:
+            color_str = 'C3'
+            title_preamble = '24 Hour '
+            data_before = self.panel.plot_dfs3[day_type]
+            data_after = self.panel.plot_dfs3[day_type + offset]
+        elif self.panel.selected_peak == PEAK_AM:
+            color_str = 'C0'
+            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.am_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[day_type]
+            data_after = self.panel.plot_dfs5[day_type + offset]
+        elif self.panel.selected_peak == PEAK_MID:
+            color_str = 'C2'
+            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.md_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[18 + day_type]
+            data_after = self.panel.plot_dfs5[18 + day_type + offset]
+        else:
+            color_str = 'C1'
+            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[36 + day_type]
+            data_after = self.panel.plot_dfs5[36 + day_type + offset]
 
         if self.region == AFTER:
             data1 = data_after
@@ -825,12 +851,11 @@ class MplChart(FigureCanvas):
 
         # Before Data  # if self.region2 != NONE:
         max_y2 = len(data2['speed'][tmc1])
-        self.axes.plot(data2['speed'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
+        self.axes.plot(data2['speed'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=color_str, label='Before', ls='--')
         # After Data
         max_y = len(data1['speed'][tmc1])
-        self.axes.plot(data1['speed'][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
-
-        title_str = 'Speed Distribution: ' + self.panel.project.get_name()
+        self.axes.plot(data1['speed'][tmc1].values, [el/max_y for el in range(max_y)], color=color_str, label='After')
+        title_str = title_preamble + 'Speed Distribution: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
         title_str = title_str + '\n'
         if self.region2 != 0:
@@ -855,8 +880,28 @@ class MplChart(FigureCanvas):
         offset = 9
         # tmc_list = self.panel.project.get_tmc(as_list=True)
         tmc1 = self.panel.selected_tmc_name
-        data_before = self.panel.plot_dfs3[day_type]
-        data_after = self.panel.plot_dfs3[day_type + offset]
+        # data_before = self.panel.plot_dfs3[day_type]
+        # data_after = self.panel.plot_dfs3[day_type + offset]
+        if self.panel.selected_peak == PEAK_24HR:
+            color_str = 'C3'
+            title_preamble = '24 Hour '
+            data_before = self.panel.plot_dfs3[day_type]
+            data_after = self.panel.plot_dfs3[day_type + offset]
+        elif self.panel.selected_peak == PEAK_AM:
+            color_str = 'C0'
+            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.am_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[day_type]
+            data_after = self.panel.plot_dfs5[day_type + offset]
+        elif self.panel.selected_peak == PEAK_MID:
+            color_str = 'C2'
+            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.md_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[18 + day_type]
+            data_after = self.panel.plot_dfs5[18 + day_type + offset]
+        else:
+            color_str = 'C1'
+            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None, 5) + ') '
+            data_before = self.panel.plot_dfs5[36 + day_type]
+            data_after = self.panel.plot_dfs5[36 + day_type + offset]
 
         if self.region == AFTER:
             data1 = data_after
@@ -864,21 +909,20 @@ class MplChart(FigureCanvas):
         else:
             data1 = data_before
             data2 = data_after
-
         # Before Data # if self.region2 != NONE:
         max_speed2 = int(ceil(max(data2['speed'][tmc1].values)))
         y2, x2 = np_hist(data2['speed'][tmc1].values, bins=[el for el in range(max_speed2 + bin_extend)])
         y2 = np_append(y2, [0])
         sum_y2 = sum(y2)
-        self.axes.plot(x2, y2/sum(y2), color=TT_BLUE, label='Before')
+        self.axes.plot(x2, y2/sum(y2), color=color_str, label='Before', ls='--')
         # After Data
         max_speed = int(ceil(max(data1['speed'][tmc1].values)))
         y, x = np_hist(data1['speed'][tmc1].values, bins=[el for el in range(max_speed + bin_extend)])
         y = np_append(y, [0])
         sum_y = sum(y)
-        self.axes.plot(x, y/sum(y), color=SB_RED, label='After')
+        self.axes.plot(x, y/sum(y), color=color_str, label='After')
 
-        title_str = 'Speed Frequency: ' + self.panel.project.get_name()
+        title_str = title_preamble + 'Speed Frequency: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
         title_str = title_str + '\n'
         if self.region2 != 0:

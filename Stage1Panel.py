@@ -274,7 +274,7 @@ class Stage1GridPanel(QtWidgets.QWidget):
             print(self.ap_start)
             print(self.ap_end)
             func_list = [None,
-                         lambda: create_pct_congested_sp(filtered_df, self.speed_bins, aps=[self.ap_start, self.ap_end]),
+                         lambda: create_pct_congested_sp(tmc_df, self.speed_bins, aps=[self.ap_start, self.ap_end]),  # filtered_df
                          None,
                          lambda: create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
                          None]

@@ -463,7 +463,7 @@ def create_speed_freq(data):
     # time1 = time.time()
     # speed_freq = data.groupby(['tmc_code', pd.cut(data.speed, [el for el in range(80)])]).size().unstack()
     # time2 = time.time()
-    # print('Speed Freq Analysis: ' + str(time2 - time1))
+    # print('Speed Freq Analysis: ' + str(0.0))
     return None
 
 
