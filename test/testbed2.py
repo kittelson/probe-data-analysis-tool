@@ -126,6 +126,7 @@ if len(dirs) > 1:
 tmc11 = df_dir1[(df_dir1['AP'] >= am_ap_start) & (df_dir1['AP'] <= am_ap_end)]
 test11 = tmc11.groupby(['Date', 'tmc_code'])['speed'].agg(np.mean)
 d11 = test11.to_frame()
+d11.reindex(tmc_subset1, level=1)
 imshow_data11 = d11.unstack().values[:, :]
 imshow_data11 = imshow_data11.T
 
@@ -217,27 +218,42 @@ f_x_label = lambda x, pos: convert_x_to_day(x, pos, start_datetime)
 f_y_label = lambda y, pos: convert_xval_to_time(y, pos, 5)
 f_tmc_label1 = lambda x, pos: convert_extent_to_tmc(x, pos, tmc_subset1, tmc_ext)
 f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, tmc_subset2, tmc_ext)
-im11 = ax11.imshow(imshow_data11, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
-im12 = ax12.imshow(imshow_data12, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
-im13 = ax13.imshow(imshow_data13, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+# imshow_data11.sort(axis=1)
+# imshow_data12.sort(axis=1)
+# imshow_data13.sort(axis=1)
+# imshow_data11 = imshow_data11.T
+# imshow_data12 = imshow_data12.T
+# imshow_data13 = imshow_data13.T
+# im11 = ax11.imshow(imshow_data11, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+last_val = 0
+row_idx = 0
+tmc_l1 = tmc[tmc['direction'] == dirs[0]]
+for row in imshow_data11:
+    curr_tmc_len = tmc_l1['miles'][row_idx]
+    im11 = ax11.imshow(row.reshape((1, num_days)), extent=[0, num_days, last_val, last_val + curr_tmc_len], cmap='RdYlGn', origin='lower', interpolation='nearest', aspect='auto')
+    last_val += curr_tmc_len
+    row_idx += 1
+# im12 = ax12.imshow(imshow_data12, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+# im13 = ax13.imshow(imshow_data13, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+ax11.set_ylim(0, tmc_l1['miles'].sum())
 ax11.set_title(dirs[0] + ': AM Peak')
 ax12.set_title(dirs[0] + ': PM Peak')
 ax13.set_title(dirs[0] + ': Midday Peak')
 cbar11 = fig.colorbar(im11, ax=ax11, shrink=cb_shrink)
 cbar11.set_label('Speed (mph)')
-cbar12 = fig.colorbar(im12, ax=ax12, shrink=cb_shrink)
-cbar12.set_label('Speed (mph)')
-cbar13 = fig.colorbar(im13, ax=ax13, shrink=cb_shrink)
-cbar13.set_label('Speed (mph)')
-ax11.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-ax11.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
-ax11.set_ylabel('TMC')
-ax12.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-ax12.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
-ax12.set_ylabel('TMC')
-ax13.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-ax13.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
-ax13.set_ylabel('TMC')
+# cbar12 = fig.colorbar(im12, ax=ax12, shrink=cb_shrink)
+# cbar12.set_label('Speed (mph)')
+# cbar13 = fig.colorbar(im13, ax=ax13, shrink=cb_shrink)
+# cbar13.set_label('Speed (mph)')
+# ax11.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+# ax11.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
+# ax11.set_ylabel('TMC')
+# ax12.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+# ax12.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
+# ax12.set_ylabel('TMC')
+# ax13.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+# ax13.yaxis.set_major_formatter(FuncFormatter(f_tmc_label1))
+# ax13.set_ylabel('TMC')
 
 # Direction #2
 if len(dirs) > 1:

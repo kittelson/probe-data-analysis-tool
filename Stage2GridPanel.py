@@ -5,7 +5,7 @@ from mpl_panels import create_spacer_line
 from mpl_charts import MplChart, FIG_TYPE_SPD_BAND, FIG_TYPE_EXTRA_TIME, FIG_TYPE_SPD_FREQ, FIG_TYPE_TT_CDF
 from mpl_charts import PEAK_24HR, PEAK_AM, PEAK_PM, PEAK_MID
 from viz_qt import LoadStage2QT, LoadSummaryQT
-from DataHelper import SummaryData
+from DataHelper import SummaryData, Project
 from numpy import mean, percentile
 
 
@@ -44,15 +44,15 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.period1 = dr1[0].toString('yyyy-MM-dd') + ' to ' + dr1[1].toString('yyyy-MM-dd')
         self.period2 = dr2[0].toString('yyyy-MM-dd') + ' to ' + dr2[1].toString('yyyy-MM-dd')
         tmc = self.project.database.get_tmcs()
-        self.facility_len = tmc['miles'].sum()
+        self.facility_len = tmc[Project.ID_TMC_LEN].sum()
         self.dfs = [df_period1, df_period2]
         # self.dfs = [self.f_extra_time(df) for df in self.dfs]
         # self.dfs = [self.f_extra_time(df_period1), self.f_extra_time(df_period2)]
         # self.tmc_subset = []
         # self.facility_len_subset = tmc[tmc['tmc'].isin(self.tmc_subset)]['miles'].sum()
         tmc = self.project.get_tmc()
-        self.selected_tmc_name = tmc['tmc'][0]
-        self.selected_tmc_len = tmc['miles'][0]
+        self.selected_tmc_name = tmc[Project.ID_TMC_CODE][0]
+        self.selected_tmc_len = tmc[Project.ID_TMC_LEN][0]
         self.selected_peak = PEAK_24HR
         self.am_ap_start = convert_time_to_ap(6, 0, 5)
         self.am_ap_end = convert_time_to_ap(9, 0, 5)
@@ -628,7 +628,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
         # self.cb_tmc_select.setCurrentText(tmc_code)
         self.selected_tmc_name = tmc_code
         tmc = self.project.get_tmc(full_list=True)
-        self.selected_tmc_len = tmc.loc[tmc['tmc'] == tmc_code, 'miles'].iloc[0]
+        self.selected_tmc_len = tmc.loc[tmc[Project.ID_TMC_CODE] == tmc_code, Project.ID_TMC_LEN].iloc[0]
         self.tmc_selection_changed()
 
     def toggle_func(self, day_select, button):
@@ -695,59 +695,59 @@ class Stage2GridPanel(QtWidgets.QWidget):
         sd._end_time = ['11:59PM', '11:59PM']
         sd._num_days = [dr1[0].daysTo(dr1[1]) + 1, dr2[0].daysTo(dr2[1]) + 1]
         # sd._sample_size = [self.project.compute_sample_size(0, self.selected_tmc_name), self.project.compute_sample_size(1, self.selected_tmc_name)]
-        # sd._am_mean = [mean(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values)]
-        # sd._md_mean = [mean(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values)]
-        # sd._pm_mean = [mean(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values)]
-        # sd._am_95 = [percentile(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values, 5)]
-        # sd._md_95 = [percentile(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values, 5)]
-        # sd._pm_95 = [percentile(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values, 5)]
+        # sd._am_mean = [mean(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        # sd._md_mean = [mean(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        # sd._pm_mean = [mean(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+        #                mean(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        # sd._am_95 = [percentile(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
+        # sd._md_95 = [percentile(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
+        # sd._pm_95 = [percentile(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+        #              percentile(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
         # self.project.set_summary_data(sd)
 
         func_summ = dict()
         func_summ['sample_size'] = [lambda: self.project.compute_sample_size(0, self.selected_tmc_name),
                                     lambda: self.project.compute_sample_size(1, self.selected_tmc_name)]
-        func_summ['am_mean'] = [lambda: mean(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values)]
-        func_summ['md_mean'] = [lambda: mean(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values)]
-        func_summ['pm_mean'] = [lambda: mean(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values),
-                                lambda: mean(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values)]
-        func_summ['am_95'] = [lambda: percentile(self.plot_dfs5[0]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[9]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[1]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[10]['speed'][self.selected_tmc_name].values, 5)]
-        func_summ['md_95'] = [lambda: percentile(self.plot_dfs5[18]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[27]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[19]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[28]['speed'][self.selected_tmc_name].values, 5)]
-        func_summ['pm_95'] = [lambda: percentile(self.plot_dfs5[36]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[45]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[37]['speed'][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[46]['speed'][self.selected_tmc_name].values, 5)]
+        func_summ['am_mean'] = [lambda: mean(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        func_summ['md_mean'] = [lambda: mean(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        func_summ['pm_mean'] = [lambda: mean(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
+                                lambda: mean(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
+        func_summ['am_95'] = [lambda: percentile(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
+        func_summ['md_95'] = [lambda: percentile(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
+        func_summ['pm_95'] = [lambda: percentile(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
+                                lambda: percentile(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
 
         LoadSummaryQT(self, self.project.main_window, func_summ, sd)
 

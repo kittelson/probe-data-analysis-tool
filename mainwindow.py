@@ -651,7 +651,7 @@ class Ui_MainWindow(object):
         self.pushButton_exit.setText(_translate("MainWindow", "Exit"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Welcome"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Facility Map"))
-        self.menuAnalyze.setTitle(_translate("MainWindow", "Analyze"))
+        self.menuAnalyze.setTitle(_translate("MainWindow", "View"))
         self.menuChartOptions.setTitle(_translate("MainWindow", "Chart Options"))
         self.menuHelp.setTitle(_translate("MainWindow", "Help"))
         self.menuFile.setTitle(_translate("MainWindow", "Project"))

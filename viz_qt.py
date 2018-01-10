@@ -4,7 +4,7 @@ Module that houses some Qt-based data-loading classes.
 
 from PyQt5.QtCore import QThread, pyqtSignal
 from PyQt5.QtWidgets import QDialog, QProgressBar
-from DataHelper import Database
+import DataHelper
 import datetime
 import pandas as pd
 import time
@@ -201,8 +201,8 @@ def load_project_data(project, progress_tracker=None):
     tmc = pd.read_csv(project.get_tmc_file_name())
 
     # Reading and dropping all null values
-    df = pd.read_csv(project.get_data_file_name())  # , parse_dates=['measurement_tstamp']
-    df = df[df.speed.notnull()]
+    df = pd.read_csv(project.get_data_file_name())  # , parse_dates=[DataHelper.Project.ID_DATA_TIMESTAMP]
+    df = df[df[DataHelper.Project.ID_DATA_SPEED].notnull()]  # df.speed.notnull()
 
     if progress_tracker is not None:
         progress_tracker.bar.setTextVisible(True)
@@ -214,7 +214,7 @@ def load_project_data(project, progress_tracker=None):
     progress = 0
     view_progress = 0
     if progress_tracker is not None:
-        for dStr in df['measurement_tstamp']:
+        for dStr in df[DataHelper.Project.ID_DATA_TIMESTAMP]:
             new_mat.append(extract_vals(dStr))
             progress += 1
             if progress == 10000:
@@ -225,7 +225,7 @@ def load_project_data(project, progress_tracker=None):
         progress_tracker.emitter.emit(0)
         progress_tracker.bar.setTextVisible(False)
     else:
-        new_mat = [extract_vals(dStr) for dStr in df['measurement_tstamp']]
+        new_mat = [extract_vals(dStr) for dStr in df[DataHelper.Project.ID_DATA_TIMESTAMP]]
 
     time2 = time.time()  # Print_Delete
     print('Mat Creation: ' + str(time2 - time1))  # Print_Delete
@@ -237,7 +237,7 @@ def load_project_data(project, progress_tracker=None):
     time2 = time.time()  # Print_Delete
     print('DF Creation: '+str(time2-time1))  # Print_Delete
 
-    db = Database(project.get_name(), tmc, df)
+    db = DataHelper.Database(project.get_name(), tmc, df)
     db.set_first_date(df['Date'].min())
     db.set_last_date(df['Date'].max())
     ad = df['weekday'].unique()
@@ -375,15 +375,15 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
     progress = 0
     if progress_tracker is not None:
         if tmc is not None:
-            agg_data = data[data['tmc_code'].isin(tmc)]
-            agg_data = agg_data.groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])['speed'] / 12
+            agg_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc)]
+            agg_data = agg_data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / 12
         else:
-            agg_data = data.groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])['speed'] / 12
+            agg_data = data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / 12
         progress_tracker.bar.setTextVisible(True)
         progress_tracker.bar.setMaximum(8)
         progress += 1
         progress_tracker.emitter.emit(progress)
-        agg_data = agg_data['count'].groupby(['tmc_code', 'Year', 'Month', 'weekday', 'Hour']).agg([np_mean])['mean']
+        agg_data = agg_data['count'].groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour']).agg([np_mean])['mean']
         progress += 1
         progress_tracker.emitter.emit(progress)
         wkdy_data = agg_data.groupby(['weekday']).agg([np_mean])['mean']
@@ -394,7 +394,7 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
         chart_data.append(tod_data)
         progress += 1
         progress_tracker.emitter.emit(progress)
-        tmc_data = agg_data.groupby(['tmc_code']).agg([np_mean])['mean']
+        tmc_data = agg_data.groupby([DataHelper.Project.ID_DATA_TMC]).agg([np_mean])['mean']
         if tmc is not None:
             tmc_data = tmc_data.reindex(tmc)
         chart_data.append(tmc_data)
@@ -658,8 +658,12 @@ class LoadTemporalQT(QDialog):
 def extract_vals(date_str):
     # print(date_str)
     date, time = date_str.split(' ')
-    [hour, minute, second] = [int(val) for val in time.split(':')]
+    # [hour, minute, second] = [int(val) for val in time.split(':')]
+    time_tokens = time.split(':')
+    hour = int(time_tokens[0])
+    minute = int(time_tokens[1])
     [year, month, day] = [int(val) for val in date.split('-')]
+    # [month, day, year] = [int(val) for val in date.split('/')]
     day_type = datetime.datetime(year, month, day).weekday()
     ap = (hour * 12) + minute // 5
     return date, year, month, day, ap, day_type

@@ -16,11 +16,31 @@
     <style>#map {position:absolute;top:0;bottom:0;right:0;left:0;}</style>
 
     <style> #map_facility {
-        position : relative;
-        width : 100.0%;
-        height: 100.0%;
-        left: 0.0%;
-        top: 0.0%;
+            position : relative;
+            width : 100.0%;
+            height: 100.0%;
+            left: 0.0%;
+            top: 0.0%;
+        }.info {
+            padding: 6px 8px;
+            font: 14px/16px Arial, Helvetica, sans-serif;
+            background: white;
+            background: rgba(255,255,255,0.8);
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            border-radius: 5px;
+        }.info h4 {
+            margin: 0 0 5px;
+            color: #777;
+        }.legend {
+            text-align: left;
+            line-height: 18px;
+            color: #555;
+        }.legend i {
+            width: 18px;
+            height: 18px;
+            float: left;
+            margin-right: 8px;
+            opacity: 0.7;
         }
     </style>
 
@@ -76,7 +96,7 @@ function clear_map() {
     }
 }
 
-function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name) {
+function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name, tmc_color) {
     var tmp_marker = L.marker([s_lat, s_lon],
                                 {
                                 icon: new L.Icon.Default()
@@ -91,11 +111,11 @@ function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name) {
     var tmp_polyline = L.polyline([[s_lat, s_lon], [e_lat, e_lon]],
                                     {
                                         "bubblingMouseEvents": true,
-                                        "color": "black",
+                                        "color": tmc_color,
                                         "dashArray": null,
                                         "dashOffset": null,
                                         "fill": false,
-                                        "fillColor": "black",
+                                        "fillColor": tmc_color,
                                         "fillOpacity": 0.2,
                                         "fillRule": "evenodd",
                                         "lineCap": "round",
@@ -121,13 +141,30 @@ function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name) {
     tmp_polyline.on('mouseout', function(e) {
                                     var layer = e.target;
                                     layer.setStyle({
-                                        color: 'black',
+                                        color: tmc_color,
                                         opacity: 1,
                                         weight: 3
                                     });
                                     tmp_polyline.closePopup();
                                     });
     polylines.push(tmp_polyline);
+}
+
+function createLegend(labels, colors) {
+    // var labels = ['dir1', 'dir2'];
+    // var colors = ['black', 'red'];
+    var legend = L.control({position: 'topright'});
+
+    legend.onAdd = function (map_facility) {
+        var div = L.DomUtil.create('div', 'info legend');
+        // loop through our density intervals and generate a label with a colored square for each interval
+        for (var i = 0; i < labels.length; i++) {
+            div.innerHTML +=
+                '<i style="background:' + colors[i] + '"></i> ' + labels[i] + '<br>';
+        }
+        return div;
+    };
+    legend.addTo(map_facility);
 }
 
 function highlightTMC(tmc_idx) {

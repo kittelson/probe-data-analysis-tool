@@ -4,6 +4,157 @@ Module for the Database class used by the Project class to store the project dat
 
 import calendar
 import datetime
+from chart_defaults import ChartOptions
+import viz_qt
+
+
+class Project:
+    ID_DATA_TMC = 'tmc_code'
+    ID_DATA_TIMESTAMP = 'measurement_tstamp'
+    ID_DATA_SPEED = 'speed'
+    ID_DATA_TT = 'travel_time_minutes'
+
+    ID_TMC_CODE = 'tmc'
+    ID_TMC_DIR = 'direction'
+    ID_TMC_LEN = 'miles'
+    ID_TMC_INTX = 'intersection'
+    ID_TMC_SLAT = 'start_latitude'
+    ID_TMC_SLON = 'start_longitude'
+    ID_TMC_ELAT = 'end_latitude'
+    ID_TMC_ELON = 'end_longitude'
+
+    def __init__(self, project_name, directory, main_window):
+        self.main_window = main_window
+        self._project_name = project_name
+        self._project_analyst = ''
+        self._project_agency = ''
+        self._project_state = ''
+        self._project_location = ''
+        self._project_dir = directory
+        self._tmc_file_name = None
+        self._data_file_name = None
+        self.database = None
+        self._date_ranges = []
+        self.chart_panel1_opts = ChartOptions()
+        # self.chart_panel1_opts = None  # _Delete
+        self.data_res = 5
+        self.direction = None
+        self._summary_data = None
+        self.min_speed = 15
+        self.max_speed = 70
+
+    def set_name(self, new_name):
+        self._project_name = new_name
+
+    def get_name(self):
+        return self._project_name
+
+    def set_analyst(self, new_analyst):
+        self._project_analyst = new_analyst
+
+    def get_analyst(self):
+        return self._project_analyst
+
+    def get_agency(self):
+        return self._project_agency
+
+    def set_agency(self, new_agency):
+        self._project_agency = new_agency
+
+    def get_state(self):
+        return self._project_state
+
+    def set_state(self, new_state):
+        self._project_state = new_state
+
+    def get_location(self):
+        return self._project_location
+
+    def set_location(self, new_location):
+        self._project_location = new_location
+
+    def set_tmc_file(self, new_name):
+        self._tmc_file_name = new_name
+
+    def get_tmc_file_name(self):
+        return self._tmc_file_name
+
+    def set_data_file(self, new_name):
+        self._data_file_name = new_name
+
+    def get_data_file_name(self):
+        return self._data_file_name
+
+    def add_date_range(self, new_date_range):
+        self._date_ranges.append(new_date_range)
+
+    def del_date_range(self, index):
+        return self._date_ranges.pop(index)
+
+    def get_date_ranges(self):
+        return self._date_ranges
+
+    def get_date_range(self, index):
+        return self._date_ranges[index]
+
+    def get_selected_directions(self):
+        # direction_list = []
+        # root = self.main_window.ui.treeWidget_3.invisibleRootItem()
+        # for ti in range(root.child(0).childCount()):
+        #     if root.child(0).child(ti).checkState(0):
+        #         direction_list.append(root.child(0).child(ti).text(0))
+
+        all_direction_list = self.database.get_directions()
+        direction_list = []
+        get_selected = self.main_window.ui.treeWidget_3.selectedItems()
+        if get_selected:
+            base_node = get_selected[0]
+            get_child_node = base_node.text(0)
+            if get_child_node in all_direction_list:
+                direction_list.append(get_child_node)
+            elif get_child_node == self._project_name:
+                direction_list.append(all_direction_list[0])
+            else:
+                direction_list.append(base_node.parent().text(0))
+        else:
+            direction_list.append(all_direction_list[0])
+        self.direction = direction_list[0]
+        return direction_list
+
+    def get_tmc(self, full_list=False, as_list=False):
+        if full_list:
+            return self.database.get_tmcs(as_list=as_list)
+        else:
+            tmc_list = self.database.get_tmcs()
+            subset_dirs = self.get_selected_directions()
+            subset_tmc = tmc_list[tmc_list[Project.ID_TMC_DIR].isin(subset_dirs)]
+            subset_tmc.reset_index(inplace=True)
+            if as_list:
+                return subset_tmc[Project.ID_TMC_CODE]
+            else:
+                return subset_tmc
+
+    def load(self):
+        viz_qt.LoadProjectQT(self.main_window, create_database=True, print_csv=False)
+
+    def loaded(self):
+        self.main_window.add_project(self)
+
+    def summary_data(self):
+        return self._summary_data
+
+    def set_summary_data(self, summary):
+        self._summary_data = summary
+
+    def compute_sample_size(self, period_idx, tmc_code):
+        if self.database is not None and len(self._date_ranges) > period_idx and tmc_code in self.get_tmc(full_list=True, as_list=True).tolist():
+            dr1 = self.get_date_range(period_idx)
+            df = self.database.get_data()
+            df_tmc = df[(df[Project.ID_DATA_TMC].isin([tmc_code]))]
+            df_period = df_tmc[(df_tmc['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df_tmc['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
+            return df_period[Project.ID_DATA_SPEED].count()
+        else:
+            return 0
 
 
 class Database:
@@ -28,12 +179,12 @@ class Database:
 
     def get_tmcs(self, as_list=False):
         if as_list:
-            return self._tmcs['tmc']
+            return self._tmcs[Project.ID_TMC_CODE]
         else:
             return self._tmcs
 
     def get_directions(self):
-        return self._tmcs['direction'].unique()
+        return self._tmcs[Project.ID_TMC_DIR].unique()
 
     def set_first_date(self, date):
         self._first_date = date

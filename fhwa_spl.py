@@ -16,8 +16,6 @@ from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorD
 from PyQt5.QtGui import QColor, QFont
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
-from viz_qt import LoadProjectQT
-from offline_viz import FourByFourPanel
 from Stage2GridPanel import Stage2GridPanel
 from DQGridPanel import DataQualityGridPanel
 # from mpl_panels import ChartGridPanel, SpatialGridPanel
@@ -25,7 +23,8 @@ from Stage1Panel import Stage1GridPanel, SpatialGridPanel
 from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_button_style, CHART1_TYPES
 # import sql_helper
 # from chart_defaults import generate_vega_lite
-from jinja2 import Environment, PackageLoader, FileSystemLoader
+from DataHelper import Project
+from ImportHelper import ImportDialog
 
 PORT = 5000
 ROOT_URL = 'http://localhost:{}'.format(PORT)
@@ -110,51 +109,26 @@ class MainWindow(QMainWindow):
         load_flask_action = QAction('&Load via Flask', self)
         load_flask_action.setToolTip('Load WebBrowser')
         load_flask_action.triggered.connect(self.load_flask_chart)
-        self.ui.menuAnalyze.addAction(load_flask_action)
+        # self.ui.menuAnalyze.addAction(load_flask_action)
 
-        load_map_action = QAction('&Load Map', self)
-        load_map_action.setToolTip('Load Web Map of TMC locations')
-        load_map_action.triggered.connect(self.load_map)
-        # load_map_action.triggered.connect(self.load_map_chart)
-        self.ui.menuAnalyze.addAction(load_map_action)
+        self.load_map_action = QAction('&Load Map', self)
+        self.load_map_action.setToolTip('Load Web Map of TMC locations')
+        self.load_map_action.triggered.connect(self.load_map)
+        self.ui.menuAnalyze.addAction(self.load_map_action)
+        self.load_map_action.setEnabled(False)
 
-        toggle_floating_map_action = QAction('&Toggle Floating Map', self)
-        toggle_floating_map_action.setToolTip('Pop out or dock map window.')
-        toggle_floating_map_action.triggered.connect(self.toggle_floating_map)
-        self.ui.menuAnalyze.addAction(toggle_floating_map_action)
+        self.toggle_floating_map_action = QAction('&Toggle Floating Map', self)
+        self.toggle_floating_map_action.setToolTip('Pop out or dock map window.')
+        self.toggle_floating_map_action.triggered.connect(self.toggle_floating_map)
+        self.ui.menuAnalyze.addAction(self.toggle_floating_map_action)
+        self.toggle_floating_map_action.setEnabled(False)
 
-        # load_mpl_action = QAction('&Load Offline Chart', self)
-        # load_mpl_action.setToolTip('Load Charts in offline mode.')
-        # load_mpl_action.triggered.connect(self.extract_case_study)
-        # self.ui.menuAnalyze.addAction(load_mpl_action)
-
-        # load_mpl_spm_action = QAction('&Load SPM Chart', self)
-        # load_mpl_spm_action.setToolTip('Load Charts for SPM Case Study.')
-        # load_mpl_spm_action.triggered.connect(self.extract_case_study_spm)
-        # self.ui.menuAnalyze.addAction(load_mpl_spm_action)
-
-        # edit_tmcs_action = QAction('&Create TMC Subset', self)
-        # edit_tmcs_action.setToolTip('Edit the set of TMCs')
-        # edit_tmcs_action.triggered.connect(self.edit_tmcs)
-        # self.ui.menuAnalyze.addAction(edit_tmcs_action)
-
-        # update_chart_action = QAction('&Update Chart', self)
-        # update_chart_action.setShortcut('Ctrl+K')
-        # update_chart_action.setToolTip('Update WebBrowser')
-        # update_chart_action.triggered.connect(self.update_chart)
-        # self.ui.menuAnalyze.addAction(update_chart_action)
-
-        self.chart1_load_action = QAction('&Load Temporal Scoping Charts', self)
-        self.chart1_load_action.setToolTip('Load the temporal scoping charts')
-        self.chart1_load_action.triggered.connect(self.create_chart_panel1)
+        # self.chart1_options_action = QAction('&Chart 1 Options', self)
+        # self.chart1_options_action.setToolTip('Configure the Chart Panel 1 Options')
+        # self.chart1_options_action.triggered.connect(self.edit_chart1_options)
         # self.chart1_options_action.setEnabled(False)
-        self.ui.menuAnalyze.addAction(self.chart1_load_action)
-
-        self.chart1_options_action = QAction('&Chart 1 Options', self)
-        self.chart1_options_action.setToolTip('Configure the Chart Panel 1 Options')
-        self.chart1_options_action.triggered.connect(self.edit_chart1_options)
-        self.chart1_options_action.setEnabled(False)
-        self.ui.menuChartOptions.addAction(self.chart1_options_action)
+        # self.ui.menuChartOptions.addAction(self.chart1_options_action)
+        self.ui.menuChartOptions.setDisabled(True)
 
         # self.create_table_action = QAction('&Create Summary Table', self)
         # self.create_table_action.setToolTip('Temporary Option')
@@ -181,6 +155,11 @@ class MainWindow(QMainWindow):
 
         self.ui.create_charts_button.setEnabled(False)
         self.ui.del_range_button.setEnabled(False)
+
+        f_name = os.path.realpath('templates/map_instructions.html')
+        self.ui.webView_map.load(QUrl('file:///' + f_name.replace('\\', '/')))
+        f_name = os.path.realpath('templates/minimap_instructions.html')
+        self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
 
         self.ui.pushButton_5.clicked.connect(self.generate_summary_table)
 
@@ -225,59 +204,6 @@ class MainWindow(QMainWindow):
 
     def load_map_chart(self, create_plots=False):
         if self.project is not None:
-            # import folium
-            # import json
-            # from numpy import mean
-            # tmc_list = self.project.get_tmc()
-            # lat = tmc_list['start_latitude'][0]
-            # lon = tmc_list['start_longitude'][0]
-            # m = folium.Map(location=[lat, lon])
-            # # create_plots = True
-            # # if create_plots:
-            # #     df = self.project.database.get_data()
-            # #     tt_hour = df[df['weekday'] <= 4].groupby(['tmc_code', 'Hour']).agg(mean)['travel_time_minutes']
-            # # else:
-            # #     tt_hour = None
-            # for index, row in tmc_list.iterrows():
-            #     if create_plots:
-            #         df = self.project.database.get_data()
-            #         tt_hour = df[(df['weekday'] <= 4) & (df['tmc_code'].isin([row['tmc']]))].groupby('Hour').agg(mean)['travel_time_minutes']
-            #         if row['tmc'] in tt_hour:
-            #             # vis_str = generate_vega_lite(tt_hour[row['tmc']].to_frame())
-            #             pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
-            #         else:
-            #             pu = row['tmc'] + ': No Travel Time Data Available'
-            #     else:
-            #         # vis_str = json.load(open('templates/vis1.json'))
-            #         # pu = folium.Popup(max_width=300).add_child(folium.VegaLite(vis_str, width=300, height=275))
-            #         vis_str = json.load(open('templates/vis2.json'))
-            #         pu = folium.Popup(max_width=300).add_child(folium.Vega(vis_str, width=300, height=275))
-            #
-            #     folium.Marker(
-            #         location=[row['start_latitude'], row['start_longitude']],
-            #         popup=row['tmc'] + ' Start',
-            #         # popup=pu,
-            #         icon=folium.Icon(icon='cloud')
-            #     ).add_to(m)
-            #     folium.Marker(
-            #         location=[row['end_latitude'], row['end_longitude']],
-            #         popup=row['tmc'] + ' End',
-            #         icon=folium.Icon(icon='cloud')
-            #     ).add_to(m)
-            #     pl = folium.PolyLine(
-            #         [[row['start_latitude'], row['start_longitude']], [row['end_latitude'], row['end_longitude']]],
-            #         weight=3,
-            #         color='black',
-            #         # popup='TMC ID: ' + row['tmc'] + '\n' + 'Road/Route: ' + row['road'] + ' ' + row['direction'] + '\n' + 'Name/Intersection: ' + row['intersection'],
-            #         # popup='TMC ID: ' + row['tmc'] + ', ' + row['direction'] + ', ' + row['intersection']
-            #         popup=pu
-            #     )
-            #     pl.add_to(m)
-            # m.save('templates/map3.html')
-            # f_name = os.path.realpath('templates/map3.html')
-            # print(f_name.replace('\\', '/'))
-            # self.ui.webView_map.load(QUrl('file:///'+f_name.replace('\\', '/')))
-            # self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
             pass
 
     def load_map(self):
@@ -287,6 +213,7 @@ class MainWindow(QMainWindow):
 
     def map_loaded(self):
         self.map_exists = True
+        self.toggle_floating_map_action.setEnabled(True)
         self.load_minimap()
 
     def load_minimap(self):
@@ -308,18 +235,14 @@ class MainWindow(QMainWindow):
     def add_tmcs_to_map(self):
         self.map_tmc_to_pl_index = dict()
         for index, tmc_info in self.project.get_tmc().iterrows():
-            self.map_tmc_to_pl_index[tmc_info['tmc']] = index
-            # if index == 0:
-                # self.ui.webView_map.page().runJavaScript(
-                #     'updateCenter(' + str(tmc_info['start_latitude']) + ',' + str(tmc_info['start_longitude']) + ')')
-                # self.ui.webView_minimap.page().runJavaScript(
-                #     'updateCenter(' + str(tmc_info['start_latitude']) + ',' + str(tmc_info['start_longitude']) + ')')
+            self.map_tmc_to_pl_index[tmc_info[Project.ID_TMC_CODE]] = index
             js_string = 'placeTMC('
-            js_string = js_string + str(tmc_info['start_latitude']) + ','
-            js_string = js_string + str(tmc_info['start_longitude']) + ','
-            js_string = js_string + str(tmc_info['end_latitude']) + ','
-            js_string = js_string + str(tmc_info['end_longitude']) + ','
-            js_string = js_string + ' \'' + tmc_info['tmc'] + '\''
+            js_string = js_string + str(tmc_info[Project.ID_TMC_SLAT]) + ','
+            js_string = js_string + str(tmc_info[Project.ID_TMC_SLON]) + ','
+            js_string = js_string + str(tmc_info[Project.ID_TMC_ELAT]) + ','
+            js_string = js_string + str(tmc_info[Project.ID_TMC_ELON]) + ','
+            js_string = js_string + ' \'' + tmc_info[Project.ID_TMC_CODE] + '\'' + ','
+            js_string = js_string + '\'black\''
             js_string = js_string + ')'
             # print(js_string)
             if self.map_exists:
@@ -352,6 +275,13 @@ class MainWindow(QMainWindow):
             pass
 
     def create_new(self):
+        project_dir_name = QFileDialog.getExistingDirectory(self, "Select Project/Data Folder")
+        if project_dir_name != '':
+            dlg = ImportDialog(self, project_dir_name)
+            # dlg.setModal(True)
+            # dlg.show()
+
+    def create_new_deprecated(self):
         project_dir_name = QFileDialog.getExistingDirectory(self, "Select Project/Data Folder")
         if project_dir_name != '':
             # tokens = project_dir_name.split('/')
@@ -469,18 +399,20 @@ class MainWindow(QMainWindow):
         directions = project.database.get_directions()
         all_tmc = project.get_tmc(full_list=True)
         for dir in directions:
-            tmc_curr_dir = all_tmc[all_tmc['direction'] == dir]
+            tmc_curr_dir = all_tmc[all_tmc[Project.ID_TMC_DIR] == dir]
             child = QTreeWidgetItem(proj_item)
             child.setText(0, dir)
             # child.setFlags(child.flags() | Qt.ItemIsUserCheckable)
             # child.setCheckState(0, Qt.Unchecked)
-            for sub_tmc in tmc_curr_dir['tmc']:
+            for sub_tmc in tmc_curr_dir[Project.ID_TMC_CODE]:
                 sub_child = QTreeWidgetItem(child)
                 sub_child.setText(0, sub_tmc)
 
+        # Enabling components
+        self.load_map_action.setEnabled(True)
         self.ui.pushButton_first_chart.setEnabled(True)
         self.ui.pushButton_sec_chart.setEnabled(True)
-        self.chart1_load_action.setEnabled(True)
+        # self.chart1_load_action.setEnabled(True)
         proj_item.setExpanded(True)
         # proj_item.child(0).setCheckState(0, Qt.Checked)  # Uncomment to make checkable
         # self.ui.treeWidget_3.itemChanged.connect(self.setup_tmc_list)  # Uncomment to enable check listening via "itemChanged"
@@ -504,10 +436,8 @@ class MainWindow(QMainWindow):
         self.ui.dateEdit_start.setDateRange(s_qdate, e_qdate)
         self.ui.dateEdit_end.setDate(e_qdate)
         self.ui.dateEdit_end.setDateRange(s_qdate, e_qdate)
-
         # Setting up tmc list
         self.setup_tmc_list(is_init=True)
-
         self.load_data_density_charts('1.1 - Data Availability')
 
     def open_file(self):
@@ -574,12 +504,6 @@ class MainWindow(QMainWindow):
             self.dq_chart_panel = DataQualityGridPanel(self.project)
             new_tab_index = self.ui.tabWidget.addTab(self.dq_chart_panel, chart_panel_name)
             self.ui.tabWidget.setCurrentIndex(new_tab_index)
-
-    def load_mpl_charts(self, chart_panel_name):
-        mpl_widget = FourByFourPanel(self.project)
-        new_tab_index = self.ui.tabWidget.addTab(mpl_widget, chart_panel_name)
-        self.ui.tabWidget.setCurrentIndex(new_tab_index)
-        # pass 
 
     def load_extra_time_charts(self):
         chart_panel_name = '2 - Extra Time/Speed Bands'
@@ -741,7 +665,7 @@ class MainWindow(QMainWindow):
         chart_panel_name = '1.3 - Temporal Scoping'
         # self.chart_panel1 = ChartGridPanel(self.project, options=self.project.chart_panel1_opts)
         self.chart_panel1_3 = Stage1GridPanel(self.project, panel_type=3, options=self.project.chart_panel1_opts)
-        self.chart1_options_action.setEnabled(True)
+        # self.chart1_options_action.setEnabled(True)
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel1_3, chart_panel_name)
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.pushButton_first_chart.setDisabled(True)
@@ -770,7 +694,7 @@ class MainWindow(QMainWindow):
         # cp1_dlg.show()
         self.load_time_time_charts()
         self.ui.pushButton_sec_chart.setDisabled(True)
-        self.chart1_options_action.setDisabled(False)
+        # self.chart1_options_action.setDisabled(False)
 
     def edit_chart1_options(self):
         cp1_dlg = ChartPanelOptionsDlg(self, self.update_chart_panel1)
@@ -833,11 +757,11 @@ class MainWindow(QMainWindow):
             # tmc_item.setFlags(tmc_item.flags() | Qt.ItemIsUserCheckable)
             # tmc_item.setCheckState(0, Qt.Checked)
             # tmc_item.setCheckState(0, Qt.Unchecked)
-            tmc_item.setText(0, row['tmc'])
-            tmc_item.setText(1, row['intersection'])
-            tmc_item.setText(2, row['direction'][0] + 'B')
-            tmc_item.setText(3, '{:1.1f}'.format(row['miles']))
-            cumulative_mi += row['miles']
+            tmc_item.setText(0, row[Project.ID_TMC_CODE])
+            tmc_item.setText(1, row[Project.ID_TMC_INTX])
+            tmc_item.setText(2, row[Project.ID_TMC_DIR][0] + 'B')
+            tmc_item.setText(3, '{:1.1f}'.format(row[Project.ID_TMC_LEN]))
+            cumulative_mi += row[Project.ID_TMC_LEN]
             tmc_item.setText(4, '{:1.1f}'.format(cumulative_mi))
 
         if is_init:
@@ -860,7 +784,7 @@ class MainWindow(QMainWindow):
         root_item = self.ui.treeWidget_2.invisibleRootItem()
         for tmc_idx in range(root_item.childCount()):
             if root_item.child(tmc_idx).checkState(0):
-                cumulative_mi += tmc_list['miles'][tmc_idx]
+                cumulative_mi += tmc_list[Project.ID_TMC_LEN][tmc_idx]
         self.ui.label_6.setText('{:1.1f}'.format(cumulative_mi))
         # self.ui.pushButton_tmc_subset.setEnabled(False)
 
@@ -870,142 +794,9 @@ class MainWindow(QMainWindow):
         root_item = self.ui.treeWidget_2.invisibleRootItem()
         for tmc_idx in range(root_item.childCount()):
             if root_item.child(tmc_idx).checkState(0):
-                tmc_subset.append(tmc_list['tmc'][tmc_idx])
+                tmc_subset.append(tmc_list[Project.ID_TMC_CODE][tmc_idx])
 
         return tmc_subset
-
-
-class Project:
-    def __init__(self, project_name, directory, main_window):
-        self.main_window = main_window
-        self._project_name = project_name
-        self._project_analyst = ''
-        self._project_agency = ''
-        self._project_state = ''
-        self._project_location = ''
-        self._project_dir = directory
-        self._tmc_file_name = None
-        self._data_file_name = None
-        self.database = None
-        self._date_ranges = []
-        self.chart_panel1_opts = ChartOptions()
-        # self.chart_panel1_opts = None  # _Delete
-        self.data_res = 5
-        self.direction = None
-        self._summary_data = None
-
-    def set_name(self, new_name):
-        self._project_name = new_name
-
-    def get_name(self):
-        return self._project_name
-
-    def set_analyst(self, new_analyst):
-        self._project_analyst = new_analyst
-
-    def get_analyst(self):
-        return self._project_analyst
-
-    def get_agency(self):
-        return self._project_agency
-
-    def set_agency(self, new_agency):
-        self._project_agency = new_agency
-
-    def get_state(self):
-        return self._project_state
-
-    def set_state(self, new_state):
-        self._project_state = new_state
-
-    def get_location(self):
-        return self._project_location
-
-    def set_location(self, new_location):
-        self._project_location = new_location
-
-    def set_tmc_file(self, new_name):
-        self._tmc_file_name = new_name
-
-    def get_tmc_file_name(self):
-        return self._tmc_file_name
-
-    def set_data_file(self, new_name):
-        self._data_file_name = new_name
-
-    def get_data_file_name(self):
-        return self._data_file_name
-
-    def add_date_range(self, new_date_range):
-        self._date_ranges.append(new_date_range)
-
-    def del_date_range(self, index):
-        return self._date_ranges.pop(index)
-
-    def get_date_ranges(self):
-        return self._date_ranges
-
-    def get_date_range(self, index):
-        return self._date_ranges[index]
-
-    def get_selected_directions(self):
-        # direction_list = []
-        # root = self.main_window.ui.treeWidget_3.invisibleRootItem()
-        # for ti in range(root.child(0).childCount()):
-        #     if root.child(0).child(ti).checkState(0):
-        #         direction_list.append(root.child(0).child(ti).text(0))
-
-        all_direction_list = self.database.get_directions()
-        direction_list = []
-        get_selected = self.main_window.ui.treeWidget_3.selectedItems()
-        if get_selected:
-            base_node = get_selected[0]
-            get_child_node = base_node.text(0)
-            if get_child_node in all_direction_list:
-                direction_list.append(get_child_node)
-            elif get_child_node == self._project_name:
-                direction_list.append(all_direction_list[0])
-            else:
-                direction_list.append(base_node.parent().text(0))
-        else:
-            direction_list.append(all_direction_list[0])
-        self.direction = direction_list[0]
-        return direction_list
-
-    def get_tmc(self, full_list=False, as_list=False):
-        if full_list:
-            return self.database.get_tmcs(as_list=as_list)
-        else:
-            tmc_list = self.database.get_tmcs()
-            subset_dirs = self.get_selected_directions()
-            subset_tmc = tmc_list[tmc_list['direction'].isin(subset_dirs)]
-            subset_tmc.reset_index(inplace=True)
-            if as_list:
-                return subset_tmc['tmc']
-            else:
-                return subset_tmc
-
-    def load(self):
-        LoadProjectQT(self.main_window, create_database=True, print_csv=False)
-
-    def loaded(self):
-        self.main_window.add_project(self)
-
-    def summary_data(self):
-        return self._summary_data
-
-    def set_summary_data(self, summary):
-        self._summary_data = summary
-
-    def compute_sample_size(self, period_idx, tmc_code):
-        if self.database is not None and len(self._date_ranges) > period_idx and tmc_code in self.get_tmc(full_list=True, as_list=True).tolist():
-            dr1 = self.get_date_range(period_idx)
-            df = self.database.get_data()
-            df_tmc = df[(df['tmc_code'].isin([tmc_code]))]
-            df_period = df_tmc[(df_tmc['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df_tmc['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
-            return df_period['speed'].count()
-        else:
-            return 0
 
 
 class ConnectionContainer(QObject):
@@ -1093,7 +884,7 @@ class ChartPanelOptionsDlg(QDialog):
         if self.update_func is not None:
             self.update_func()
             self.main_window.ui.pushButton_sec_chart.setDisabled(True)
-            self.main_window.chart1_options_action.setDisabled(False)
+            # self.main_window.chart1_options_action.setDisabled(False)
 
     def close_press(self):
         self.close()

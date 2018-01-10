@@ -3,6 +3,7 @@ from stat_func import create_dq_weekday, create_dq_time_of_day, create_dq_tmc, c
 from chart_defaults import ChartOptions, AnalysisOptions
 from viz_qt import LoadDataQualityQT
 from mpl_charts import MplChart, FIG_DQ_WKDY, FIG_DQ_TOD, FIG_DQ_TMC, FIG_DQ_SP
+from DataHelper import Project
 
 
 class DataQualityGridPanel(QtWidgets.QWidget):
@@ -28,7 +29,7 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         self.project = project
         df = self.project.database.get_data()
         tmc = self.project.database.get_tmcs()
-        self.facility_len = tmc['miles'].sum()
+        self.facility_len = tmc[Project.ID_TMC_LEN].sum()
         self.dfs = [df]
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()

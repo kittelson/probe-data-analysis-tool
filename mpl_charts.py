@@ -12,6 +12,7 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.figure import Figure
 from matplotlib.ticker import FuncFormatter, MaxNLocator
 from matplotlib import animation
+import matplotlib.collections as collections
 import calendar
 from datetime import datetime, timedelta
 from math import floor
@@ -22,7 +23,7 @@ from numpy import pi as np_pi
 from numpy import linspace as np_linspace
 from math import ceil
 from pandas import DataFrame
-from PyQt5.QtCore import QThread
+import DataHelper
 
 FIG_TYPE_TT_TREND_LINE = 0
 FIG_TYPE_TT_TREND_BAR = 1
@@ -144,6 +145,33 @@ class MplChart(FigureCanvas):
         self.reset_axis_action.setToolTip('Reset the x and y bounds of the chart')
         self.reset_axis_action.triggered.connect(self.reset_axis_bounds)
         self.context_menu.addAction(self.reset_axis_action)
+
+        if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY:
+            self.toggle_scaled_action = QtWidgets.QAction('Scale Y-Axis by TMC Length', self)
+            self.toggle_scaled_action.setToolTip('Set whether each TMC is displayed with a width relative to its ' +
+                                                 'length or if all TMCs are scaled uniformly.')
+            self.toggle_scaled_action.setCheckable(True)
+            self.toggle_scaled_action.setChecked(True)
+            self.toggle_scaled_action.triggered.connect(self.panel.toggle_data_scaled)
+            self.context_menu.addAction(self.toggle_scaled_action)
+
+        if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY or self.fig_type == FIG_TYPE_SPD_HEAT_MAP:
+            self.context_menu.addSeparator()
+            self.toggle_stacked_action =QtWidgets.QAction('Sort X-Axis by Date', self)
+            self.toggle_stacked_action.setToolTip('Toggle between sorting the X-Axis by date versus sorting it by speed.')
+            self.toggle_stacked_action.setCheckable(True)
+            self.toggle_stacked_action.setChecked(True)
+            self.toggle_stacked_action.triggered.connect(self.panel.toggle_data_stacked)
+            self.context_menu.addAction(self.toggle_stacked_action)
+
+        if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY or self.fig_type == FIG_TYPE_SPD_HEAT_MAP or self.fig_type == FIG_TYPE_PCT_CONG_DAY\
+                or self.fig_type == FIG_TYPE_TT_TREND_LINE or self.fig_type == FIG_TYPE_TT_TREND_BAR:
+            self.toggle_before_after_action = QtWidgets.QAction('Show Before/After Ranges', self)
+            self.toggle_before_after_action.setToolTip('Set whether the before and after ranges are displayed on the chart.')
+            self.toggle_before_after_action.setCheckable(True)
+            self.toggle_before_after_action.setChecked(False)
+            self.toggle_before_after_action.triggered.connect(self.panel.toggle_before_after)
+            self.context_menu.addAction(self.toggle_before_after_action)
 
         scale = 1.1
         self.zp = ZoomPan()
@@ -327,25 +355,25 @@ class MplChart(FigureCanvas):
 
     def compute_trend_line(self):
         if self.show_am:
-            tt_am_mean_dir1 = self.panel.plot_dfs[0]['speed']['mean']
-            tt_am_pct5_dir1 = self.panel.plot_dfs[0]['speed']['percentile_5']
-            tt_am_pct95_dir1 = self.panel.plot_dfs[0]['speed']['percentile_95']
+            tt_am_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED]['mean']
+            tt_am_pct5_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED]['percentile_5']
+            tt_am_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED]['percentile_95']
             x = [el for el in range(len(tt_am_mean_dir1))]
             self.axes.plot(x, tt_am_mean_dir1, color='C0', linestyle='-', lw=2.0, label='AM-Mean')
             self.axes.plot(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
             self.axes.plot(x, tt_am_pct95_dir1, color='C0', linestyle='--', lw=1.0, label='AM-95th Pct')
         if self.show_pm:
-            tt_pm_mean_dir1 = self.panel.plot_dfs[0]['speedpm']['mean']
-            tt_pm_pct5_dir1 = self.panel.plot_dfs[0]['speedpm']['percentile_5']
-            tt_pm_pct95_dir1 = self.panel.plot_dfs[0]['speedpm']['percentile_95']
+            tt_pm_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'pm']['mean']
+            tt_pm_pct5_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'pm']['percentile_5']
+            tt_pm_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'pm']['percentile_95']
             x = [el for el in range(len(tt_pm_mean_dir1))]
             self.axes.plot(x, tt_pm_mean_dir1, color='C1', linestyle='-', lw=2.0, label='PM-Mean')
             self.axes.plot(x, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
             self.axes.plot(x, tt_pm_pct95_dir1, color='C1', linestyle='--', lw=1.0, label='PM-95th Pct')
         if self.show_mid:
-            tt_md_mean_dir1 = self.panel.plot_dfs[0]['speedmid']['mean']
-            tt_md_pct5_dir1 = self.panel.plot_dfs[0]['speedmid']['percentile_5']
-            tt_md_pct95_dir1 = self.panel.plot_dfs[0]['speedmid']['percentile_95']
+            tt_md_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'mid']['mean']
+            tt_md_pct5_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'mid']['percentile_5']
+            tt_md_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_SPEED + 'mid']['percentile_95']
             x = [el for el in range(len(tt_md_mean_dir1))]
             self.axes.plot(x, tt_md_mean_dir1, color='C2', linestyle='-', lw=2.0, label='Mid-Mean')
             self.axes.plot(x, tt_md_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='Mid-5th Pct')
@@ -360,6 +388,36 @@ class MplChart(FigureCanvas):
         self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
         self.axes.grid(color='0.85', linestyle='-', linewidth=0.5)
+
+        date_ranges = self.panel.project.get_date_ranges()
+        if self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
+            print('here')
+            first_date = self.panel.project.database.get_first_date(as_datetime=True)
+            first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
+            last_date = self.panel.project.database.get_last_date(as_datetime=True)
+            last_date = QtCore.QDate(last_date.year, last_date.month, last_date.day)
+            dr1 = date_ranges[0]
+            dr2 = date_ranges[1]
+            num_monts_p1 = compute_num_months(dr1[0], dr1[1]) - 1
+            num_monts_p2 = compute_num_months(dr2[0], dr2[1]) - 1
+            months_to_p1_start = compute_num_months(first_date, dr1[0]) - 1
+            months_p1_end_to_p2_start = compute_num_months(dr1[1], dr2[0]) - 1
+            print(months_to_p1_start)
+            print(num_monts_p1)
+            print(months_p1_end_to_p2_start)
+            print(num_monts_p2)
+            xr1 = (months_to_p1_start - 0.25, num_monts_p1 + 0.5)
+            p2_start = months_to_p1_start + num_monts_p1 + months_p1_end_to_p2_start
+            xr2 = (p2_start - 0.25, num_monts_p2 + 0.5)
+            c1 = collections.BrokenBarHCollection([xr1, xr2], (0, 80),
+                                                  edgecolors=['C0', 'navy'],
+                                                  linewidths=[2.5, 2.5],
+                                                  linestyles=['--', '--'],
+                                                  facecolors=['none', 'none'],
+                                                  # alpha=0.75
+                                                  )
+            self.axes.add_collection(c1)
+
         self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
                                             bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
                                             annotation_clip=False)
@@ -427,16 +485,18 @@ class MplChart(FigureCanvas):
 
     def compute_trend_bar(self):
         width = 0.35
+        y_max = 0
         if self.show_am:
-            tt_am_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutes']['mean']
-            tt_am_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutes']['percentile_95']
+            tt_am_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT]['mean']
+            tt_am_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT]['percentile_95']
             x = [el for el in range(len(tt_am_mean_dir1))]
             self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
             self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
                     label='AM-95th Pct')
+            y_max = max(y_max, max(tt_am_pct95_dir1))
         if self.show_pm:
-            tt_pm_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutespm']['mean']
-            tt_pm_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutespm']['percentile_95']
+            tt_pm_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'pm']['mean']
+            tt_pm_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'pm']['percentile_95']
             x = [el for el in range(len(tt_pm_mean_dir1))]
             offset = 0
             if self.show_am:
@@ -444,9 +504,10 @@ class MplChart(FigureCanvas):
             self.axes.bar([el + offset for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
             self.axes.bar([el + offset for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
                     bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+            y_max = max(y_max, max(tt_pm_pct95_dir1))
         if self.show_mid:
-            tt_md_mean_dir1 = self.panel.plot_dfs[0]['travel_time_minutesmid']['mean']
-            tt_md_pct95_dir1 = self.panel.plot_dfs[0]['travel_time_minutesmid']['percentile_95']
+            tt_md_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'mid']['mean']
+            tt_md_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'mid']['percentile_95']
             x = [el for el in range(len(tt_md_mean_dir1))]
             offset = 0
             if self.show_am:
@@ -456,6 +517,7 @@ class MplChart(FigureCanvas):
             self.axes.bar([el + offset for el in x], tt_md_mean_dir1, width, color='C2', label='Mid-Mean')
             self.axes.bar([el + offset for el in x], [tt_md_pct95_dir1[i] - tt_md_mean_dir1[i] for i in range(len(tt_md_mean_dir1))], width,
                     bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
+            y_max = max(y_max, max(tt_md_pct95_dir1))
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
                             + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
@@ -465,6 +527,32 @@ class MplChart(FigureCanvas):
         if not self.panel.plot_dfs[0].empty:
             self.axes.legend()
         self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_month))
+
+        date_ranges = self.panel.project.get_date_ranges()
+        if self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
+            print('here')
+            first_date = self.panel.project.database.get_first_date(as_datetime=True)
+            first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
+            last_date = self.panel.project.database.get_last_date(as_datetime=True)
+            last_date = QtCore.QDate(last_date.year, last_date.month, last_date.day)
+            dr1 = date_ranges[0]
+            dr2 = date_ranges[1]
+            num_monts_p1 = compute_num_months(dr1[0], dr1[1]) - 1
+            num_monts_p2 = compute_num_months(dr2[0], dr2[1]) - 1
+            months_to_p1_start = compute_num_months(first_date, dr1[0]) - 1
+            months_p1_end_to_p2_start = compute_num_months(dr1[1], dr2[0]) - 1
+            xr1 = (months_to_p1_start - 0.25, num_monts_p1 + 0.825)
+            p2_start = months_to_p1_start + num_monts_p1 + months_p1_end_to_p2_start
+            xr2 = (p2_start - 0.25, num_monts_p2 + 0.825)
+            c1 = collections.BrokenBarHCollection([xr1, xr2], (0, y_max * 1.01),
+                                                  edgecolors=['C0', 'navy'],
+                                                  linewidths=[2.5, 2.5],
+                                                  linestyles=['--', '--'],
+                                                  facecolors=['none', 'none'],
+                                                  # alpha=0.75
+                                                  )
+            self.axes.add_collection(c1)
+
         self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
                                             bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
                                             annotation_clip=False)
@@ -559,6 +647,32 @@ class MplChart(FigureCanvas):
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
         self.axes.legend()
+
+        date_ranges = self.panel.project.get_date_ranges()
+        if not self.panel.is_stack and self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
+            first_date = self.panel.project.database.get_first_date(as_datetime=True)
+            first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
+            last_date = self.panel.project.database.get_last_date(as_datetime=True)
+            last_date = QtCore.QDate(last_date.year, last_date.month, last_date.day)
+            dr1 = date_ranges[0]
+            dr2 = date_ranges[1]
+            num_days_p1 = dr1[0].daysTo(dr1[1]) + 1
+            num_days_p2 = dr2[0].daysTo(dr2[1]) + 1
+            days_to_p1_start = first_date.daysTo(dr1[0])
+            days_p1_end_to_p2_start = dr1[1].daysTo(dr2[0])
+            # days_p2_end_to_data_end = dr2[1].daysTo(last_date)
+            xr1 = (days_to_p1_start, num_days_p1)
+            p2_start = days_to_p1_start + num_days_p1 + days_p1_end_to_p2_start - 1
+            xr2 = (p2_start, num_days_p2-1)
+            c1 = collections.BrokenBarHCollection([xr1, xr2], (0, 1),
+                                                  edgecolors=['C0', 'navy'],
+                                                  linewidths=[2.5, 2.5],
+                                                  linestyles=['--', '--'],
+                                                  facecolors=['none', 'none'],
+                                                  # alpha=0.75
+                                                  )
+            self.axes.add_collection(c1)
+
         self.fig.tight_layout()
 
     def compute_pct_cong_tmc(self):
@@ -597,8 +711,7 @@ class MplChart(FigureCanvas):
 
     def compute_speed_heatmap(self):
         imshow_data = self.panel.plot_dfs[3]
-        dq_cm = create_dq_cmap()
-        # im = self.axes.imshow(imshow_data, cmap=dq_cm)
+        y_argmax = imshow_data.shape[0]
         im = self.axes.imshow(imshow_data, cmap='RdYlGn', aspect='auto')
         if self.color_bar1 is not None:
             self.color_bar1.remove()
@@ -609,6 +722,32 @@ class MplChart(FigureCanvas):
         self.axes.set_title('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
+
+        date_ranges = self.panel.project.get_date_ranges()
+        if not self.panel.is_stack and self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
+            first_date = self.panel.project.database.get_first_date(as_datetime=True)
+            first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
+            last_date = self.panel.project.database.get_last_date(as_datetime=True)
+            last_date = QtCore.QDate(last_date.year, last_date.month, last_date.day)
+            dr1 = date_ranges[0]
+            dr2 = date_ranges[1]
+            num_days_p1 = dr1[0].daysTo(dr1[1]) + 1
+            num_days_p2 = dr2[0].daysTo(dr2[1]) + 1
+            days_to_p1_start = first_date.daysTo(dr1[0])
+            days_p1_end_to_p2_start = dr1[1].daysTo(dr2[0])
+            # days_p2_end_to_data_end = dr2[1].daysTo(last_date)
+            xr1 = (days_to_p1_start, num_days_p1)
+            p2_start = days_to_p1_start + num_days_p1 + days_p1_end_to_p2_start - 1
+            xr2 = (p2_start, num_days_p2)
+            c1 = collections.BrokenBarHCollection([xr1, xr2], (0, y_argmax),
+                                                  edgecolors=['C0', 'navy'],
+                                                  linewidths=[2.5, 2.5],
+                                                  linestyles=['--', '--'],
+                                                  facecolors=['none', 'none'],
+                                                  # alpha=0.75
+                                                  )
+            self.axes.add_collection(c1)
+
         self.fig.tight_layout()
 
     def compute_speed_tmc_heatmap(self):
@@ -627,23 +766,87 @@ class MplChart(FigureCanvas):
         num_tmc, num_days = imshow_data.shape
         self.tmc_ext = num_days / 5
         cb_shrink = 0.8
-        dq_cm = create_dq_cmap()
-        # im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap=dq_cm)
-        im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
+        # im = self.axes.imshow(imshow_data, extent=[0, num_days, 0, self.tmc_ext], cmap='RdYlGn')
+        last_val = 0
+        row_idx = 0
+        tmc = self.panel.project.get_tmc()
+        if self.panel.is_scaled:
+            for row in imshow_data:
+                curr_tmc_len = tmc[DataHelper.Project.ID_TMC_LEN][row_idx]
+                im = self.axes.imshow(row.reshape((1, num_days)),
+                                      extent=[0, num_days, last_val, last_val + curr_tmc_len],
+                                      cmap='RdYlGn', aspect='auto',
+                                      vmin=self.panel.project.min_speed,
+                                      vmax=self.panel.project.max_speed
+                                      )
+                last_val += curr_tmc_len
+                row_idx += 1
+            y_max = tmc[DataHelper.Project.ID_TMC_LEN].sum()
+
+            self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:1.1f} mi'.format(y)))
+            self.axes.set_ylabel('Milepost')
+        else:
+            im = self.axes.imshow(imshow_data,
+                                  # extent=[0, num_days, 0, self.tmc_ext],
+                                  cmap='RdYlGn', aspect='auto',
+                                  vmin=self.panel.project.min_speed,
+                                  vmax=self.panel.project.max_speed
+                                  )
+            # f_tmc_label2 = lambda x, pos: convert_extent_to_mile(x, pos, self.panel.facility_len, self.tmc_ext)
+            # self.axes.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
+            y_max = num_tmc-1
+            self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '#{:1.0f}'.format(y + 1)))
+            self.axes.set_ylabel('TMC #')
+
+        self.axes.set_ylim(0, y_max)
+
         if self.color_bar2 is not None:
             self.color_bar2.remove()
         self.color_bar2 = self.fig.colorbar(im, ax=self.axes, shrink=cb_shrink, use_gridspec=True)
         self.color_bar2.set_label('Speed (mph)')
         # self.color_bar2.set_clim(35, 65)
-        self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
-        # f_tmc_label2 = lambda x, pos: convert_extent_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True), self.tmc_ext)
-        f_tmc_label2 = lambda x, pos: convert_extent_to_mile(x, pos, self.panel.facility_len, self.tmc_ext)
-        self.axes.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
+        if not self.panel.is_stack:
+            self.axes.xaxis.set_major_formatter(FuncFormatter(self.f_x_to_day))
+        else:
+            self.axes.xaxis.set_major_formatter(FuncFormatter(lambda x, _: '{:.1%}'.format(x / num_days)))
+            self.axes.set_xlabel('Percent Congested')
+
         self.axes.set_title(self.panel.project.get_name() + ' Spatial Speed Heatmap: ' + hour_str)
         # self.fig.tight_layout()
-        tmc_list = self.panel.project.get_tmc(as_list=True).tolist()
-        tmc_list.reverse()
-        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc_list, peak_idx))
+        # tmc_list = self.panel.project.get_tmc(as_list=True).tolist()
+        # tmc_list = tmc[DataHelper.Project.ID_TMC_CODE].tolist()
+        # tmc_list.reverse()
+        self.hover_ann = self.axes.annotate('', xy=(2, 1), xytext=(3, 1.5),
+                                            bbox=dict(boxstyle='round,pad=0.5', fc='white', alpha=0.5),
+                                            annotation_clip=False)
+        self.hover_ann.set_visible(False)
+        self.fig.canvas.mpl_connect('motion_notify_event', lambda event: self.hover_tmc(event, tmc, peak_idx))
+
+        date_ranges = self.panel.project.get_date_ranges()
+        if not self.panel.is_stack and self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
+            first_date = self.panel.project.database.get_first_date(as_datetime=True)
+            first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
+            last_date = self.panel.project.database.get_last_date(as_datetime=True)
+            last_date = QtCore.QDate(last_date.year, last_date.month, last_date.day)
+            dr1 = date_ranges[0]
+            dr2 = date_ranges[1]
+            num_days_p1 = dr1[0].daysTo(dr1[1]) + 1
+            num_days_p2 = dr2[0].daysTo(dr2[1]) + 1
+            days_to_p1_start = first_date.daysTo(dr1[0])
+            days_p1_end_to_p2_start = dr1[1].daysTo(dr2[0])
+            # days_p2_end_to_data_end = dr2[1].daysTo(last_date)
+            xr1 = (days_to_p1_start, num_days_p1)
+            p2_start = days_to_p1_start + num_days_p1 + days_p1_end_to_p2_start - 1
+            xr2 = (p2_start, num_days_p2)
+            c1 = collections.BrokenBarHCollection([xr1, xr2], (0, y_max),
+                                                  edgecolors=['C0', 'navy'],
+                                                  linewidths=[2.5, 2.5],
+                                                  linestyles=['--', '--'],
+                                                  facecolors=['none', 'none'],
+                                                  # alpha=0.75
+                                                  )
+            self.axes.add_collection(c1)
+
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
 
@@ -792,11 +995,11 @@ class MplChart(FigureCanvas):
             data2 = data_after
 
         # Before Data  # if self.region2 != NONE:
-        max_y2 = len(data2['travel_time_minutes'][tmc1])
-        self.axes.plot(data2['travel_time_minutes'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
+        max_y2 = len(data2[DataHelper.Project.ID_DATA_TT][tmc1])
+        self.axes.plot(data2[DataHelper.Project.ID_DATA_TT][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
         # After Data
-        max_y = len(data1['travel_time_minutes'][tmc1])
-        self.axes.plot(data1['travel_time_minutes'][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
+        max_y = len(data1[DataHelper.Project.ID_DATA_TT][tmc1])
+        self.axes.plot(data1[DataHelper.Project.ID_DATA_TT][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
 
         title_str = 'Travel Time Distribution: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
@@ -850,11 +1053,11 @@ class MplChart(FigureCanvas):
             data2 = data_after
 
         # Before Data  # if self.region2 != NONE:
-        max_y2 = len(data2['speed'][tmc1])
-        self.axes.plot(data2['speed'][tmc1].values, [el / max_y2 for el in range(max_y2)], color=color_str, label='Before', ls='--')
+        max_y2 = len(data2[DataHelper.Project.ID_DATA_SPEED][tmc1])
+        self.axes.plot(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el / max_y2 for el in range(max_y2)], color=color_str, label='Before', ls='--')
         # After Data
-        max_y = len(data1['speed'][tmc1])
-        self.axes.plot(data1['speed'][tmc1].values, [el/max_y for el in range(max_y)], color=color_str, label='After')
+        max_y = len(data1[DataHelper.Project.ID_DATA_SPEED][tmc1])
+        self.axes.plot(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el/max_y for el in range(max_y)], color=color_str, label='After')
         title_str = title_preamble + 'Speed Distribution: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
         title_str = title_str + '\n'
@@ -910,14 +1113,14 @@ class MplChart(FigureCanvas):
             data1 = data_before
             data2 = data_after
         # Before Data # if self.region2 != NONE:
-        max_speed2 = int(ceil(max(data2['speed'][tmc1].values)))
-        y2, x2 = np_hist(data2['speed'][tmc1].values, bins=[el for el in range(max_speed2 + bin_extend)])
+        max_speed2 = int(ceil(max(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values)))
+        y2, x2 = np_hist(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values, bins=[el for el in range(max_speed2 + bin_extend)])
         y2 = np_append(y2, [0])
         sum_y2 = sum(y2)
         self.axes.plot(x2, y2/sum(y2), color=color_str, label='Before', ls='--')
         # After Data
-        max_speed = int(ceil(max(data1['speed'][tmc1].values)))
-        y, x = np_hist(data1['speed'][tmc1].values, bins=[el for el in range(max_speed + bin_extend)])
+        max_speed = int(ceil(max(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values)))
+        y, x = np_hist(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values, bins=[el for el in range(max_speed + bin_extend)])
         y = np_append(y, [0])
         sum_y = sum(y)
         self.axes.plot(x, y/sum(y), color=color_str, label='After')
@@ -1044,6 +1247,30 @@ class MplChart(FigureCanvas):
             bar.set_alpha(0.8)
 
     def hover_tmc(self, event, tmc_list, peak_idx):
+        if event.xdata is not None and event.ydata is not None:
+            # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
+            self.hover_ann.set_x(int(event.xdata))
+            self.hover_ann.set_y(event.ydata)
+            hover_idx = 0
+            iter_len = tmc_list[DataHelper.Project.ID_TMC_LEN][hover_idx]
+            while hover_idx < len(tmc_list) - 1 and event.ydata > iter_len:
+                hover_idx += 1
+                iter_len += tmc_list[DataHelper.Project.ID_TMC_LEN][hover_idx]
+
+            if hover_idx < len(tmc_list) and hover_idx >= 0:
+                if floor(event.xdata) < self.panel.plot_dfs[peak_idx].shape[1] and floor(event.xdata) >= 0:
+                    self.hover_ann.set_text(tmc_list[DataHelper.Project.ID_TMC_CODE][hover_idx]
+                                            + '\n' + self.f_x_to_day_1l(event.xdata, None)
+                                            + '\n' + '{:1.2f} mph'.format(self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)]))
+            else:
+                self.hover_ann.set_text('')
+            self.hover_ann.set_visible(True)
+            event.canvas.draw()
+        else:
+            self.hover_ann.set_visible(False)
+            event.canvas.draw()
+
+    def hover_tmc_unscaled(self, event, tmc_list, peak_idx):
         if event.xdata is not None and event.ydata is not None:
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
             self.hover_ann.set_x(int(event.xdata))
@@ -1282,3 +1509,21 @@ def convert_xval_to_month(x, pos, first_year, first_month):
     x = int(x)
     return str(first_year + ((first_month + x) // 12)) + '-' + calendar.month_abbr[((first_month + x) % 12) + 1]
 
+
+def compute_num_months(qdate1, qdate2):
+    m1 = qdate1.month()
+    m2 = qdate2.month()
+
+    y1 = qdate1.year()
+    y2 = qdate2.year()
+
+    if y1 == y2:
+        return m2 - m1 + 1
+    else:
+        month_count = 12 - m1 + 1
+        y1 += 1
+        while y1 < y2:
+            month_count += 12
+            y1 += 1
+        month_count += m2
+        return month_count

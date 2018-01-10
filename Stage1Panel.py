@@ -5,6 +5,7 @@ from chart_defaults import ChartOptions
 from mpl_charts import MplChart, FIG_TYPE_SPD_HEAT_MAP_FACILITY, FIG_TYPE_SPD_HEAT_MAP, FIG_TYPE_PCT_CONG_DAY, FIG_TYPE_TT_TREND_LINE, FIG_TYPE_TT_TREND_BAR
 from datetime import datetime, timedelta
 from viz_qt import LoadSpatialQT, LoadTemporalQT
+import DataHelper
 
 
 TYPE_S1_2 = 2
@@ -26,11 +27,14 @@ class Stage1GridPanel(QtWidgets.QWidget):
         self.init_mode = True
         self.no_compute = True
 
+        self.is_stack = False
+        self.show_before_after = False
+
         self.project = project
         facility_tmcs = self.project.get_tmc()  # Gets the tmc list for the selected direction(s)
-        self.facility_len = facility_tmcs['miles'].sum()
-        self.selected_tmc_name = facility_tmcs['tmc'][0]
-        self.selected_tmc_len = facility_tmcs['miles'][0]
+        self.facility_len = facility_tmcs[DataHelper.Project.ID_TMC_LEN].sum()
+        self.selected_tmc_name = facility_tmcs[DataHelper.Project.ID_TMC_CODE][0]
+        self.selected_tmc_len = facility_tmcs[DataHelper.Project.ID_TMC_LEN][0]
         self.dfs = [self.project.database.get_data(), None, None]
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
@@ -261,12 +265,12 @@ class Stage1GridPanel(QtWidgets.QWidget):
     def update_plot_data(self, **kwargs):
         full_df = self.dfs[0]
         dir_tmc = self.project.get_tmc()
-        dir_df = full_df[full_df['tmc_code'].isin(dir_tmc['tmc'])]
+        dir_df = full_df[full_df[DataHelper.Project.ID_DATA_TMC].isin(dir_tmc[DataHelper.Project.ID_TMC_CODE])]
         filtered_df = dir_df[dir_df['weekday'].isin(self.plot_days)]
         selected_tmc = self.cb_tmc_select.currentIndex()
-        self.selected_tmc_name = dir_tmc['tmc'][selected_tmc]
-        tmc_df = filtered_df[filtered_df['tmc_code'].isin([self.selected_tmc_name])]
-        self.selected_tmc_len = dir_tmc['miles'][selected_tmc]
+        self.selected_tmc_name = dir_tmc[DataHelper.Project.ID_TMC_CODE][selected_tmc]
+        tmc_df = filtered_df[filtered_df[DataHelper.Project.ID_DATA_TMC].isin([self.selected_tmc_name])]
+        self.selected_tmc_len = dir_tmc[DataHelper.Project.ID_TMC_LEN][selected_tmc]
 
         if self.panel_type == TYPE_S1_3:
             self.ap_start = self.cb_peak_hour_start.currentIndex() * 3
@@ -276,7 +280,7 @@ class Stage1GridPanel(QtWidgets.QWidget):
             func_list = [None,
                          lambda: create_pct_congested_sp(tmc_df, self.speed_bins, aps=[self.ap_start, self.ap_end]),  # filtered_df
                          None,
-                         lambda: create_speed_heatmap(self.dfs[0], dir_tmc['tmc'][selected_tmc]),
+                         lambda: create_speed_heatmap(self.dfs[0], dir_tmc[DataHelper.Project.ID_TMC_CODE][selected_tmc], stacked=self.is_stack),
                          None]
         else:
             am_aps = [self.am_ap_start, self.am_ap_end]
@@ -327,6 +331,14 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.chart11.set_fig_type(0)
             self.chart21.set_fig_type(1)
 
+    def toggle_data_stacked(self):
+        self.is_stack = not self.is_stack
+        self.update_plot_data()
+
+    def toggle_before_after(self):
+        self.show_before_after = not self.show_before_after
+        self.plot_data_updated()
+
 
 class SpatialGridPanel(QtWidgets.QWidget):
     def __init__(self, project, options=None):
@@ -344,11 +356,15 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.init_mode = True
         self.no_compute = True
 
+        self.is_stack = False
+        self.is_scaled = True
+        self.show_before_after = False
+
         self.project = project
         facility_tmcs = self.project.get_tmc()  # Gets the tmc list for the selected direction(s)
-        self.facility_len = facility_tmcs['miles'].sum()
-        self.selected_tmc_name = facility_tmcs['tmc'][0]
-        self.selected_tmc_len = facility_tmcs['miles'][0]
+        self.facility_len = facility_tmcs[DataHelper.Project.ID_TMC_LEN].sum()
+        self.selected_tmc_name = facility_tmcs[DataHelper.Project.ID_TMC_CODE][0]
+        self.selected_tmc_len = facility_tmcs[DataHelper.Project.ID_TMC_LEN][0]
         self.dfs = [self.project.database.get_data(), None, None]
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
@@ -390,7 +406,7 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.connect_combo_boxes()
         self.plot_dfs = [None, None, None, None, None, None, None]
         self.plot_dfs_temp = []
-        self.update_plot_data()
+        self.update_plot_data(fig_num=0)
 
     def create_charts(self):
         self.chart11 = MplChart(self, fig_type=FIG_TYPE_SPD_HEAT_MAP_FACILITY, panel=self, show_am=True, show_mid=False, show_pm=False)
@@ -406,23 +422,23 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.grid_layout.addWidget(self.chart12, 2, 0)
 
     def connect_combo_boxes(self):
-        self.cb_peak_hour_start1.currentIndexChanged.connect(lambda: self.options_updated(fig_num=0))
-        self.cb_peak_hour_end1.currentIndexChanged.connect(lambda: self.options_updated(fig_num=0))
-        self.cb_peak_hour_start2.currentIndexChanged.connect(lambda: self.options_updated(fig_num=1))
-        self.cb_peak_hour_end2.currentIndexChanged.connect(lambda: self.options_updated(fig_num=1))
-        self.cb_peak_hour_start3.currentIndexChanged.connect(lambda: self.options_updated(fig_num=2))
-        self.cb_peak_hour_end3.currentIndexChanged.connect(lambda: self.options_updated(fig_num=2))
+        self.cb_peak_hour_start1.currentIndexChanged.connect(lambda: self.options_updated(fig_num=1))
+        self.cb_peak_hour_end1.currentIndexChanged.connect(lambda: self.options_updated(fig_num=1))
+        self.cb_peak_hour_start2.currentIndexChanged.connect(lambda: self.options_updated(fig_num=2))
+        self.cb_peak_hour_end2.currentIndexChanged.connect(lambda: self.options_updated(fig_num=2))
+        self.cb_peak_hour_start3.currentIndexChanged.connect(lambda: self.options_updated(fig_num=3))
+        self.cb_peak_hour_end3.currentIndexChanged.connect(lambda: self.options_updated(fig_num=3))
 
     def update_plot_data(self, **kwargs):
 
-        fig_num = -1
+        fig_num = 0
         if kwargs is not None:
             if 'fig_num' in kwargs:
                 fig_num = kwargs['fig_num']
 
         full_df = self.dfs[0]
         dir_tmc = self.project.get_tmc()
-        dir_df = full_df[full_df['tmc_code'].isin(dir_tmc['tmc'])]
+        dir_df = full_df[full_df[DataHelper.Project.ID_DATA_TMC].isin(dir_tmc[DataHelper.Project.ID_TMC_CODE])]
         self.ap_start1 = self.cb_peak_hour_start1.currentIndex() * 3
         self.ap_end1 = self.cb_peak_hour_end1.currentIndex() * 3
         self.ap_start2 = self.cb_peak_hour_start2.currentIndex() * 3
@@ -430,26 +446,29 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.ap_start3 = self.cb_peak_hour_start3.currentIndex() * 3
         self.ap_end3 = self.cb_peak_hour_end3.currentIndex() * 3
 
-        if fig_num == 0:
+        if fig_num == 1:
             func_list = [None, None, None, None,
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc']),
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack),
                          None,
-                         None]
-        elif fig_num == 1:
-            func_list = [None, None, None, None,
-                         None,
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc']),
                          None]
         elif fig_num == 2:
             func_list = [None, None, None, None,
                          None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack),
+                         None]
+        elif fig_num == 3:
+            func_list = [None, None, None, None,
                          None,
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])]
+                         None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack)]
+        elif fig_num == 0:
+            func_list = [None, None, None, None,
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack),
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack),
+                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc[DataHelper.Project.ID_TMC_CODE], stacked=self.is_stack)]
         else:
             func_list = [None, None, None, None,
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start1, self.ap_end1], dir_tmc['tmc']),
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start2, self.ap_end2], dir_tmc['tmc']),
-                         lambda: create_speed_tmc_heatmap(dir_df, [self.ap_start3, self.ap_end3], dir_tmc['tmc'])]
+                         None, None, None]
 
         LoadSpatialQT(self, self.project.main_window, func_list)
 
@@ -483,7 +502,7 @@ class SpatialGridPanel(QtWidgets.QWidget):
             self.chart12.update_figure()
             self.chart12.draw()
 
-    def options_updated(self, fig_num=-1):
+    def options_updated(self, fig_num=0):
         self.update_plot_data(fig_num=fig_num)
 
     def update_chart_visibility(self):
@@ -495,6 +514,18 @@ class SpatialGridPanel(QtWidgets.QWidget):
 
     def update_chart_types(self):
         pass
+
+    def toggle_data_stacked(self):
+        self.is_stack = not self.is_stack
+        self.options_updated()
+
+    def toggle_data_scaled(self):
+        self.is_scaled = not self.is_scaled
+        self.options_updated(fig_num=-1)
+
+    def toggle_before_after(self):
+        self.show_before_after = not self.show_before_after
+        self.options_updated(fig_num=-1)
 
 
 def convert_ap_to_time(x, min_resolution):
