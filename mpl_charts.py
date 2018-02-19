@@ -4,7 +4,6 @@ All charts the MplChart class, but the visualization is determined by the “fig
 Contains the ZoomPan class for dynamic interaction with the MPL charts without the need for the navigation toolbar.
 """
 
-
 from PyQt5 import QtWidgets
 from PyQt5 import QtCore
 from PyQt5.QtGui import QCursor
@@ -112,7 +111,7 @@ class MplChart(FigureCanvas):
         self.f_x_to_day_1l = lambda x, pos: convert_x_to_day(x, pos, start_date, two_lines=False)
         self.f_x_to_tmc = lambda x, pos: convert_x_to_tmc(x, pos, self.panel.project.get_tmc(as_list=True))
         self.f_x_to_mile = lambda x, pos: convert_x_to_mile(x, pos, self.panel.project.get_tmc(as_list=True), self.panel.facility_len)
-        self.f_y_to_time = lambda y, pos: convert_xval_to_time(y, pos, 5)
+        self.f_y_to_time = lambda y, pos: convert_xval_to_time(y, pos, self.panel.project.data_res)
 
         self.color_bar1 = None
         self.color_bar2 = None
@@ -126,10 +125,6 @@ class MplChart(FigureCanvas):
         FigureCanvas.updateGeometry(self)
 
         self.context_menu = QtWidgets.QMenu(self)
-        self.toggle_legend_action = QtWidgets.QAction('Toggle Chart Legend', self)
-        self.toggle_legend_action.setToolTip('Toggle the chart legend on/off')
-        self.toggle_legend_action.triggered.connect(self.toggle_legend)
-        self.context_menu.addAction(self.toggle_legend_action)
 
         self.save_figure_action = QtWidgets.QAction('Save Chart as Image', self)
         self.save_figure_action.setToolTip('Save the chart as an image file (png, jpg, etc.)')
@@ -141,10 +136,17 @@ class MplChart(FigureCanvas):
         self.export_data_action.triggered.connect(self.export_data)
         self.context_menu.addAction(self.export_data_action)
 
-        self.reset_axis_action = QtWidgets.QAction('Reset Axis Bounds', self)
-        self.reset_axis_action.setToolTip('Reset the x and y bounds of the chart')
-        self.reset_axis_action.triggered.connect(self.reset_axis_bounds)
-        self.context_menu.addAction(self.reset_axis_action)
+        if self.fig_type != FIG_DQ_TOD:
+            self.context_menu.addSeparator()
+            self.toggle_legend_action = QtWidgets.QAction('Toggle Chart Legend', self)
+            self.toggle_legend_action.setToolTip('Toggle the chart legend on/off')
+            self.toggle_legend_action.triggered.connect(self.toggle_legend)
+            self.context_menu.addAction(self.toggle_legend_action)
+
+            self.reset_axis_action = QtWidgets.QAction('Reset Axis Bounds', self)
+            self.reset_axis_action.setToolTip('Reset the x and y bounds of the chart')
+            self.reset_axis_action.triggered.connect(self.reset_axis_bounds)
+            self.context_menu.addAction(self.reset_axis_action)
 
         if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY:
             self.toggle_scaled_action = QtWidgets.QAction('Scale Y-Axis by TMC Length', self)
@@ -157,14 +159,14 @@ class MplChart(FigureCanvas):
 
         if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY or self.fig_type == FIG_TYPE_SPD_HEAT_MAP:
             self.context_menu.addSeparator()
-            self.toggle_stacked_action =QtWidgets.QAction('Sort X-Axis by Date', self)
+            self.toggle_stacked_action = QtWidgets.QAction('Sort X-Axis by Date', self)
             self.toggle_stacked_action.setToolTip('Toggle between sorting the X-Axis by date versus sorting it by speed.')
             self.toggle_stacked_action.setCheckable(True)
             self.toggle_stacked_action.setChecked(True)
             self.toggle_stacked_action.triggered.connect(self.panel.toggle_data_stacked)
             self.context_menu.addAction(self.toggle_stacked_action)
 
-        if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY or self.fig_type == FIG_TYPE_SPD_HEAT_MAP or self.fig_type == FIG_TYPE_PCT_CONG_DAY\
+        if self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY or self.fig_type == FIG_TYPE_SPD_HEAT_MAP or self.fig_type == FIG_TYPE_PCT_CONG_DAY \
                 or self.fig_type == FIG_TYPE_TT_TREND_LINE or self.fig_type == FIG_TYPE_TT_TREND_BAR:
             self.toggle_before_after_action = QtWidgets.QAction('Show Before/After Ranges', self)
             self.toggle_before_after_action.setToolTip('Set whether the before and after ranges are displayed on the chart.')
@@ -175,28 +177,28 @@ class MplChart(FigureCanvas):
 
         scale = 1.1
         self.zp = ZoomPan()
-        if self.fig_type != FIG_DQ_TOD:
-            figZoom = self.zp.zoom_factory(self.axes, self, base_scale=scale)
-            figPan = self.zp.pan_factory(self.axes, self)
+        figZoom = self.zp.zoom_factory(self.axes, self, base_scale=scale)
+        figPan = self.zp.pan_factory(self.axes, self)
         self.set_x_bounds(self.axes.get_xlim()[0], self.axes.get_xlim()[1], make_default=True)
         self.set_y_bounds(self.axes.get_ylim()[0], self.axes.get_ylim()[1], make_default=True)
 
     def manual_ani_tod(self, event):
-        anim = animation.FuncAnimation(self.fig, self.animate_tod, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        anim = animation.FuncAnimation(self.fig, self.animate_tod, frames=self.frames + 1, interval=1, repeat=False, blit=False)
         # anim.save('test_anim_file.html')
         self.draw_idle()
 
     def manual_ani_wkdy(self, event):
-        anim = animation.FuncAnimation(self.fig, self.animate_wkdy, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        anim = animation.FuncAnimation(self.fig, self.animate_wkdy, frames=self.frames + 1, interval=1, repeat=False, blit=False)
         self.draw()
         # self.draw_idle()
+
     def manual_ani_tmc(self, event):
-        anim = animation.FuncAnimation(self.fig, self.animate_tmc, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        anim = animation.FuncAnimation(self.fig, self.animate_tmc, frames=self.frames + 1, interval=1, repeat=False, blit=False)
         self.draw()
         # self.draw_idle()
 
     def manual_ani_sp(self, event):
-        anim = animation.FuncAnimation(self.fig, self.animate_sp, frames=self.frames+1, interval=1, repeat=False,  blit=False)
+        anim = animation.FuncAnimation(self.fig, self.animate_sp, frames=self.frames + 1, interval=1, repeat=False, blit=False)
         self.draw()
         # self.draw_idle()
 
@@ -232,7 +234,8 @@ class MplChart(FigureCanvas):
         self.fig_type = fig_type
 
     def save_figure(self):
-        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'PNG files (*.png);;PDF files (*.pdf);;JPEG files (*.jpg)', 'PNG files (*.png)')
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'PNG files (*.png);;PDF files (*.pdf);;JPEG files (*.jpg)',
+                                                                    'PNG files (*.png)')
         if f_name:
             self.fig.savefig(f_name)
 
@@ -290,7 +293,7 @@ class MplChart(FigureCanvas):
         elif self.fig_type == FIG_DQ_SP:
             # self.compute_dq_sp()
             self.manual_ani_sp(None)
-        # pass
+            # pass
 
     def animate_tod(self, i):
         # if i < self.frames:
@@ -308,7 +311,6 @@ class MplChart(FigureCanvas):
         # if i < self.frames:
         print(str(self.fig_type) + ' - ' + str(i))
         rs = [r for r in self.wkdy_bars]
-        # heights = [h + s / 25 for h, s in zip(heights, speeds)]
         heights = self.panel.plot_dfs_dq[0].values.reshape(self.panel.plot_dfs_dq[0].shape[0], )
         heights = [h * i / self.frames for h in heights]
         for h, r in zip(heights, rs):
@@ -322,8 +324,7 @@ class MplChart(FigureCanvas):
         # if i < self.frames:
         print(str(self.fig_type) + ' - ' + str(i))
         rs = [r for r in self.tmc_bars]
-        # heights = [h + s / 25 for h, s in zip(heights, speeds)]
-        heights = [h* i / self.frames for h in self.panel.plot_dfs_dq[2].values]
+        heights = [h * i / self.frames for h in self.panel.plot_dfs_dq[2].values]
         for h, r in zip(heights, rs):
             r.set_height(h)
         return rs
@@ -336,7 +337,6 @@ class MplChart(FigureCanvas):
             print(str(self.fig_type) + ' - ' + str(i))
             rs1 = [r for r in self.sp_bars1]
             rs2 = [r for r in self.sp_bars2]
-            # heights = [h + s / 25 for h, s in zip(heights, speeds)]
             heights1 = [h * i / self.frames for h in self.panel.plot_dfs_dq[3][0]]
             heights2 = [h * i / self.frames for h in self.panel.plot_dfs_dq[3][1]]
             for h, r in zip(heights1, rs1):
@@ -430,14 +430,34 @@ class MplChart(FigureCanvas):
             self.export_trend_line()
         elif self.fig_type == FIG_TYPE_SPD_BAND:
             self.export_speed_band()
+        elif self.fig_type == FIG_DQ_WKDY:
+            self.export_dq_wkdy()
+        elif self.fig_type == FIG_DQ_TOD:
+            self.export_dq_tod()
+        elif self.fig_type == FIG_DQ_SP:
+            self.export_dq_sp()
+        elif self.fig_type == FIG_DQ_TMC:
+            self.export_dq_tmc()
+        elif self.fig_type == FIG_TYPE_SPD_HEAT_MAP_FACILITY:
+            self.export_speed_tmc_heatmap()
+        elif self.fig_type == FIG_TYPE_SPD_HEAT_MAP:
+            self.export_speed_tod_heatmap()
         else:
+            QtWidgets.QMessageBox.information(self, 'Function Not Implemented', 'Exporting the data for this chart is not yet supported.',
+                                              QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
             pass
 
     def export_trend_line(self):
-        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file', '', 'CSV files (*.csv)',
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
                                                                     'CSV files (*.csv)')
         if f_name:
-            self.panel.plot_dfs[0].to_csv(f_name)
+            # self.panel.plot_dfs[0].to_csv(f_name)
+            if file_filter.count('h5') > 0:
+                self.panel.plot_dfs[0].to_hdf(f_name, 'table')
+            else:
+                self.panel.plot_dfs[0].to_csv(f_name)
 
     def compute_trend_line_deprecated(self):
         if self.show_am:
@@ -491,8 +511,9 @@ class MplChart(FigureCanvas):
             tt_am_pct95_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT]['percentile_95']
             x = [el for el in range(len(tt_am_mean_dir1))]
             self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
-            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
-                    label='AM-95th Pct')
+            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1,
+                          color='#aec7e8',
+                          label='AM-95th Pct')
             y_max = max(y_max, max(tt_am_pct95_dir1))
         if self.show_pm:
             tt_pm_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'pm']['mean']
@@ -503,7 +524,7 @@ class MplChart(FigureCanvas):
                 offset += width
             self.axes.bar([el + offset for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
             self.axes.bar([el + offset for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
-                    bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+                          bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
             y_max = max(y_max, max(tt_pm_pct95_dir1))
         if self.show_mid:
             tt_md_mean_dir1 = self.panel.plot_dfs[0][DataHelper.Project.ID_DATA_TT + 'mid']['mean']
@@ -516,7 +537,7 @@ class MplChart(FigureCanvas):
                 offset += width
             self.axes.bar([el + offset for el in x], tt_md_mean_dir1, width, color='C2', label='Mid-Mean')
             self.axes.bar([el + offset for el in x], [tt_md_pct95_dir1[i] - tt_md_mean_dir1[i] for i in range(len(tt_md_mean_dir1))], width,
-                    bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
+                          bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
             y_max = max(y_max, max(tt_md_pct95_dir1))
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
@@ -569,8 +590,9 @@ class MplChart(FigureCanvas):
             x = [el for el in range(len(tt_am_mean_dir1))]
             self.axes.bar(x, tt_am_mean_dir1, width, color='C0', label='AM-Mean')
             # ax3.bar(x, tt_am_pct5_dir1, color='C0', linestyle='--', lw=1.0, label='AM-5th Pct')
-            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1, color='#aec7e8',
-                    label='AM-95th Pct')
+            self.axes.bar(x, [tt_am_pct95_dir1[i] - tt_am_mean_dir1[i] for i in range(len(tt_am_mean_dir1))], width, bottom=tt_am_mean_dir1,
+                          color='#aec7e8',
+                          label='AM-95th Pct')
         if self.show_pm:
             tt_pm_mean_dir1 = self.panel.plot_dfs[0]['meanpm']
             # tt_pm_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5pm']
@@ -582,7 +604,7 @@ class MplChart(FigureCanvas):
             self.axes.bar([el + offset for el in x], tt_pm_mean_dir1, width, color='C1', label='PM-Mean')
             # ax1.bar(x + width, tt_pm_pct5_dir1, color='C1', linestyle='--', lw=1.0, label='PM-5th Pct')
             self.axes.bar([el + offset for el in x], [tt_pm_pct95_dir1[i] - tt_pm_mean_dir1[i] for i in range(len(tt_pm_mean_dir1))], width,
-                    bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
+                          bottom=tt_pm_mean_dir1, color='#ffbb78', label='PM-95th Pct')
         if self.show_mid:
             tt_md_mean_dir1 = self.panel.plot_dfs[0]['meanmid']
             # tt_md_pct5_dir1 = self.panel.plot_dfs[0]['percentile_5mid']
@@ -596,7 +618,7 @@ class MplChart(FigureCanvas):
             self.axes.bar([el + offset for el in x], tt_md_mean_dir1, width, color='C2', label='Mid-Mean')
             # ax1.bar(x + width, tt_pm_pct5_dir1, color='C2', linestyle='--', lw=1.0, label='PM-5th Pct')
             self.axes.bar([el + offset for el in x], [tt_md_pct95_dir1[i] - tt_md_mean_dir1[i] for i in range(len(tt_md_mean_dir1))], width,
-                    bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
+                          bottom=tt_md_mean_dir1, color='#98df8a', label='Mid-95th Pct')
 
         self.axes.set_title(self.panel.peak_period_str + 'Travel Time Trends by Month'
                             + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
@@ -621,7 +643,7 @@ class MplChart(FigureCanvas):
         BIN4 = self.panel.options.speed_bins[4]
         bin_limits = [BIN0, BIN1, BIN2, BIN3, BIN4]
         bin_labels = [str(bin_limits[i]) + 'mph-' + str(bin_limits[i + 1]) + 'mph' for i in range(len(bin_limits) - 1)]
-        #bin_labels.insert(0, '<' + str(BIN1) + 'mph')
+        # bin_labels.insert(0, '<' + str(BIN1) + 'mph')
         bin_labels.append(str(BIN4) + '+')
         cl = self.panel.options.speed_bin_colors
         bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
@@ -641,8 +663,8 @@ class MplChart(FigureCanvas):
         # self.axes.set_xlabel('Date')
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.2%}'.format(y)))
         self.axes.set_ylabel('Percent Congested')
-        self.axes.set_title('Percent Congested over Time: ' + convert_xval_to_time(self.panel.ap_start, None, 5)
-                            + '-' + convert_xval_to_time(self.panel.ap_end, None, 5)
+        self.axes.set_title('Percent Congested over Time: ' + convert_xval_to_time(self.panel.ap_start, None, self.panel.project.data_res)
+                            + '-' + convert_xval_to_time(self.panel.ap_end, None, self.panel.project.data_res)
                             + '\n' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')')
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
@@ -663,7 +685,7 @@ class MplChart(FigureCanvas):
             # days_p2_end_to_data_end = dr2[1].daysTo(last_date)
             xr1 = (days_to_p1_start, num_days_p1)
             p2_start = days_to_p1_start + num_days_p1 + days_p1_end_to_p2_start - 1
-            xr2 = (p2_start, num_days_p2-1)
+            xr2 = (p2_start, num_days_p2 - 1)
             c1 = collections.BrokenBarHCollection([xr1, xr2], (0, 1),
                                                   edgecolors=['C0', 'navy'],
                                                   linewidths=[2.5, 2.5],
@@ -712,7 +734,9 @@ class MplChart(FigureCanvas):
     def compute_speed_heatmap(self):
         imshow_data = self.panel.plot_dfs[3]
         y_argmax = imshow_data.shape[0]
-        im = self.axes.imshow(imshow_data, cmap='RdYlGn', aspect='auto')
+        im = self.axes.imshow(imshow_data, cmap='RdYlGn', aspect='auto',
+                                      vmin=self.panel.project.min_speed,
+                                      vmax=self.panel.project.max_speed)
         if self.color_bar1 is not None:
             self.color_bar1.remove()
         self.color_bar1 = self.fig.colorbar(im, ax=self.axes, shrink=0.8, use_gridspec=True)
@@ -750,17 +774,52 @@ class MplChart(FigureCanvas):
 
         self.fig.tight_layout()
 
+    def export_speed_tod_heatmap(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            imshow_data = self.panel.plot_dfs[3]
+            num_aps, num_days = imshow_data.shape
+            if file_filter.count('h5') > 0:
+                QtWidgets.QMessageBox.information(self, 'Function Not Implemented', 'Exporting this chart to the HDF5 format is not yet supported.',
+                                                  QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+                pass
+            else:
+                wf = open(f_name, 'w')
+                wf.write('Daily Speed Heatmap for ' + self.panel.selected_tmc_name + ' (' + '{:1.2f} mi'.format(self.panel.selected_tmc_len) + ')\n')
+                wf.write('Time of Day/Date')
+                for di in range(num_days):
+                    wf.write(',' + self.f_x_to_day_1l(di, None))
+                wf.write('\n')
+                for ti in range(num_aps):
+                    wf.write(self.f_y_to_time(ti, None))
+                    for di in range(num_days):
+                        wf.write(', {:1.2f}'.format(imshow_data[ti][di]))
+                    wf.write('\n')
+                wf.close()
+                QtWidgets.QMessageBox.information(self, 'Export Successful!',
+                                                  'Time of Day Heatmap Matrix successfully written to CSV file.',
+                                                  QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+
     def compute_speed_tmc_heatmap(self):
         peak_idx = 4
         if self.show_am:
-            hour_str = convert_xval_to_time(self.panel.ap_start1, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end1, None, 5)
+            hour_str = convert_xval_to_time(self.panel.ap_start1, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end1,
+                                                                                                                                  None,
+                                                                                                                                  self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[4]
         elif self.show_mid:
-            hour_str = convert_xval_to_time(self.panel.ap_start2, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end2, None, 5)
+            hour_str = convert_xval_to_time(self.panel.ap_start2, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end2,
+                                                                                                                                  None,
+                                                                                                                                  self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[5]
             peak_idx = 5
         else:
-            hour_str = convert_xval_to_time(self.panel.ap_start3, None, 5) + '-' + convert_xval_to_time(self.panel.ap_end3, None, 5)
+            hour_str = convert_xval_to_time(self.panel.ap_start3, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end3,
+                                                                                                                                  None,
+                                                                                                                                  self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[6]
             peak_idx = 6
         num_tmc, num_days = imshow_data.shape
@@ -794,7 +853,7 @@ class MplChart(FigureCanvas):
                                   )
             # f_tmc_label2 = lambda x, pos: convert_extent_to_mile(x, pos, self.panel.facility_len, self.tmc_ext)
             # self.axes.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
-            y_max = num_tmc-1
+            y_max = num_tmc - 1
             self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '#{:1.0f}'.format(y + 1)))
             self.axes.set_ylabel('TMC #')
 
@@ -849,6 +908,47 @@ class MplChart(FigureCanvas):
 
         self.axes.spines['top'].set_visible(False)
         self.axes.spines['right'].set_visible(False)
+
+    def export_speed_tmc_heatmap(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            if self.show_am:
+                hour_str = convert_xval_to_time(self.panel.ap_start1, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.panel.ap_end1, None, self.panel.project.data_res)
+                imshow_data = self.panel.plot_dfs[4]
+            elif self.show_mid:
+                hour_str = convert_xval_to_time(self.panel.ap_start2, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.panel.ap_end2, None, self.panel.project.data_res)
+                imshow_data = self.panel.plot_dfs[5]
+            else:
+                hour_str = convert_xval_to_time(self.panel.ap_start3, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.panel.ap_end3, None, self.panel.project.data_res)
+                imshow_data = self.panel.plot_dfs[6]
+            num_tmc, num_days = imshow_data.shape
+            if file_filter.count('h5') > 0:
+                QtWidgets.QMessageBox.information(self, 'Function Not Implemented', 'Exporting this chart to the HDF5 format is not yet supported.',
+                                                  QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
+                pass
+            else:
+                wf = open(f_name, 'w')
+                wf.write('Spatial Heatmap Matrix for "' + self.panel.project.get_name() + '" for ' + hour_str + '\n')
+                wf.write('TMC/Day')
+                for di in range(num_days):
+                    wf.write(',' + self.f_x_to_day_1l(di, None))
+                wf.write('\n')
+                tmc = self.panel.project.get_tmc()
+                for ti in range(num_tmc - 1, -1, -1):
+                    wf.write(tmc[DataHelper.Project.ID_TMC_CODE][ti])
+                    for di in range(num_days):
+                        wf.write(', {:1.2f}'.format(imshow_data[ti][di]))
+                    wf.write('\n')
+                wf.close()
+                QtWidgets.QMessageBox.information(self, 'Export Successful!',
+                                                  'Spatial Heatmap Matrix successfully written to CSV file.',
+                                                  QtWidgets.QMessageBox.Ok, QtWidgets.QMessageBox.Ok)
 
     def compute_extra_time_area(self):
         day_type = self.panel.day_select
@@ -999,7 +1099,7 @@ class MplChart(FigureCanvas):
         self.axes.plot(data2[DataHelper.Project.ID_DATA_TT][tmc1].values, [el / max_y2 for el in range(max_y2)], color=TT_BLUE, label='Before')
         # After Data
         max_y = len(data1[DataHelper.Project.ID_DATA_TT][tmc1])
-        self.axes.plot(data1[DataHelper.Project.ID_DATA_TT][tmc1].values, [el/max_y for el in range(max_y)], color=SB_RED, label='After')
+        self.axes.plot(data1[DataHelper.Project.ID_DATA_TT][tmc1].values, [el / max_y for el in range(max_y)], color=SB_RED, label='After')
 
         title_str = 'Travel Time Distribution: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
@@ -1031,17 +1131,23 @@ class MplChart(FigureCanvas):
             data_after = self.panel.plot_dfs3[day_type + offset]
         elif self.panel.selected_peak == PEAK_AM:
             color_str = 'C0'
-            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.am_ap_end, None, 5) + ') '
+            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None,
+                                                                self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.am_ap_end, None,
+                                                                                                                          self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[day_type]
             data_after = self.panel.plot_dfs5[day_type + offset]
         elif self.panel.selected_peak == PEAK_MID:
             color_str = 'C2'
-            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.md_ap_end, None, 5) + ') '
+            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None,
+                                                               self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.md_ap_end, None,
+                                                                                                                         self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[18 + day_type]
             data_after = self.panel.plot_dfs5[18 + day_type + offset]
         else:
             color_str = 'C1'
-            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None, 5) + ') '
+            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None,
+                                                                self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None,
+                                                                                                                          self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[36 + day_type]
             data_after = self.panel.plot_dfs5[36 + day_type + offset]
 
@@ -1054,10 +1160,11 @@ class MplChart(FigureCanvas):
 
         # Before Data  # if self.region2 != NONE:
         max_y2 = len(data2[DataHelper.Project.ID_DATA_SPEED][tmc1])
-        self.axes.plot(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el / max_y2 for el in range(max_y2)], color=color_str, label='Before', ls='--')
+        self.axes.plot(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el / max_y2 for el in range(max_y2)], color=color_str, label='Before',
+                       ls='--')
         # After Data
         max_y = len(data1[DataHelper.Project.ID_DATA_SPEED][tmc1])
-        self.axes.plot(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el/max_y for el in range(max_y)], color=color_str, label='After')
+        self.axes.plot(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values, [el / max_y for el in range(max_y)], color=color_str, label='After')
         title_str = title_preamble + 'Speed Distribution: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
         title_str = title_str + '\n'
@@ -1092,17 +1199,23 @@ class MplChart(FigureCanvas):
             data_after = self.panel.plot_dfs3[day_type + offset]
         elif self.panel.selected_peak == PEAK_AM:
             color_str = 'C0'
-            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.am_ap_end, None, 5) + ') '
+            title_preamble = 'AM Peak (' + convert_xval_to_time(self.panel.am_ap_start, None,
+                                                                self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.am_ap_end, None,
+                                                                                                                          self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[day_type]
             data_after = self.panel.plot_dfs5[day_type + offset]
         elif self.panel.selected_peak == PEAK_MID:
             color_str = 'C2'
-            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.md_ap_end, None, 5) + ') '
+            title_preamble = 'Midday (' + convert_xval_to_time(self.panel.md_ap_start, None,
+                                                               self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.md_ap_end, None,
+                                                                                                                         self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[18 + day_type]
             data_after = self.panel.plot_dfs5[18 + day_type + offset]
         else:
             color_str = 'C1'
-            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None, 5) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None, 5) + ') '
+            title_preamble = 'PM Peak (' + convert_xval_to_time(self.panel.pm_ap_start, None,
+                                                                self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.pm_ap_end, None,
+                                                                                                                          self.panel.project.data_res) + ') '
             data_before = self.panel.plot_dfs5[36 + day_type]
             data_after = self.panel.plot_dfs5[36 + day_type + offset]
 
@@ -1117,13 +1230,13 @@ class MplChart(FigureCanvas):
         y2, x2 = np_hist(data2[DataHelper.Project.ID_DATA_SPEED][tmc1].values, bins=[el for el in range(max_speed2 + bin_extend)])
         y2 = np_append(y2, [0])
         sum_y2 = sum(y2)
-        self.axes.plot(x2, y2/sum(y2), color=color_str, label='Before', ls='--')
+        self.axes.plot(x2, y2 / sum(y2), color=color_str, label='Before', ls='--')
         # After Data
         max_speed = int(ceil(max(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values)))
         y, x = np_hist(data1[DataHelper.Project.ID_DATA_SPEED][tmc1].values, bins=[el for el in range(max_speed + bin_extend)])
         y = np_append(y, [0])
         sum_y = sum(y)
-        self.axes.plot(x, y/sum(y), color=color_str, label='After')
+        self.axes.plot(x, y / sum(y), color=color_str, label='After')
 
         title_str = title_preamble + 'Speed Frequency: ' + self.panel.project.get_name()
         title_str = title_str + ' (' + self.panel.selected_tmc_name + ', {:1.2f} mi'.format(self.panel.selected_tmc_len) + ')'
@@ -1166,6 +1279,18 @@ class MplChart(FigureCanvas):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
+    def export_dq_wkdy(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            # self.panel.plot_dfs[0].to_csv(f_name)
+            if file_filter.count('h5') > 0:
+                self.panel.plot_dfs_dq[0].to_hdf(f_name, 'table')
+            else:
+                self.panel.plot_dfs_dq[0].to_csv(f_name)
+
     def compute_dq_tod(self):
         data = self.panel.plot_dfs_dq[1]
         radii = data.values
@@ -1188,6 +1313,18 @@ class MplChart(FigureCanvas):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
+    def export_dq_tod(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            # self.panel.plot_dfs[0].to_csv(f_name)
+            if file_filter.count('h5') > 0:
+                self.panel.plot_dfs_dq[1].to_hdf(f_name, 'table')
+            else:
+                self.panel.plot_dfs_dq[1].to_csv(f_name)
+
     def compute_dq_tmc(self):
         data = self.panel.plot_dfs_dq[2]
         num_tmc = len(data.values)
@@ -1208,6 +1345,18 @@ class MplChart(FigureCanvas):
         for r, bar in zip(data.values, self.tmc_bars):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
+
+    def export_dq_tmc(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            # self.panel.plot_dfs[0].to_csv(f_name)
+            if file_filter.count('h5') > 0:
+                self.panel.plot_dfs_dq[2].to_hdf(f_name, 'table')
+            else:
+                self.panel.plot_dfs_dq[2].to_csv(f_name)
 
     def compute_dq_sp(self):
         self.axes.yaxis.set_major_formatter(FuncFormatter(lambda y, _: '{:.0%}'.format(y)))
@@ -1246,6 +1395,22 @@ class MplChart(FigureCanvas):
             bar.set_facecolor(dq_cm(r))
             bar.set_alpha(0.8)
 
+    def export_dq_sp(self):
+        f_name, file_filter = QtWidgets.QFileDialog.getSaveFileName(self, 'Save file',
+                                                                    '',
+                                                                    'CSV files (*.csv);;HDF5 files (*.h5)',
+                                                                    'CSV files (*.csv)')
+        if f_name:
+            # self.panel.plot_dfs[0].to_csv(f_name)
+            write_df = DataFrame()
+            write_df['weekday'] = self.panel.plot_dfs_dq[3][0]
+            write_df['weekend'] = self.panel.plot_dfs_dq[3][1]
+            if file_filter.count('h5') > 0:
+                write_df.to_hdf(f_name, 'table')
+            else:
+                write_df.to_csv(f_name)
+                pass
+
     def hover_tmc(self, event, tmc_list, peak_idx):
         if event.xdata is not None and event.ydata is not None:
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
@@ -1261,7 +1426,10 @@ class MplChart(FigureCanvas):
                 if floor(event.xdata) < self.panel.plot_dfs[peak_idx].shape[1] and floor(event.xdata) >= 0:
                     self.hover_ann.set_text(tmc_list[DataHelper.Project.ID_TMC_CODE][hover_idx]
                                             + '\n' + self.f_x_to_day_1l(event.xdata, None)
-                                            + '\n' + '{:1.2f} mph'.format(self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)]))
+                                            + '\n' + '{:1.2f} mph'.format(
+                        # self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)])
+                        self.panel.plot_dfs[peak_idx][hover_idx][floor(event.xdata)])
+                                            )
             else:
                 self.hover_ann.set_text('')
             self.hover_ann.set_visible(True)
@@ -1275,13 +1443,14 @@ class MplChart(FigureCanvas):
             # print(str(int(event.xdata)) + ',' + str(int(event.ydata)))
             self.hover_ann.set_x(int(event.xdata))
             self.hover_ann.set_y(int(event.ydata))
-            hover_idx = floor(event.ydata*len(tmc_list) / self.tmc_ext)
+            hover_idx = floor(event.ydata * len(tmc_list) / self.tmc_ext)
             # print(self.panel.plot_dfs[3])
             if hover_idx < len(tmc_list) and hover_idx >= 0:
                 if floor(event.xdata) < self.panel.plot_dfs[peak_idx].shape[1] and floor(event.xdata) >= 0:
                     self.hover_ann.set_text(tmc_list[hover_idx]
                                             + '\n' + self.f_x_to_day_1l(event.xdata, None)
-                                            + '\n' + '{:1.2f} mph'.format(self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)]))
+                                            + '\n' + '{:1.2f} mph'.format(
+                        self.panel.plot_dfs[peak_idx][(self.panel.plot_dfs[peak_idx].shape[0] - hover_idx - 1)][floor(event.xdata)]))
             else:
                 self.hover_ann.set_text('')
             self.hover_ann.set_visible(True)
@@ -1312,6 +1481,7 @@ class ZoomPan:
     """
     https://stackoverflow.com/questions/11551049/matplotlib-plot-zooming-with-scroll-wheel
     """
+
     def __init__(self):
         self.press = None
         self.cur_xlim = None
@@ -1322,8 +1492,8 @@ class ZoomPan:
         self.y1 = None
         self.xpress = None
         self.ypress = None
-        self.default_xlim=None
-        self.default_ylim=None
+        self.default_xlim = None
+        self.default_ylim = None
 
     def set_default_xlim(self, new_xlim):
         self.default_xlim = new_xlim
@@ -1361,8 +1531,8 @@ class ZoomPan:
 
             if allow_key_zoom and event.key is "control":
                 if xdata is not None:
-                    relx = (cur_xlim[1] - xdata)/(cur_xlim[1] - cur_xlim[0])
-                    ax.set_xlim([xdata - new_width * (1-relx), xdata + new_width * (relx)])
+                    relx = (cur_xlim[1] - xdata) / (cur_xlim[1] - cur_xlim[0])
+                    ax.set_xlim([xdata - new_width * (1 - relx), xdata + new_width * (relx)])
             elif allow_key_zoom and event.key is "shift":
                 if ydata is not None:
                     rely = (cur_ylim[1] - ydata) / (cur_ylim[1] - cur_ylim[0])
@@ -1387,6 +1557,8 @@ class ZoomPan:
                 cursor = QCursor()
                 mpl_panel.context_menu.popup(cursor.pos())
             else:
+                if mpl_panel.fig_type is FIG_DQ_TOD:
+                    return
                 if ax.get_navigate_mode() is None:
                     if event.dblclick:
                         mpl_panel.reset_axis_bounds()
@@ -1401,8 +1573,8 @@ class ZoomPan:
             if event.button == 3:
                 pass
             else:
-                # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
-                #     return
+                if mpl_panel.fig_type is FIG_DQ_TOD:
+                    return
                 if ax.get_navigate_mode() is None:
                     self.press = None
                     ax.figure.canvas.draw()
@@ -1413,6 +1585,8 @@ class ZoomPan:
             else:
                 # if mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP_FACILITY or mpl_panel.fig_type is FIG_TYPE_SPD_HEAT_MAP:
                 #     return
+                if mpl_panel.fig_type is FIG_DQ_TOD:
+                    return
                 if ax.get_navigate_mode() is None:
                     if self.press is None: return
                     if event.inaxes != ax: return
@@ -1425,14 +1599,14 @@ class ZoomPan:
 
                     ax.figure.canvas.draw()
 
-        fig = ax.get_figure() # get the figure of interest
+        fig = ax.get_figure()  # get the figure of interest
 
         # attach the call back
         fig.canvas.mpl_connect('button_press_event', onPress)
         fig.canvas.mpl_connect('button_release_event', onRelease)
         fig.canvas.mpl_connect('motion_notify_event', onMotion)
 
-        #return the function
+        # return the function
         return onMotion
 
 
@@ -1467,7 +1641,7 @@ def convert_x_to_tmc(x, pos, tmc_list):
 
 def convert_x_to_mile(x, pos, tmc_list, facilit_len):
     if x >= 0 and x < len(tmc_list):
-        return '{:1.1f} mi'.format(x/len(tmc_list) * facilit_len)
+        return '{:1.1f} mi'.format(x / len(tmc_list) * facilit_len)
     else:
         return ''
 
@@ -1475,7 +1649,7 @@ def convert_x_to_mile(x, pos, tmc_list, facilit_len):
 def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):
     tmc_span = tmc_extent / len(tmc_list)
     c_idx = x // tmc_span
-    return tmc_list[min(c_idx, len(tmc_list)-1)]
+    return tmc_list[min(c_idx, len(tmc_list) - 1)]
 
 
 def convert_extent_to_mile(x, pos, facility_len, tmc_ext):

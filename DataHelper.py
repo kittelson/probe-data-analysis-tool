@@ -13,6 +13,7 @@ class Project:
     ID_DATA_TIMESTAMP = 'measurement_tstamp'
     ID_DATA_SPEED = 'speed'
     ID_DATA_TT = 'travel_time_minutes'
+    ID_DATA_RESOLUTION = 5
 
     ID_TMC_CODE = 'tmc'
     ID_TMC_DIR = 'direction'
@@ -37,7 +38,7 @@ class Project:
         self._date_ranges = []
         self.chart_panel1_opts = ChartOptions()
         # self.chart_panel1_opts = None  # _Delete
-        self.data_res = 5
+        self.data_res = Project.ID_DATA_RESOLUTION
         self.direction = None
         self._summary_data = None
         self.min_speed = 15
@@ -126,7 +127,10 @@ class Project:
             return self.database.get_tmcs(as_list=as_list)
         else:
             tmc_list = self.database.get_tmcs()
-            subset_dirs = self.get_selected_directions()
+            if self.direction is None:
+                subset_dirs = self.get_selected_directions()
+            else:
+                subset_dirs = [self.direction]
             subset_tmc = tmc_list[tmc_list[Project.ID_TMC_DIR].isin(subset_dirs)]
             subset_tmc.reset_index(inplace=True)
             if as_list:

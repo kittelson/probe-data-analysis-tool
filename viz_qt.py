@@ -74,7 +74,8 @@ class DQDataLoadThread(QThread):
         if self.data is None:
             plot_dfs = compute_data_quality(self.funcs, progress_tracker=self.progress_helper)
         else:
-            plot_dfs = compute_data_quality2(self.data, tmc=self.tmc, progress_tracker=self.progress_helper)
+            ap_per_hour = 60 / self.chart_panel.project.data_res
+            plot_dfs = compute_data_quality2(self.data, ap_per_hour, tmc=self.tmc, progress_tracker=self.progress_helper)
         self.chart_panel.plot_dfs_dq = plot_dfs
         self.countChanged.emit(-1)
 
@@ -233,13 +234,18 @@ def load_project_data(project, progress_tracker=None):
     # Joining dataframe
     time1 = time.time()  # Print_Delete
     df['Date'], df['Year'], df['Month'], df['Day'], df['AP'], df['weekday'] = create_columns(new_mat)
-    df['Hour'] = df['AP'] // 12
+    ap_per_hour = 60 / project.data_res
+    df['Hour'] = df['AP'] // ap_per_hour
     time2 = time.time()  # Print_Delete
     print('DF Creation: '+str(time2-time1))  # Print_Delete
 
     db = DataHelper.Database(project.get_name(), tmc, df)
-    db.set_first_date(df['Date'].min())
-    db.set_last_date(df['Date'].max())
+    # db.set_first_date(df['Date'].min())
+    # db.set_last_date(df['Date'].max())
+    d_min = pd.to_datetime(df['Date']).min()
+    d_max = pd.to_datetime(df['Date']).max()
+    db.set_first_date(d_min.strftime('%Y-%m-%d'))
+    db.set_last_date(d_max.strftime('%Y-%m-%d'))
     ad = df['weekday'].unique()
     wd = [el for el in ad if el < 5]
     wd.sort()
@@ -336,7 +342,6 @@ class LoadStage2QT(QDialog):
             self.progress.setValue(value)
 
 
-
 def compute_data_quality(funcs, progress_tracker=None):
     if progress_tracker is not None:
         progress_tracker.bar.setTextVisible(True)
@@ -366,7 +371,7 @@ def compute_data_quality(funcs, progress_tracker=None):
     return chart_data
 
 
-def compute_data_quality2(data, tmc=None, progress_tracker=None):
+def compute_data_quality2(data, ap_per_hour, tmc=None, progress_tracker=None):
     # if progress_tracker is not None:
     #     progress_tracker.bar.setTextVisible(True)
     #     progress_tracker.bar.setMaximum(8)
@@ -376,9 +381,9 @@ def compute_data_quality2(data, tmc=None, progress_tracker=None):
     if progress_tracker is not None:
         if tmc is not None:
             agg_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc)]
-            agg_data = agg_data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / 12
+            agg_data = agg_data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ap_per_hour
         else:
-            agg_data = data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / 12
+            agg_data = data.groupby([DataHelper.Project.ID_DATA_TMC, 'Year', 'Month', 'weekday', 'Hour', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ap_per_hour
         progress_tracker.bar.setTextVisible(True)
         progress_tracker.bar.setMaximum(8)
         progress += 1
@@ -656,16 +661,38 @@ class LoadTemporalQT(QDialog):
 
 
 def extract_vals(date_str):
-    # print(date_str)
-    date, time = date_str.split(' ')
-    # [hour, minute, second] = [int(val) for val in time.split(':')]
+    # ----NPMRDS----
+    date, time = date_str.split(' ')[:2]
     time_tokens = time.split(':')
     hour = int(time_tokens[0])
     minute = int(time_tokens[1])
     [year, month, day] = [int(val) for val in date.split('-')]
-    # [month, day, year] = [int(val) for val in date.split('/')]
     day_type = datetime.datetime(year, month, day).weekday()
-    ap = (hour * 12) + minute // 5
+    ap = (hour * (60 // DataHelper.Project.ID_DATA_RESOLUTION)) + minute // DataHelper.Project.ID_DATA_RESOLUTION
+    # ----End NPMRDS----
+
+    # ----BlueMAC----
+    # date_tokens = date_str.strip('*').split(' ')
+    # date, time = date_tokens[:2]
+    # pm_offset = False
+    # am_offset = False
+    # if len(date_tokens) > 2:
+    #     if date_tokens[-1].lower().endswith('pm'):
+    #         pm_offset = True
+    #     else:
+    #         am_offset = True
+    # time_tokens = time.split(':')
+    # hour = int(time_tokens[0])
+    # if hour == 12:
+    #     hour -= (12 if am_offset else 0)
+    # else:
+    #     hour += (12 if pm_offset else 0)
+    # minute = int(time_tokens[1])
+    # [month, day, year] = [int(val) for val in date.split('/')]
+    # date = str(year) + '-' + str(month) + '-' + str(day)
+    # day_type = datetime.datetime(year, month, day).weekday()
+    # ap = (hour * (60 // DataHelper.Project.ID_DATA_RESOLUTION)) + minute // DataHelper.Project.ID_DATA_RESOLUTION
+    # ----END BlueMAC----
     return date, year, month, day, ap, day_type
 
 

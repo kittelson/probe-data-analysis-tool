@@ -13,6 +13,7 @@ from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QAction, QFileDialog, QDialog, QFormLayout, QDialogButtonBox, QVBoxLayout, QGridLayout
 from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox, QTableWidget, QTableWidgetItem
+from PyQt5.QtWidgets import QInputDialog
 from PyQt5.QtGui import QColor, QFont
 from mainwindow import Ui_MainWindow
 from chart_panel_options import Ui_Dialog as Ui_CPD
@@ -679,6 +680,22 @@ class MainWindow(QMainWindow):
 
     def load_spatial_charts(self):
         # chart_panel_name = self.project.get_name() + ' Spatial Exploration Charts'
+        full_dir_list = self.project.database.get_directions()
+        if len(full_dir_list) > 1:
+            selected_direction_list = self.project.get_selected_directions()
+            if len(selected_direction_list) > 1:
+                sel_index = 0
+            else:
+                sel_index = full_dir_list.tolist().index(selected_direction_list[0])
+            item, okPressed = QInputDialog.getItem(self,
+                                                   'Select Direction for Analysis',
+                                                   'Data can only be analyzed for a single direction at a time.\n' +
+                                                   'Please select direction from the drop down list below.',
+                                                   full_dir_list,
+                                                   sel_index,
+                                                   False)
+            self.project.direction = item
+            self.setup_tmc_list()
         chart_panel_name = '1.2 - Spatial Scoping'
         self.chart_panel_spatial = SpatialGridPanel(self.project, options=self.project.chart_panel1_opts)
         new_tab_index = self.ui.tabWidget.addTab(self.chart_panel_spatial, chart_panel_name)
@@ -959,6 +976,7 @@ class ChartPanelOptionsDlg(QDialog):
         bin_label.setText(bin_spin.text())
 
 def provide_gui_for(application):
+    QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
     qt_app = QApplication(sys.argv)
     web_app = FlaskThread(application)
     web_app.start()

@@ -39,14 +39,14 @@ class Stage1GridPanel(QtWidgets.QWidget):
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.ap_start = 0
-        self.ap_end = 287
+        self.ap_end = 24 * 60 / self.project.data_res - 1
         self.peak_period_str = 'Peak Period '
-        self.am_ap_start = convert_time_to_ap(6, 0, 5)
-        self.am_ap_end = convert_time_to_ap(9, 0, 5)
-        self.pm_ap_start = convert_time_to_ap(16, 0, 5)
-        self.pm_ap_end = convert_time_to_ap(18, 0, 5)
-        self.md_ap_start = convert_time_to_ap(10, 0, 5)
-        self.md_ap_end = convert_time_to_ap(16, 0, 5)
+        self.am_ap_start = convert_time_to_ap(6, 0, self.project.data_res)
+        self.am_ap_end = convert_time_to_ap(9, 0, self.project.data_res)
+        self.pm_ap_start = convert_time_to_ap(16, 0, self.project.data_res)
+        self.pm_ap_end = convert_time_to_ap(18, 0, self.project.data_res)
+        self.md_ap_start = convert_time_to_ap(10, 0, self.project.data_res)
+        self.md_ap_end = convert_time_to_ap(16, 0, self.project.data_res)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         if options is not None:
             self.options = options
@@ -61,9 +61,9 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.cb_peak_hour_start = self.project.main_window.ui.cb_stack_start
             self.cb_peak_hour_end = self.project.main_window.ui.cb_stack_end
             midnight = datetime(2000, 1, 1, 0, 0, 0)
-            self.cb_peak_hour_start.addItems([(midnight + timedelta(minutes=15 * i)).strftime('%I:%M%p') for i in range(93)])
+            self.cb_peak_hour_start.addItems([(midnight + timedelta(minutes=self.project.data_res * i)).strftime('%I:%M%p') for i in range(24 * 60 // self.project.data_res - 1)])
             self.cb_peak_hour_start.setCurrentIndex(0)
-            self.cb_peak_hour_end.addItems([(midnight + timedelta(minutes=15 * i)).strftime('%I:%M%p') for i in range(1, 97)])
+            self.cb_peak_hour_end.addItems([(midnight + timedelta(minutes=self.project.data_res * i)).strftime('%I:%M%p') for i in range(1, 24 * 60 // self.project.data_res)])
             self.cb_peak_hour_end.setCurrentIndex(self.cb_peak_hour_end.count() - 1)
             self.check_am = None
             self.check_pm = None
@@ -87,9 +87,9 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.check_am = self.project.main_window.ui.check_am
             self.check_pm = self.project.main_window.ui.check_pm
             self.check_mid = self.project.main_window.ui.check_mid
-            self.project.main_window.ui.trend_label_am.setText(convert_ap_to_time(self.am_ap_start, 5) + '-' + convert_ap_to_time(self.am_ap_end, 5))
-            self.project.main_window.ui.trend_label_pm.setText(convert_ap_to_time(self.pm_ap_start, 5) + '-' + convert_ap_to_time(self.pm_ap_end, 5))
-            self.project.main_window.ui.trend_label_mid.setText(convert_ap_to_time(self.md_ap_start, 5) + '-' + convert_ap_to_time(self.md_ap_end, 5))
+            self.project.main_window.ui.trend_label_am.setText(convert_ap_to_time(self.am_ap_start, self.project.data_res) + '-' + convert_ap_to_time(self.am_ap_end, self.project.data_res))
+            self.project.main_window.ui.trend_label_pm.setText(convert_ap_to_time(self.pm_ap_start, self.project.data_res) + '-' + convert_ap_to_time(self.pm_ap_end, self.project.data_res))
+            self.project.main_window.ui.trend_label_mid.setText(convert_ap_to_time(self.md_ap_start, self.project.data_res) + '-' + convert_ap_to_time(self.md_ap_end, self.project.data_res))
             self.check_wkdy = self.project.main_window.ui.check_wkdy
             self.check_wknd = self.project.main_window.ui.check_wknd
             self.check_mon = self.project.main_window.ui.check_mon
@@ -273,8 +273,8 @@ class Stage1GridPanel(QtWidgets.QWidget):
         self.selected_tmc_len = dir_tmc[DataHelper.Project.ID_TMC_LEN][selected_tmc]
 
         if self.panel_type == TYPE_S1_3:
-            self.ap_start = self.cb_peak_hour_start.currentIndex() * 3
-            self.ap_end = (self.cb_peak_hour_end.currentIndex()+1) * 3
+            self.ap_start = self.cb_peak_hour_start.currentIndex()
+            self.ap_end = (self.cb_peak_hour_end.currentIndex() + 1)
             print(self.ap_start)
             print(self.ap_end)
             func_list = [None,
@@ -369,12 +369,12 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.peak_period_str = 'Peak Period '
-        self.ap_start1 = convert_time_to_ap(6, 0, 5)
-        self.ap_end1 = convert_time_to_ap(10, 0, 5)
-        self.ap_start2 = convert_time_to_ap(10, 0, 5)
-        self.ap_end2 = convert_time_to_ap(15, 0, 5)
-        self.ap_start3 = convert_time_to_ap(15, 0, 5)
-        self.ap_end3 = convert_time_to_ap(19, 0, 5)
+        self.ap_start1 = convert_time_to_ap(6, 0, self.project.data_res)
+        self.ap_end1 = convert_time_to_ap(10, 0, self.project.data_res)
+        self.ap_start2 = convert_time_to_ap(10, 0, self.project.data_res)
+        self.ap_end2 = convert_time_to_ap(15, 0, self.project.data_res)
+        self.ap_start3 = convert_time_to_ap(15, 0, self.project.data_res)
+        self.ap_end3 = convert_time_to_ap(19, 0, self.project.data_res)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         if options is not None:
             self.options = options
@@ -390,19 +390,19 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.cb_peak_hour_start3 = self.project.main_window.ui.ap_start3
         self.cb_peak_hour_end3 = self.project.main_window.ui.ap_end3
         midnight = datetime(2000, 1, 1, 0, 0, 0)
-        ap_list = [(midnight + timedelta(minutes=15*i)).strftime('%I:%M%p') for i in range(93)]
+        ap_list = [(midnight + timedelta(minutes=self.project.data_res * i)).strftime('%I:%M%p') for i in range(24 * 60 // self.project.data_res)]
         self.cb_peak_hour_start1.addItems(ap_list)
-        self.cb_peak_hour_start1.setCurrentIndex(24)
+        self.cb_peak_hour_start1.setCurrentIndex(self.ap_start1)
         self.cb_peak_hour_end1.addItems(ap_list)
-        self.cb_peak_hour_end1.setCurrentIndex(40)
+        self.cb_peak_hour_end1.setCurrentIndex(self.ap_end1)
         self.cb_peak_hour_start2.addItems(ap_list)
-        self.cb_peak_hour_start2.setCurrentIndex(40)
+        self.cb_peak_hour_start2.setCurrentIndex(self.ap_start2)
         self.cb_peak_hour_end2.addItems(ap_list)
-        self.cb_peak_hour_end2.setCurrentIndex(60)
+        self.cb_peak_hour_end2.setCurrentIndex(self.ap_end2)
         self.cb_peak_hour_start3.addItems(ap_list)
-        self.cb_peak_hour_start3.setCurrentIndex(60)
+        self.cb_peak_hour_start3.setCurrentIndex(self.ap_start3)
         self.cb_peak_hour_end3.addItems(ap_list)
-        self.cb_peak_hour_end3.setCurrentIndex(76)
+        self.cb_peak_hour_end3.setCurrentIndex(self.ap_end3)
         self.connect_combo_boxes()
         self.plot_dfs = [None, None, None, None, None, None, None]
         self.plot_dfs_temp = []
@@ -439,12 +439,12 @@ class SpatialGridPanel(QtWidgets.QWidget):
         full_df = self.dfs[0]
         dir_tmc = self.project.get_tmc()
         dir_df = full_df[full_df[DataHelper.Project.ID_DATA_TMC].isin(dir_tmc[DataHelper.Project.ID_TMC_CODE])]
-        self.ap_start1 = self.cb_peak_hour_start1.currentIndex() * 3
-        self.ap_end1 = self.cb_peak_hour_end1.currentIndex() * 3
-        self.ap_start2 = self.cb_peak_hour_start2.currentIndex() * 3
-        self.ap_end2 = self.cb_peak_hour_end2.currentIndex() * 3
-        self.ap_start3 = self.cb_peak_hour_start3.currentIndex() * 3
-        self.ap_end3 = self.cb_peak_hour_end3.currentIndex() * 3
+        self.ap_start1 = self.cb_peak_hour_start1.currentIndex()
+        self.ap_end1 = self.cb_peak_hour_end1.currentIndex()
+        self.ap_start2 = self.cb_peak_hour_start2.currentIndex()
+        self.ap_end2 = self.cb_peak_hour_end2.currentIndex()
+        self.ap_start3 = self.cb_peak_hour_start3.currentIndex()
+        self.ap_end3 = self.cb_peak_hour_end3.currentIndex()
 
         if fig_num == 1:
             func_list = [None, None, None, None,

@@ -59,8 +59,10 @@ data_path = path1 + str(cs_idx) + path2 + '.csv'
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_NB_Extended_20140901_20170131/TX161_TX_NB_Extended_20140901_20170131.csv')
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/TX161_TX_SB_Extended_20140901_20170131/TX161_TX_SB_Extended_20140901_20170131.csv')
-tmc = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/' + tmc_path)
-df = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/I95_PA_15Min_2016_AllDays.csv')
+# tmc = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/' + tmc_path)
+# df = pd.read_csv('C:/Users/ltrask/Documents/21538 - STOL Freeway Merge Analysis/I95_PA_15Min_2016_AllDays/I95_PA_15Min_2016_AllDays.csv')
+tmc = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I66_EB_AllDays_NPMRDS/' + tmc_path)
+df = pd.read_csv('C:/Users/ltrask/Documents/18112 - FHWA Shoulder Use/Ext/I66_EB_AllDays_NPMRDS/I66_EB_AllDays_NPMRDS.csv')
 df = df[df.travel_time_minutes.notnull()]
 
 dirs = tmc['direction'].unique()
@@ -127,6 +129,7 @@ tmc11 = df_dir1[(df_dir1['AP'] >= am_ap_start) & (df_dir1['AP'] <= am_ap_end)]
 test11 = tmc11.groupby(['Date', 'tmc_code'])['speed'].agg(np.mean)
 d11 = test11.to_frame()
 d11.reindex(tmc_subset1, level=1)
+# d11.fillna(65.0, inplace=True)
 imshow_data11 = d11.unstack().values[:, :]
 imshow_data11 = imshow_data11.T
 
@@ -193,17 +196,18 @@ def convert_extent_to_tmc(x, pos, tmc_list, tmc_extent):
     return tmc_list[min(c_idx, len(tmc_list)-1)]
 
 fig = plt.figure(figsize=(12, 8))
-if len(dirs) > 1:
-    ax11 = fig.add_subplot(3, 2, 1)
-    ax12 = fig.add_subplot(3, 2, 3)
-    ax13 = fig.add_subplot(3, 2, 5)
-    ax21 = fig.add_subplot(3, 2, 2)
-    ax22 = fig.add_subplot(3, 2, 4)
-    ax23 = fig.add_subplot(3, 2, 6)
-else:
-    ax11 = fig.add_subplot(3, 1, 1)
-    ax12 = fig.add_subplot(3, 1, 2)
-    ax13 = fig.add_subplot(3, 1, 3)
+ax11 = fig.add_subplot(1, 1, 1)
+# if len(dirs) > 1:
+#     ax11 = fig.add_subplot(3, 2, 1)
+#     ax12 = fig.add_subplot(3, 2, 3)
+#     ax13 = fig.add_subplot(3, 2, 5)
+#     ax21 = fig.add_subplot(3, 2, 2)
+#     ax22 = fig.add_subplot(3, 2, 4)
+#     ax23 = fig.add_subplot(3, 2, 6)
+# else:
+#     ax11 = fig.add_subplot(3, 1, 1)
+#     ax12 = fig.add_subplot(3, 1, 2)
+#     ax13 = fig.add_subplot(3, 1, 3)
     # ax21 = fig.add_subplot(3, 1, 2)
     # ax22 = fig.add_subplot(3, 1, 4)
     # ax23 = fig.add_subplot(3, 1, 6)
@@ -237,10 +241,28 @@ for row in imshow_data11:
 # im13 = ax13.imshow(imshow_data13, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
 ax11.set_ylim(0, tmc_l1['miles'].sum())
 ax11.set_title(dirs[0] + ': AM Peak')
-ax12.set_title(dirs[0] + ': PM Peak')
-ax13.set_title(dirs[0] + ': Midday Peak')
-cbar11 = fig.colorbar(im11, ax=ax11, shrink=cb_shrink)
-cbar11.set_label('Speed (mph)')
+
+dat = imshow_data11.T
+for i in range(dat.shape[0]):
+    for j in range(dat.shape[1]):
+        if np.isnan(dat[i][j]):
+            dat[i][j] = 65.0
+
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=3)
+kmeans.fit(dat)
+pred = []
+for row in dat:
+    pred.append(kmeans.predict(row))
+
+plt.scatter(np.arange(len(pred)), pred)
+
+
+# ax12.set_title(dirs[0] + ': PM Peak')
+# ax13.set_title(dirs[0] + ': Midday Peak')
+# cbar11 = fig.colorbar(im11, ax=ax11, shrink=cb_shrink)
+# cbar11.set_label('Speed (mph)')
 # cbar12 = fig.colorbar(im12, ax=ax12, shrink=cb_shrink)
 # cbar12.set_label('Speed (mph)')
 # cbar13 = fig.colorbar(im13, ax=ax13, shrink=cb_shrink)
@@ -256,28 +278,28 @@ cbar11.set_label('Speed (mph)')
 # ax13.set_ylabel('TMC')
 
 # Direction #2
-if len(dirs) > 1:
-    im21 = ax21.imshow(imshow_data21, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
-    im22 = ax22.imshow(imshow_data22, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
-    im23 = ax23.imshow(imshow_data23, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
-    ax21.set_title(dirs[1] + ': AM Peak' + ' (' + am_peak_str + ')')
-    ax22.set_title(dirs[1] + ': PM Peak' + ' (' + pm_peak_str + ')')
-    ax23.set_title(dirs[1] + ': Midday Peak' + ' (' + md_peak_str + ')')
-    cbar21 = fig.colorbar(im21, ax=ax21, shrink=cb_shrink)
-    cbar21.set_label('Speed (mph)')
-    cbar22 = fig.colorbar(im22, ax=ax22, shrink=cb_shrink)
-    cbar22.set_label('Speed (mph)')
-    cbar23 = fig.colorbar(im23, ax=ax23, shrink=cb_shrink)
-    cbar23.set_label('Speed (mph)')
-    ax21.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-    ax21.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
-    ax21.set_ylabel('TMC')
-    ax22.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-    ax22.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
-    ax22.set_ylabel('TMC')
-    ax23.xaxis.set_major_formatter(FuncFormatter(f_x_label))
-    ax23.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
-    ax23.set_ylabel('TMC')
+# if len(dirs) > 1:
+#     im21 = ax21.imshow(imshow_data21, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+#     im22 = ax22.imshow(imshow_data22, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+#     im23 = ax23.imshow(imshow_data23, extent=[0, num_days, 0, tmc_ext], cmap='RdYlGn')
+#     ax21.set_title(dirs[1] + ': AM Peak' + ' (' + am_peak_str + ')')
+#     ax22.set_title(dirs[1] + ': PM Peak' + ' (' + pm_peak_str + ')')
+#     ax23.set_title(dirs[1] + ': Midday Peak' + ' (' + md_peak_str + ')')
+#     cbar21 = fig.colorbar(im21, ax=ax21, shrink=cb_shrink)
+#     cbar21.set_label('Speed (mph)')
+#     cbar22 = fig.colorbar(im22, ax=ax22, shrink=cb_shrink)
+#     cbar22.set_label('Speed (mph)')
+#     cbar23 = fig.colorbar(im23, ax=ax23, shrink=cb_shrink)
+#     cbar23.set_label('Speed (mph)')
+#     ax21.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+#     ax21.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
+#     ax21.set_ylabel('TMC')
+#     ax22.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+#     ax22.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
+#     ax22.set_ylabel('TMC')
+#     ax23.xaxis.set_major_formatter(FuncFormatter(f_x_label))
+#     ax23.yaxis.set_major_formatter(FuncFormatter(f_tmc_label2))
+#     ax23.set_ylabel('TMC')
 
 fig.suptitle(main_title)
 fig.tight_layout()
@@ -360,26 +382,26 @@ width = 0.35
 # ax1.bar(x, plot_df_dir1[bin_list[3]], width, color=cl[3], label='AM-'+bin_list[3], bottom=bott_arr)
 # bott_arr += plot_df_dir1[bin_list[3]]
 # ax1.bar(x, plot_df_dir1[bin_list[4]], width, color=cl[4], label='AM-'+bin_list[4], bottom=bott_arr)
-ax11.stackplot(x_study_period,
-               am_gp1[bin_list[0]],
-               am_gp1[bin_list[1]],
-               am_gp1[bin_list[2]],
-               am_gp1[bin_list[3]],
-               am_gp1[bin_list[4]],
-               labels=bin_list, colors=cl)
-ax11.xaxis.set_major_formatter(FuncFormatter(convert_x_to_day))
-ax11.set_title(start_date + ' to ' + end_date)
-ax11.legend()
+# ax11.stackplot(x_study_period,
+#                am_gp1[bin_list[0]],
+#                am_gp1[bin_list[1]],
+#                am_gp1[bin_list[2]],
+#                am_gp1[bin_list[3]],
+#                am_gp1[bin_list[4]],
+#                labels=bin_list, colors=cl)
+# ax11.xaxis.set_major_formatter(FuncFormatter(convert_x_to_day))
+# ax11.set_title(start_date + ' to ' + end_date)
+# ax11.legend()
 
-x_facility = [el for el in range(len(pm_gp1[bin_list[0]]))]
-ax12.stackplot(x_facility,
-               pm_gp1[bin_list[0]],
-               pm_gp1[bin_list[1]],
-               pm_gp1[bin_list[2]],
-               pm_gp1[bin_list[3]],
-               pm_gp1[bin_list[4]],
-               labels=bin_list, colors=cl)
-ax12.legend()
+# x_facility = [el for el in range(len(pm_gp1[bin_list[0]]))]
+# ax12.stackplot(x_facility,
+#                pm_gp1[bin_list[0]],
+#                pm_gp1[bin_list[1]],
+#                pm_gp1[bin_list[2]],
+#                pm_gp1[bin_list[3]],
+#                pm_gp1[bin_list[4]],
+#                labels=bin_list, colors=cl)
+# ax12.legend()
 
 # ax2.bar(x, plot_df_dir1[bin_list[0] + '_pm'], width, color=cl[0], label='PM-'+bin_list[0])
 # bott_arr = plot_df_dir1[bin_list[0] + '_pm']

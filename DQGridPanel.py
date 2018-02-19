@@ -75,11 +75,11 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         # self.chart22.fire_animation()
 
     def update_plot_data(self, tmc_id=None, **kwargs):
-        dq_funcs = [lambda: self.f_dq_weekday(self.dfs[0]),
-                    lambda: self.f_dq_time_of_day(self.dfs[0]),
-                    lambda: self.f_dq_tmc(self.dfs[0], tmc_index=self.project.get_tmc()),
-                    lambda: self.f_dq_study_period(self.dfs[0], day_list=[0, 1, 2, 3, 4]),
-                    lambda: self.f_dq_study_period(self.dfs[0], day_list=[5, 6])]
+        dq_funcs = [lambda: self.f_dq_weekday(self.dfs[0], self.project.data_res),
+                    lambda: self.f_dq_time_of_day(self.dfs[0], self.project.data_res),
+                    lambda: self.f_dq_tmc(self.dfs[0], self.project.data_res, tmc_index=self.project.get_tmc()),
+                    lambda: self.f_dq_study_period(self.dfs[0], self.project.data_res, day_list=[0, 1, 2, 3, 4]),
+                    lambda: self.f_dq_study_period(self.dfs[0], self.project.data_res, day_list=[5, 6])]
 
         LoadDataQualityQT(self, self.project.main_window, dq_funcs, data=self.dfs[0], tmc=tmc_id)
         # LoadDataQualityQT(self, self.project.main_window, dq_funcs)

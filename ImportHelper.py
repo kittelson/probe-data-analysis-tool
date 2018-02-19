@@ -92,8 +92,12 @@ class ImportDialog(QDialog):
         self.cb_data_col_timestamp = QComboBox()
         self.cb_data_col_speed = QComboBox()
         self.cb_data_col_travel_time = QComboBox()
+        self.data_res_input = QLineEdit('5')
         self.data_table = QTableWidget()
-        self.data_label = QLabel("Placeholder description")
+        self.data_label = QLabel("Use this controls below to ensure that the Probe Data Analytics tool is correctly reading the dataset and "
+                                 "identify data columns correctly. If a data column exists,\nbut is not automatically identified, please use "
+                                 "the dropdown boxes to select the correct column name.  Additionally please ensure that the resolution of the\n"
+                                 "data is correct.")
         # Creating Layouts
         self.data_layout1 = QVBoxLayout(self.data_panel)
         self.data_layout2 = QHBoxLayout(self.data_sub_panel)
@@ -152,6 +156,7 @@ class ImportDialog(QDialog):
 
     def inspect_data(self):
         self.data_inspected = True
+        self.preview_data_button.setEnabled(False)
         self.data_preview = pd.read_csv(self.data_file_name, nrows=NUM_DATA_PREV)
         self.tmc_preview = pd.read_csv(self.tmc_file_name)
         self.setup_data_panel()
@@ -168,6 +173,7 @@ class ImportDialog(QDialog):
             Project.ID_DATA_TIMESTAMP = self.cb_data_col_timestamp.currentText()
             Project.ID_DATA_SPEED = self.cb_data_col_speed.currentText()
             Project.ID_DATA_TT = self.cb_data_col_travel_time.currentText()
+            Project.ID_DATA_RESOLUTION = int(self.data_res_input.text())
             Project.ID_TMC_CODE = self.cb_tmc_col_tmc.currentText()
             Project.ID_TMC_DIR = self.cb_tmc_col_dir.currentText()
             Project.ID_TMC_LEN = self.cb_tmc_col_len.currentText()
@@ -194,6 +200,7 @@ class ImportDialog(QDialog):
         self.data_form_layout.addRow(QLabel("Timestamp Column:"), self.cb_data_col_timestamp)
         self.data_form_layout.addRow(QLabel("Speed Column:"), self.cb_data_col_speed)
         self.data_form_layout.addRow(QLabel("Travel Time Column:"), self.cb_data_col_travel_time)
+        self.data_form_layout.addRow(QLabel('Timestep Resolution (min): '), self.data_res_input)
         self.data_layout2.addWidget(self.data_col_select_panel)
         self.data_layout2.addWidget(self.data_table)
         self.data_layout1.addWidget(self.data_label)
@@ -210,10 +217,16 @@ class ImportDialog(QDialog):
             self.cb_data_col_speed.addItems(col_list)
             self.cb_data_col_travel_time.addItems(col_list)
 
-            self.cb_data_col_tmc.setCurrentIndex(0)
-            self.cb_data_col_timestamp.setCurrentIndex(1)
-            self.cb_data_col_speed.setCurrentIndex(2)
-            self.cb_data_col_travel_time.setCurrentIndex(5)
+            cl2 = col_list.tolist()
+            col_data_tmc = cl2.index(Project.ID_DATA_TMC) if cl2.count(Project.ID_DATA_TMC) > 0 else -1
+            col_data_timestamp = cl2.index(Project.ID_DATA_TIMESTAMP) if cl2.count(Project.ID_DATA_TIMESTAMP) > 0 else -1
+            col_data_speed = cl2.index(Project.ID_DATA_SPEED) if cl2.count(Project.ID_DATA_SPEED) > 0 else -1
+            col_data_travel_time = cl2.index(Project.ID_DATA_TT) if cl2.count(Project.ID_DATA_TT) > 0 else -1
+
+            self.cb_data_col_tmc.setCurrentIndex(col_data_tmc)
+            self.cb_data_col_timestamp.setCurrentIndex(col_data_timestamp)
+            self.cb_data_col_speed.setCurrentIndex(col_data_speed)
+            self.cb_data_col_travel_time.setCurrentIndex(col_data_travel_time)
 
     def setup_data_preview_table(self):
         if self.data_preview is not None:
@@ -278,14 +291,24 @@ class ImportDialog(QDialog):
             self.cb_tmc_col_elat.addItems(col_list)
             self.cb_tmc_col_elon.addItems(col_list)
 
-            self.cb_tmc_col_tmc.setCurrentIndex(0)
-            self.cb_tmc_col_dir.setCurrentIndex(2)
-            self.cb_tmc_col_len.setCurrentIndex(11)
-            self.cb_tmc_col_intx.setCurrentIndex(3)
-            self.cb_tmc_col_slat.setCurrentIndex(7)
-            self.cb_tmc_col_slon.setCurrentIndex(8)
-            self.cb_tmc_col_elat.setCurrentIndex(9)
-            self.cb_tmc_col_elon.setCurrentIndex(10)
+            cl2 = col_list.tolist()
+            col_tmc_tmc = cl2.index(Project.ID_TMC_CODE) if cl2.count(Project.ID_TMC_CODE) > 0 else -1
+            col_tmc_dir = cl2.index(Project.ID_TMC_DIR) if cl2.count(Project.ID_TMC_DIR) > 0 else -1
+            col_tmc_len = cl2.index(Project.ID_TMC_LEN) if cl2.count(Project.ID_TMC_LEN) > 0 else -1
+            col_tmc_intx = cl2.index(Project.ID_TMC_INTX) if cl2.count(Project.ID_TMC_INTX) > 0 else -1
+            col_tmc_slat = cl2.index(Project.ID_TMC_SLAT) if cl2.count(Project.ID_TMC_SLAT) > 0 else -1
+            col_tmc_slon = cl2.index(Project.ID_TMC_SLON) if cl2.count(Project.ID_TMC_SLON) > 0 else -1
+            col_tmc_elat = cl2.index(Project.ID_TMC_ELAT) if cl2.count(Project.ID_TMC_ELAT) > 0 else -1
+            col_tmc_elon = cl2.index(Project.ID_TMC_ELON) if cl2.count(Project.ID_TMC_ELON) > 0 else -1
+
+            self.cb_tmc_col_tmc.setCurrentIndex(col_tmc_tmc)
+            self.cb_tmc_col_dir.setCurrentIndex(col_tmc_dir)
+            self.cb_tmc_col_len.setCurrentIndex(col_tmc_len)
+            self.cb_tmc_col_intx.setCurrentIndex(col_tmc_intx)
+            self.cb_tmc_col_slat.setCurrentIndex(col_tmc_slat)
+            self.cb_tmc_col_slon.setCurrentIndex(col_tmc_slon)
+            self.cb_tmc_col_elat.setCurrentIndex(col_tmc_elat)
+            self.cb_tmc_col_elon.setCurrentIndex(col_tmc_elon)
 
     def setup_tmc_preview_table(self):
         if self.tmc_preview is not None:

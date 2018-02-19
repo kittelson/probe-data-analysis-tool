@@ -93,195 +93,6 @@ def create_facility_et_analysis(data):
     return et
 
 
-def create_timetime_analysis_deprecated(data):
-    """
-    Function to create a travel time trenc over time analysis.  Deprecated as it incorrectly aggregates by TMC last.
-    :param data: 
-    :return: 
-    """
-    if data is None:
-        return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
-
-    df_dir1_am = data[(data['AP'] >= am_ap_start) & (data['AP'] < am_ap_end)]
-    df_dir1_pm = data[(data['AP'] >= pm_ap_start) & (data['AP'] < pm_ap_end)]
-    df_dir1_md = data[(data['AP'] >= md_ap_start) & (data['AP'] < md_ap_end)]
-
-    # AM Peak Period
-    am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    am_num_observations = am_gp0.count()
-    # am_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    am_gp = am_gp0.agg([np.mean, percentile(95), percentile(5)])
-    am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    am_gp2 = am_gp1.groupby(['Year', 'Month']).agg(np.mean)
-
-    # PM Peak Period
-    pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    pm_num_observations = pm_gp0.count()
-    # Pm_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    pm_gp = pm_gp0.agg([np.mean, percentile(95), percentile(5)])
-    pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg(np.mean)
-
-    # Midday Period
-    md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    md_num_observations = md_gp0.count()
-    # md_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    md_gp = md_gp0.agg([np.mean, percentile(95), percentile(5)])
-    md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    md_gp2 = md_gp1.groupby(['Year', 'Month']).agg(np.mean)
-
-    plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
-    plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
-    return plot_df_dir1
-
-
-def create_timetime_analysis(data):
-    """
-    Function to create a travel time trend over time analysis.
-    :param data: 
-    :return: 
-    """
-    if data is None:
-        return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
-
-    df_dir1_am = data[(data['AP'] >= am_ap_start) & (data['AP'] < am_ap_end)]
-    df_dir1_pm = data[(data['AP'] >= pm_ap_start) & (data['AP'] < pm_ap_end)]
-    df_dir1_md = data[(data['AP'] >= md_ap_start) & (data['AP'] < md_ap_end)]
-
-    # AM Peak Period
-    am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    am_num_observations = am_gp0.count()
-    # am_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    am_gp = am_gp0.agg(np.mean)
-    am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    am_gp2 = am_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    # PM Peak Period
-    pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    pm_num_observations = pm_gp0.count()
-    # Pm_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    pm_gp = pm_gp0.agg(np.mean)
-    pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    # Midday Period
-    md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    md_num_observations = md_gp0.count()
-    # md_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    md_gp = md_gp0.agg(np.mean)
-    md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    md_gp2 = md_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
-    plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
-    return plot_df_dir1
-
-
-def create_tt_trend_analysis(data, tmc_id=None):
-    """
-    Function to create a travel time trend over time analysis.
-    :param data: Pandas dataframe of travel time data
-    :param tmc_id: List of one or more tmcs to include in trend analysis
-    :return: Pandas dataframe of aggregate travel time trend data
-    """
-    if data is None:
-        return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
-    if tmc_id is not None:
-        tmc_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc_id)]
-    else:
-        tmc_data = data
-    df_dir1_am = tmc_data[(tmc_data['AP'] >= am_ap_start) & (tmc_data['AP'] < am_ap_end)]
-    df_dir1_pm = tmc_data[(tmc_data['AP'] >= pm_ap_start) & (tmc_data['AP'] < pm_ap_end)]
-    df_dir1_md = tmc_data[(tmc_data['AP'] >= md_ap_start) & (tmc_data['AP'] < md_ap_end)]
-
-    # AM Peak Period
-    am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    am_num_observations = am_gp0.count()
-    # am_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    am_gp = am_gp0.agg(np.mean)
-    am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    am_gp2 = am_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    # PM Peak Period
-    pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    pm_num_observations = pm_gp0.count()
-    # Pm_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    pm_gp = pm_gp0.agg(np.mean)
-    pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    # Midday Period
-    md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_TT]
-    md_num_observations = md_gp0.count()
-    # md_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    md_gp = md_gp0.agg(np.mean)
-    md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg(np.sum)
-    md_gp2 = md_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
-    plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
-    return plot_df_dir1
-
-
-def create_speed_trend_analysis(data, tmc_id=None):
-    """
-    Function to create a travel time trend over time analysis.
-    :param data: Pandas dataframe of travel time data
-    :param tmc_id: List of one or more tmcs to include in trend analysis
-    :return: Pandas dataframe of aggregate travel time trend data
-    """
-    if data is None:
-        return None
-    am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
-    if tmc_id is not None:
-        tmc_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc_id)]
-    else:
-        tmc_data = data
-    df_dir1_am = tmc_data[(tmc_data['AP'] >= am_ap_start) & (tmc_data['AP'] < am_ap_end)]
-    df_dir1_pm = tmc_data[(tmc_data['AP'] >= pm_ap_start) & (tmc_data['AP'] < pm_ap_end)]
-    df_dir1_md = tmc_data[(tmc_data['AP'] >= md_ap_start) & (tmc_data['AP'] < md_ap_end)]
-
-    # AM Peak Period
-    am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED]
-    am_num_observations = am_gp0.count()
-    # am_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    am_gp = am_gp0.agg(np.mean)
-    am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    am_gp2 = am_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-    # am_gp3 = am_gp1.groupby(['Year', 'Month']).describe()
-
-    # PM Peak Period
-    pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED]
-    pm_num_observations = pm_gp0.count()
-    # Pm_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    pm_gp = pm_gp0.agg(np.mean)
-    pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    # Midday Period
-    md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED]
-    md_num_observations = md_gp0.count()
-    # md_num_observations.groupby(['Year', 'Month']).agg(np.mean)
-    md_gp = md_gp0.agg(np.mean)
-    md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    md_gp2 = md_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
-
-    plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
-    plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
-    return plot_df_dir1
-
-
 def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_id=None):
     """
     Function to create a travel time trend over time analysis.
@@ -291,9 +102,6 @@ def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_id=None):
     """
     if data is None:
         return None
-    # am_ap_start, am_ap_end = convert_hour_to_ap(8, 0, 9, 0)
-    # pm_ap_start, pm_ap_end = convert_hour_to_ap(17, 0, 18, 0)
-    # md_ap_start, md_ap_end = convert_hour_to_ap(10, 0, 14, 0)
     am_ap_start = am_ap[0]
     am_ap_end = am_ap[1]
     pm_ap_start = pm_ap[0]
@@ -334,12 +142,6 @@ def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_id=None):
     plot_df_dir1 = pm_gp2.join(am_gp2, lsuffix='pm')
     plot_df_dir1 = md_gp2.join(plot_df_dir1, lsuffix='mid')
     return plot_df_dir1
-
-
-def convert_hour_to_ap(start_hour, start_min, end_hour, end_min):
-    ap_start = (start_hour * 12) + start_min // 5
-    ap_end = (end_hour * 12) + end_min // 5
-    return ap_start, ap_end
 
 
 def create_tt_compare(data_before, data_after):
@@ -383,7 +185,6 @@ def create_pct_congested_tmc(data, speed_bins, times=None, dates=None, tmc_index
     if dates is not None and len(dates) == 2:
         data = data[(data['Date'] >= dates[0]) & (data['Date'] <= dates[1])]
     if times is not None and len(times) == 2:
-        # ap_start, ap_end = convert_hour_to_ap(times[0].hour, times[0].minute, times[1].hour, times[1].minute)
         ap_start = times[0]
         ap_end = times[1]
         data = data[(data['AP'] >= ap_start) & (data['AP'] < ap_end)]
@@ -472,42 +273,43 @@ def create_speed_freq(data):
     return None
 
 
-def create_dq_weekday(data):
+def create_dq_weekday(data, data_res):
+    print(data_res)
     num_tmc = len(data[DataHelper.Project.ID_DATA_TMC].unique())
-    td_facility_Wkdy = data.groupby(['weekday', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((12 * 24) * num_tmc)
+    td_facility_Wkdy = data.groupby(['weekday', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((24 * 60 / data_res) * num_tmc)
     td1_facility_Wkdy = td_facility_Wkdy.groupby(['weekday']).agg(np.mean)
     return td1_facility_Wkdy
 
 
-def create_dq_time_of_day(data):
+def create_dq_time_of_day(data, data_res):
     num_tmc = len(data[DataHelper.Project.ID_DATA_TMC].unique())
     num_dates = len(data['Date'].unique())
     td_facility_ToD = data.groupby(['Hour']).agg(['count'])
-    td1_facility_ToD = td_facility_ToD[DataHelper.Project.ID_DATA_SPEED]['count'] / (12 * num_dates * num_tmc)
+    td1_facility_ToD = td_facility_ToD[DataHelper.Project.ID_DATA_SPEED]['count'] / (60 / data_res * num_dates * num_tmc)
     return td1_facility_ToD
 
 
-def create_dq_tmc(data, tmc_index=None):
+def create_dq_tmc(data, data_res, tmc_index=None):
     num_tmc = len(data[DataHelper.Project.ID_DATA_TMC].unique())
     num_dates = len(data['Date'].unique())
     td_facility_TMC = data.groupby([DataHelper.Project.ID_DATA_TMC]).agg(['count'])
-    td1_facility_TMC = td_facility_TMC[DataHelper.Project.ID_DATA_SPEED]['count'] / ((12 * 24) * num_dates)
+    td1_facility_TMC = td_facility_TMC[DataHelper.Project.ID_DATA_SPEED]['count'] / ((24 * 60 / data_res) * num_dates)
     if tmc_index is not None:
         td1_facility_TMC = td1_facility_TMC.reindex(tmc_index[DataHelper.Project.ID_TMC_CODE])
     return td1_facility_TMC
 
 
-def create_dq_study_period(data, day_list=None):
+def create_dq_study_period(data, data_res, day_list=None):
     num_tmc = len(data[DataHelper.Project.ID_DATA_TMC].unique())
     if day_list is not None:
-        wd = data[data['weekday'].isin(day_list)].groupby(['Year', 'Month', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((12 * 24) * num_tmc)
+        wd = data[data['weekday'].isin(day_list)].groupby(['Year', 'Month', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((24 * 60 / data_res) * num_tmc)
     else:
-        wd = data.groupby(['Year', 'Month', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((12 * 24) * num_tmc)
+        wd = data.groupby(['Year', 'Month', 'Date']).agg(['count'])[DataHelper.Project.ID_DATA_SPEED] / ((24 * 60 / data_res) * num_tmc)
     wdv = wd.groupby(['Year', 'Month']).agg(np.mean)
     y_wd = wdv.values.reshape((wdv.shape[0],))
     return y_wd
 
 
 def convert_time_to_ap(start_hour, start_min, ap_increment):
-    return (start_hour * 12) + start_min // ap_increment
+    return (start_hour * (60 // ap_increment)) + start_min // ap_increment
 

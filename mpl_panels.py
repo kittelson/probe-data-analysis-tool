@@ -9,7 +9,7 @@ Interacts the with ChartOptions object of the project that is created/edited by 
 """
 from PyQt5 import QtWidgets
 from stat_func import create_pct_congested_sp, create_pct_congested_tmc, create_speed_heatmap, create_speed_tmc_heatmap
-from stat_func import create_timetime_analysis, create_tt_trend_analysis, convert_time_to_ap, create_speed_trend_analysis, create_trend_analysis
+from stat_func import convert_time_to_ap, create_trend_analysis
 from chart_defaults import ChartOptions
 from mpl_charts import MplChart, FIG_TYPE_SPD_HEAT_MAP_FACILITY
 from datetime import datetime, timedelta
@@ -44,8 +44,8 @@ class ChartGridPanel(QtWidgets.QWidget):
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.peak_period_str = 'Peak Period '
-        self.ap_start = convert_time_to_ap(8, 0, 5)
-        self.ap_end = convert_time_to_ap(9, 0, 5)
+        self.ap_start = convert_time_to_ap(8, 0, self.project.data_res)
+        self.ap_end = convert_time_to_ap(9, 0, self.project.data_res)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         if options is not None:
             self.options = options
@@ -369,12 +369,12 @@ class SpatialGridPanel(QtWidgets.QWidget):
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         self.peak_period_str = 'Peak Period '
-        self.ap_start1 = convert_time_to_ap(6, 0, 5)
-        self.ap_end1 = convert_time_to_ap(10, 0, 5)
-        self.ap_start2 = convert_time_to_ap(10, 0, 5)
-        self.ap_end2 = convert_time_to_ap(15, 0, 5)
-        self.ap_start3 = convert_time_to_ap(15, 0, 5)
-        self.ap_end3 = convert_time_to_ap(19, 0, 5)
+        self.ap_start1 = convert_time_to_ap(6, 0, self.project.data_res)
+        self.ap_end1 = convert_time_to_ap(10, 0, self.project.data_res)
+        self.ap_start2 = convert_time_to_ap(10, 0, self.project.data_res)
+        self.ap_end2 = convert_time_to_ap(15, 0, self.project.data_res)
+        self.ap_start3 = convert_time_to_ap(15, 0, self.project.data_res)
+        self.ap_end3 = convert_time_to_ap(19, 0, self.project.data_res)
         self.titles = ['Period 1: ', 'Period 2: ', 'Period 3: ']
         if options is not None:
             self.options = options

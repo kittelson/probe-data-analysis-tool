@@ -6,6 +6,8 @@ from mpl_charts import MplChart, FIG_TYPE_SPD_BAND, FIG_TYPE_EXTRA_TIME, FIG_TYP
 from mpl_charts import PEAK_24HR, PEAK_AM, PEAK_PM, PEAK_MID
 from viz_qt import LoadStage2QT, LoadSummaryQT
 from DataHelper import SummaryData, Project
+import datetime
+import pandas as pd
 from numpy import mean, percentile
 
 
@@ -37,10 +39,19 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.no_compute = True
         self.project = project
         df = self.project.database.get_data()
+        # dr1 = self.project.get_date_range(0)
+        # df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
+        # dr2 = self.project.get_date_range(1)
+        # df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
         dr1 = self.project.get_date_range(0)
-        df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
         dr2 = self.project.get_date_range(1)
-        df_period2 = df[(df['Date'] > dr2[0].toString('yyyy-MM-dd')) & (df['Date'] < dr2[1].toString('yyyy-MM-dd'))]
+        per1_sdate = datetime.datetime(dr1[0].year(), dr1[0].month(), dr1[0].day())
+        per1_edate = datetime.datetime(dr1[1].year(), dr1[1].month(), dr1[1].day())
+        per2_sdate = datetime.datetime(dr2[0].year(), dr2[0].month(), dr2[0].day())
+        per2_edate = datetime.datetime(dr2[1].year(), dr2[1].month(), dr2[1].day())
+        temp_date_col = pd.to_datetime(df['Date'])
+        df_period1 = df[(temp_date_col >= per1_sdate) & (temp_date_col <= per1_edate)]
+        df_period2 = df[(temp_date_col >= per2_sdate) & (temp_date_col <= per2_edate)]
         self.period1 = dr1[0].toString('yyyy-MM-dd') + ' to ' + dr1[1].toString('yyyy-MM-dd')
         self.period2 = dr2[0].toString('yyyy-MM-dd') + ' to ' + dr2[1].toString('yyyy-MM-dd')
         tmc = self.project.database.get_tmcs()
@@ -54,12 +65,12 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.selected_tmc_name = tmc[Project.ID_TMC_CODE][0]
         self.selected_tmc_len = tmc[Project.ID_TMC_LEN][0]
         self.selected_peak = PEAK_24HR
-        self.am_ap_start = convert_time_to_ap(6, 0, 5)
-        self.am_ap_end = convert_time_to_ap(9, 0, 5)
-        self.pm_ap_start = convert_time_to_ap(16, 0, 5)
-        self.pm_ap_end = convert_time_to_ap(18, 0, 5)
-        self.md_ap_start = convert_time_to_ap(10, 0, 5)
-        self.md_ap_end = convert_time_to_ap(16, 0, 5)
+        self.am_ap_start = convert_time_to_ap(6, 0, self.project.data_res)
+        self.am_ap_end = convert_time_to_ap(9, 0, self.project.data_res)
+        self.pm_ap_start = convert_time_to_ap(16, 0, self.project.data_res)
+        self.pm_ap_end = convert_time_to_ap(18, 0, self.project.data_res)
+        self.md_ap_start = convert_time_to_ap(10, 0, self.project.data_res)
+        self.md_ap_end = convert_time_to_ap(16, 0, self.project.data_res)
         self.available_days = self.project.database.get_available_days()
         self.plot_days = self.available_days.copy()
         if chart_options is not None:
@@ -478,60 +489,66 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                         lambda: self.f_speed_freq(sun_data_a)
                                         ]
 
-        func_dict['Speed CDF Peak'] = [lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 72) & (wkdy_data_b['AP'] < 120)]),  # AM Peak
-                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 72) & (wknd_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 72) & (mon_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 72) & (tue_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 72) & (wed_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 72) & (thu_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 72) & (fri_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 72) & (sat_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 72) & (sun_data_b['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 72) & (wkdy_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 72) & (wknd_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 72) & (mon_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 72) & (tue_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 72) & (wed_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 72) & (thu_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 72) & (fri_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 72) & (sat_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 72) & (sun_data_a['AP'] < 120)]),
-                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 120) & (wkdy_data_b['AP'] < 180)]),  # Md Peak
-                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 120) & (wknd_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 120) & (mon_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 120) & (tue_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 120) & (wed_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 120) & (thu_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 120) & (fri_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 120) & (sat_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 120) & (sun_data_b['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 120) & (wkdy_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 120) & (wknd_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 120) & (mon_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 120) & (tue_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 120) & (wed_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 120) & (thu_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 120) & (fri_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 120) & (sat_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 120) & (sun_data_a['AP'] < 180)]),
-                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= 180) & (wkdy_data_b['AP'] < 228)]),  # PM Peak
-                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= 180) & (wknd_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= 180) & (mon_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= 180) & (tue_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= 180) & (wed_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= 180) & (thu_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= 180) & (fri_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= 180) & (sat_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= 180) & (sun_data_b['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= 180) & (wkdy_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= 180) & (wknd_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= 180) & (mon_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= 180) & (tue_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= 180) & (wed_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= 180) & (thu_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= 180) & (fri_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= 180) & (sat_data_a['AP'] < 228)]),
-                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= 180) & (sun_data_a['AP'] < 228)])
+        ams = convert_time_to_ap(6, 0, self.project.data_res)
+        ame = convert_time_to_ap(10, 0, self.project.data_res)
+        mds = convert_time_to_ap(10, 0, self.project.data_res)
+        mde = convert_time_to_ap(15, 0, self.project.data_res)
+        pms = convert_time_to_ap(15, 0, self.project.data_res)
+        pme = convert_time_to_ap(19, 0, self.project.data_res)
+        func_dict['Speed CDF Peak'] = [lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= ams) & (wkdy_data_b['AP'] < ame)]),  # AM Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= ams) & (wknd_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= ams) & (mon_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= ams) & (tue_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= ams) & (wed_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= ams) & (thu_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= ams) & (fri_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= ams) & (sat_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= ams) & (sun_data_b['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= ams) & (wkdy_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= ams) & (wknd_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= ams) & (mon_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= ams) & (tue_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= ams) & (wed_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= ams) & (thu_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= ams) & (fri_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= ams) & (sat_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= ams) & (sun_data_a['AP'] < ame)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= mds) & (wkdy_data_b['AP'] < mde)]),  # Md Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= mds) & (wknd_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= mds) & (mon_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= mds) & (tue_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= mds) & (wed_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= mds) & (thu_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= mds) & (fri_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= mds) & (sat_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= mds) & (sun_data_b['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= mds) & (wkdy_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= mds) & (wknd_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= mds) & (mon_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= mds) & (tue_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= mds) & (wed_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= mds) & (thu_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= mds) & (fri_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= mds) & (sat_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= mds) & (sun_data_a['AP'] < mde)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_b[(wkdy_data_b['AP'] >= pms) & (wkdy_data_b['AP'] < pme)]),  # PM Peak
+                                       lambda: self.f_tt_cdf(wknd_data_b[(wknd_data_b['AP'] >= pms) & (wknd_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(mon_data_b[(mon_data_b['AP'] >= pms) & (mon_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(tue_data_b[(tue_data_b['AP'] >= pms) & (tue_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(wed_data_b[(wed_data_b['AP'] >= pms) & (wed_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(thu_data_b[(thu_data_b['AP'] >= pms) & (thu_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(fri_data_b[(fri_data_b['AP'] >= pms) & (fri_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(sat_data_b[(sat_data_b['AP'] >= pms) & (sat_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(sun_data_b[(sun_data_b['AP'] >= pms) & (sun_data_b['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(wkdy_data_a[(wkdy_data_a['AP'] >= pms) & (wkdy_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(wknd_data_a[(wknd_data_a['AP'] >= pms) & (wknd_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(mon_data_a[(mon_data_a['AP'] >= pms) & (mon_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(tue_data_a[(tue_data_a['AP'] >= pms) & (tue_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(wed_data_a[(wed_data_a['AP'] >= pms) & (wed_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(thu_data_a[(thu_data_a['AP'] >= pms) & (thu_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(fri_data_a[(fri_data_a['AP'] >= pms) & (fri_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(sat_data_a[(sat_data_a['AP'] >= pms) & (sat_data_a['AP'] < pme)]),
+                                       lambda: self.f_tt_cdf(sun_data_a[(sun_data_a['AP'] >= pms) & (sun_data_a['AP'] < pme)])
                                        ]
 
         LoadStage2QT(self, self.project.main_window, func_dict)
@@ -753,4 +770,4 @@ class Stage2GridPanel(QtWidgets.QWidget):
 
 
 def convert_time_to_ap(start_hour, start_min, ap_increment):
-    return (start_hour * 12) + start_min // ap_increment
+    return (start_hour * (60 // ap_increment)) + start_min // ap_increment
