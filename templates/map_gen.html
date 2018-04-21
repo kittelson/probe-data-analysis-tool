@@ -78,6 +78,7 @@ var markers = [];
 var polylines = [];
 var curr_selected_tmc = -1;
 var zoom_group = new L.featureGroup([]);
+var legend = null;
 
 
 function updateCenter(lat, lon) {
@@ -153,18 +154,20 @@ function placeTMC(s_lat, s_lon, e_lat, e_lon, tmc_name, tmc_color) {
 function createLegend(labels, colors) {
     // var labels = ['dir1', 'dir2'];
     // var colors = ['black', 'red'];
-    var legend = L.control({position: 'topright'});
+    if (legend == null) {
+        legend = L.control({position: 'topright'});
 
-    legend.onAdd = function (map_facility) {
-        var div = L.DomUtil.create('div', 'info legend');
-        // loop through our density intervals and generate a label with a colored square for each interval
-        for (var i = 0; i < labels.length; i++) {
-            div.innerHTML +=
-                '<i style="background:' + colors[i] + '"></i> ' + labels[i] + '<br>';
-        }
-        return div;
-    };
-    legend.addTo(map_facility);
+        legend.onAdd = function (map_facility) {
+            var div = L.DomUtil.create('div', 'info legend');
+            // loop through our density intervals and generate a label with a colored square for each interval
+            for (var i = 0; i < labels.length; i++) {
+                div.innerHTML +=
+                    '<i style="background:' + colors[i] + '"></i> ' + labels[i] + '<br>';
+            }
+            return div;
+        };
+        legend.addTo(map_facility);
+    }
 }
 
 function highlightTMC(tmc_idx) {
@@ -176,6 +179,18 @@ function highlightTMC(tmc_idx) {
     }
     curr_selected_tmc = tmc_idx;
     updateBounds(tmc_idx);
+}
+
+function showTMC(tmc_idx) {
+    if (tmc_idx >= 0) {
+        map_facility.addLayer(polylines[tmc_idx]);
+    }
+}
+
+function hideTMC(tmc_idx) {
+    if (tmc_idx >= 0) {
+        map_facility.removeLayer(polylines[tmc_idx]);
+    }
 }
 
 function updateBounds(tmc_idx) {

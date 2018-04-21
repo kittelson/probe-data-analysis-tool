@@ -6,6 +6,8 @@ import calendar
 import datetime
 from chart_defaults import ChartOptions
 import viz_qt
+import mpl_charts
+from PyQt5.QtWidgets import QWidget, QVBoxLayout
 
 
 class Project:
@@ -33,6 +35,7 @@ class Project:
         self._project_location = ''
         self._project_dir = directory
         self._tmc_file_name = None
+        self._adj_tmc_list = []
         self._data_file_name = None
         self.database = None
         self._date_ranges = []
@@ -41,8 +44,11 @@ class Project:
         self.data_res = Project.ID_DATA_RESOLUTION
         self.direction = None
         self._summary_data = None
+        self.speed_limit = 65
         self.min_speed = 15
         self.max_speed = 70
+        self.data_avail_threshold_lower = 0.5
+        self.data_avail_threshold_upper = 0.8
 
     def set_name(self, new_name):
         self._project_name = new_name
@@ -79,6 +85,12 @@ class Project:
 
     def get_tmc_file_name(self):
         return self._tmc_file_name
+
+    def set_tmc_list_adj(self, adj_tmc_list):
+        self._adj_tmc_list = adj_tmc_list
+
+    def get_tmc_list_adj(self):
+        return self._adj_tmc_list
 
     def set_data_file(self, new_name):
         self._data_file_name = new_name
@@ -261,6 +273,8 @@ class SummaryData:
     def __init__(self, project, tmc):
         self._project = project
         self._tmc = tmc
+        tmc_df = project.get_tmc(full_list=True)
+        self._tmc_len = tmc_df[tmc_df[Project.ID_TMC_CODE] == tmc][Project.ID_TMC_LEN].iloc[0]
         self._start_date = []
         self._end_date = []
         self._start_time = []
@@ -273,9 +287,25 @@ class SummaryData:
         self._am_95 = []
         self._pm_95 = []
         self._md_95 = []
+        self._lottr_corr = dict()
+        self._lottr_corr['AM'] = [dict(), dict()]
+        self._lottr_corr['PM'] = [dict(), dict()]
+        self._lottr_corr['MD-WD'] = [dict(), dict()]
+        self._lottr_corr['MD-WE'] = [dict(), dict()]
+        self._lott_tmc = dict()
+        self._lott_tmc['AM'] = [-1, -1]
+        self._lott_tmc['PM'] = [-1, -1]
+        self._lott_tmc['MD-WD'] = [-1, -1]
+        self._lott_tmc['MD-WE'] = [-1, -1]
 
     def tmc(self):
         return self._tmc
+
+    def tmc_len(self, as_string=True):
+        if as_string:
+            return '{:1.2f} mi'.format(self._tmc_len)
+        else:
+            return self._tmc_len
 
     def start_date(self, period_idx, as_string=True):
         if self._start_date is not None and len(self._start_date) > period_idx:
@@ -440,4 +470,107 @@ class SummaryData:
                 return '--'
             else:
                 return 0
+
+    def set_tmc_lottr_am(self, val, period):
+        self._lott_tmc['AM'][period] = val
+
+    def set_tmc_lottr_pm(self, val, period):
+        self._lott_tmc['PM'][period] = val
+
+    def set_tmc_lottr_md_wkdy(self, val, period):
+        self._lott_tmc['MD-WD'][period] = val
+
+    def set_tmc_lottr_md_wknd(self, val, period):
+        self._lott_tmc['MD-WE'][period] = val
+
+    def get_tmc_lottr_am(self, period, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lott_tmc['AM'][period])
+        else:
+            return self._lott_tmc['AM'][period]
+
+    def get_tmc_lottr_pm(self, period, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lott_tmc['PM'][period])
+        else:
+            return self._lott_tmc['PM'][period]
+
+    def get_tmc_lottr_md_wkdy(self, period, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lott_tmc['MD-WD'][period])
+        else:
+            return self._lott_tmc['MD-WD'][period]
+
+    def get_tmc_lottr_md_wknd(self, period, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lott_tmc['MD-WE'][period])
+        else:
+            return self._lott_tmc['MD-WE'][period]
+
+    def set_lottr_dict_am(self, lottr_dict, period):
+        self._lottr_corr['AM'][period] = lottr_dict
+
+    def set_lottr_dict_pm(self, lottr_dict, period):
+        self._lottr_corr['PM'][period] = lottr_dict
+
+    def set_lottr_dict_md_wkdy(self, lottr_dict, period):
+        self._lottr_corr['MD-WD'][period] = lottr_dict
+
+    def set_lottr_dict_md_wknd(self, lottr_dict, period):
+        self._lottr_corr['MD-WE'][period] = lottr_dict
+
+    def get_lottr_dict_am(self, period):
+        return self._lottr_corr['AM'][period]
+
+    def get_lottr_dict_pm(self, period):
+        return self._lottr_corr['PM'][period]
+
+    def get_lottr_dict_md_wkdy(self, period):
+        return self._lottr_corr['MD-WD'][period]
+
+    def get_lottr_dict_md_wknd(self, period):
+        return self._lottr_corr['MD-WE'][period]
+
+    def set_corr_lottr_am(self, tmc, val):
+        self._lottr_corr['AM'][tmc] = val
+
+    def set_corr_lottr_pm(self, tmc, val):
+        self._lottr_corr['PM'][tmc] = val
+
+    def set_corr_lottr_md_wkdy(self, tmc, val):
+        self._lottr_corr['MD-WD'][tmc] = val
+
+    def set_corr_lottr_md_wknd(self, tmc, val):
+        self._lottr_corr['MD-WE'][tmc] = val
+
+    def get_corr_lottr_am(self, tmc, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lottr_corr['AM'][tmc])
+        else:
+            return self._lottr_corr['AM'][tmc]
+
+    def get_corr_lottr_pm(self, tmc, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lottr_corr['PM'][tmc])
+        else:
+            return self._lottr_corr['PM'][tmc]
+
+    def get_corr_lottr_md_wkdy(self, tmc, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lottr_corr['MD-WD'])
+        else:
+            return self._lottr_corr['MD-WD']
+
+    def get_corr_lottr_md_wknd(self, tmc, as_string=True):
+        if as_string:
+            return '{:1.2f}'.format(self._lottr_corr['MD-WE'][tmc])
+        else:
+            return self._lottr_corr['MD-WE'][tmc]
+
+    def generate_lottr_chart(self, project):
+        # chart_panel = QWidget()
+        chart = mpl_charts.MplChart(None, fig_type=mpl_charts.FIG_TYPE_LOTTR_CORR_SUMM, project=project)
+        # layout = QVBoxLayout(chart_panel)
+        # layout.addWidget(chart)
+        return chart
 

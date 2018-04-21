@@ -93,52 +93,49 @@ def create_facility_et_analysis(data):
     return et
 
 
-def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_id=None):
+def create_trend_analysis(data, am_ap, pm_ap, mid_ap, tmc_list=None, day_list=None):
     """
     Function to create a travel time trend over time analysis.
     :param data: Pandas dataframe of travel time data
-    :param tmc_id: List of one or more tmcs to include in trend analysis
+    :param am_ap: List of first/last analysis periods representing AM Peak
+    :param pm_ap: List of first/last analysis periods representing PM Peak
+    :param mid_ap: List of first/last analysis periods representing midday Peak
+    :param tmc_list: List of one or more tmcs to include in trend analysis
+    :param day_list: LIst of the days of week to include in trend analysis (Mon: 0, Tue: 1, etc.)
     :return: Pandas dataframe of aggregate travel time trend data
     """
     if data is None:
         return None
+
     am_ap_start = am_ap[0]
     am_ap_end = am_ap[1]
     pm_ap_start = pm_ap[0]
     pm_ap_end = pm_ap[1]
     md_ap_start = mid_ap[0]
     md_ap_end = mid_ap[1]
-    if tmc_id is not None:
-        tmc_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc_id)]
+
+    if tmc_list is not None:
+        tmc_data = data[data[DataHelper.Project.ID_DATA_TMC].isin(tmc_list)]
     else:
         tmc_data = data
-    df_dir1_am = tmc_data[(tmc_data['AP'] >= am_ap_start) & (tmc_data['AP'] < am_ap_end)]
-    df_dir1_pm = tmc_data[(tmc_data['AP'] >= pm_ap_start) & (tmc_data['AP'] < pm_ap_end)]
-    df_dir1_md = tmc_data[(tmc_data['AP'] >= md_ap_start) & (tmc_data['AP'] < md_ap_end)]
+    if day_list is not None:
+        filter_df = tmc_data[tmc_data['weekday'].isin(day_list)]
+    else:
+        filter_df = tmc_data
+
+    df_dir1_am = filter_df[(filter_df['AP'] >= am_ap_start) & (filter_df['AP'] < am_ap_end)]
+    df_dir1_pm = filter_df[(filter_df['AP'] >= pm_ap_start) & (filter_df['AP'] < pm_ap_end)]
+    df_dir1_md = filter_df[(filter_df['AP'] >= md_ap_start) & (filter_df['AP'] < md_ap_end)]
 
     # AM Peak Period
-    # am_gp0 = df_dir1_am.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT]
-    # am_gp = am_gp0.agg(np.mean)
-    # am_gp1 = am_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    # am_gp2 = am_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
     am_gp2 = df_dir1_am.groupby(['Year', 'Month'])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT].agg([np.mean, percentile(95), percentile(5)])
 
     # PM Peak Period
-    # pm_gp0 = df_dir1_pm.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT]
-    # pm_gp = pm_gp0.agg(np.mean)
-    # pm_gp1 = pm_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    # pm_gp2 = pm_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
     pm_gp2 = df_dir1_pm.groupby(['Year', 'Month'])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT].agg([np.mean, percentile(95), percentile(5)])
 
     # Midday Period
-    # md_gp0 = df_dir1_md.groupby(['Year', 'Month', 'AP', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT]
-    # md_gp = md_gp0.agg(np.mean)
-    # md_gp1 = md_gp.groupby(['Year', 'Month', 'AP']).agg('mean')
-    # md_gp2 = md_gp1.groupby(['Year', 'Month']).agg([np.mean, percentile(95), percentile(5)])
     md_gp2 = df_dir1_md.groupby(['Year', 'Month'])[DataHelper.Project.ID_DATA_SPEED, DataHelper.Project.ID_DATA_TT].agg([np.mean, percentile(95), percentile(5)])
 
-    # plot_df_dir1 = am_gp2.join(pm_gp2, lsuffix='pm')
-    # plot_df_dir1 = plot_df_dir1.join(md_gp2, lsuffix='mid')
     plot_df_dir1 = pm_gp2.join(am_gp2, lsuffix='pm')
     plot_df_dir1 = md_gp2.join(plot_df_dir1, lsuffix='mid')
     return plot_df_dir1
@@ -155,10 +152,11 @@ def create_tt_compare(data_before, data_after):
     return deltas
 
 
-def create_pct_congested_sp(data, speed_bins, dates=None, aps=None):
+def create_pct_congested_sp(data, selected_tmc_list, speed_bins, dates=None, aps=None):
 
     bin_list = ['bin1', 'bin2', 'bin3', 'bin4', 'bin5']
-    # Potential data filtering her
+    # Filtering data
+    data = data[data[DataHelper.Project.ID_DATA_TMC].isin(selected_tmc_list)]
     if dates is not None and len(dates) == 2:
         data = data[(data['Date'] >= dates[0]) & (data['Date'] <= dates[1])]
     if aps is not None and len(aps) == 2:
@@ -219,6 +217,7 @@ def create_speed_tmc_heatmap(data, period, tmc_index_list, stacked=False):
     tmc = data[(data['AP'] >= period[0]) & (data['AP'] <= period[1])]
     test = tmc.groupby(['Date', DataHelper.Project.ID_DATA_TMC])[DataHelper.Project.ID_DATA_SPEED].agg(np.mean)
     df_mat = test.to_frame()
+    # print(df_mat)
     if tmc_index_list is not None:
         df_mat = df_mat.reindex(tmc_index_list, level=1)
     imshow_data = df_mat.unstack().values[:, :]

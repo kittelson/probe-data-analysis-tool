@@ -38,7 +38,8 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.init_mode = True
         self.no_compute = True
         self.project = project
-        df = self.project.database.get_data()
+        full_df = self.project.database.get_data()
+        df = full_df[full_df[Project.ID_DATA_TMC].isin(self.project.get_tmc()[Project.ID_TMC_CODE])]
         # dr1 = self.project.get_date_range(0)
         # df_period1 = df[(df['Date'] >= dr1[0].toString('yyyy-MM-dd')) & (df['Date'] <= dr1[1].toString('yyyy-MM-dd'))]
         # dr2 = self.project.get_date_range(1)
@@ -211,182 +212,14 @@ class Stage2GridPanel(QtWidgets.QWidget):
         self.check_pm2.toggled.connect(lambda: self.toggle_func_peak2(PEAK_PM, self.check_pm2))
         v_layout.addWidget(check_bar_day)
         self.project.main_window.ui.tabWidget.addTab(self.panel2, '2 - Speed CDF/Frequency')
+        self.project.main_window.stage2panel_2 = self.panel2
 
     def update_plot_data(self, **kwargs):
-        # self.plot_dfs = [self.f_extra_time(df[df['weekday'].isin(self.plot_days)]) for df in self.dfs]
         before_df = self.dfs[0]
         after_df = self.dfs[1]
-        # self.plot_dfs = [self.f_extra_time(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([5, 6])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([0])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([1])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([2])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([3])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([4])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([5])]),
-        #                  self.f_extra_time(before_df[before_df['weekday'].isin([6])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([5, 6])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([0])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([1])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([2])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([3])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([4])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([5])]),
-        #                  self.f_extra_time(after_df[after_df['weekday'].isin([6])])
-        #                  ]
-        #
-        # self.plot_dfs2 = [self.f_speed_band(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([5, 6])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([0])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([1])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([2])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([3])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([4])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([5])]),
-        #                   self.f_speed_band(before_df[before_df['weekday'].isin([6])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([5, 6])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([0])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([1])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([2])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([3])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([4])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([5])]),
-        #                   self.f_speed_band(after_df[after_df['weekday'].isin([6])])
-        #                   ]
-        #
-        # self.plot_dfs3 = [self.f_tt_cdf(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([5, 6])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([0])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([1])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([2])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([3])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([4])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([5])]),
-        #                   self.f_tt_cdf(before_df[before_df['weekday'].isin([6])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([5, 6])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([0])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([1])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([2])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([3])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([4])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([5])]),
-        #                   self.f_tt_cdf(after_df[after_df['weekday'].isin([6])])
-        #                   ]
-        #
-        # self.plot_dfs4 = [self.f_speed_freq(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([5, 6])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([0])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([1])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([2])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([3])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([4])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([5])]),
-        #                   self.f_speed_freq(before_df[before_df['weekday'].isin([6])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([5, 6])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([0])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([1])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([2])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([3])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([4])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([5])]),
-        #                   self.f_speed_freq(after_df[after_df['weekday'].isin([6])])
-        #                   ]
 
         func_dict = dict()
-        # func_dict['Extra Time'] = [lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5, 6])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([0])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([1])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([2])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([3])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([4])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([5])]),
-        #                            lambda: self.f_extra_time(before_df[before_df['weekday'].isin([6])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5, 6])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([0])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([1])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([2])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([3])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([4])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([5])]),
-        #                            lambda: self.f_extra_time(after_df[after_df['weekday'].isin([6])])
-        #                            ]
-        #
-        # func_dict['Speed Band'] = [lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5, 6])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([0])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([1])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([2])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([3])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([4])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([5])]),
-        #                            lambda: self.f_speed_band(before_df[before_df['weekday'].isin([6])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5, 6])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([0])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([1])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([2])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([3])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([4])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([5])]),
-        #                            lambda: self.f_speed_band(after_df[after_df['weekday'].isin([6])])
-        #                            ]
-        #
-        # func_dict['Cumulative Distribution'] = [lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5, 6])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([0])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([1])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([2])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([3])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([4])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([5])]),
-        #                                         lambda: self.f_tt_cdf(before_df[before_df['weekday'].isin([6])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5, 6])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([0])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([1])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([2])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([3])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([4])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([5])]),
-        #                                         lambda: self.f_tt_cdf(after_df[after_df['weekday'].isin([6])])
-        #                                         ]
-        #
-        # func_dict['Speed Frequency'] = [lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5, 6])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([0])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([1])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([2])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([3])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([4])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([5])]),
-        #                                 lambda: self.f_speed_freq(before_df[before_df['weekday'].isin([6])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0, 1, 2, 3, 4])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5, 6])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([0])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([1])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([2])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([3])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([4])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([5])]),
-        #                                 lambda: self.f_speed_freq(after_df[after_df['weekday'].isin([6])])
-        #                                 ]
 
-        # import time
-        # from numpy import mean as np_mean
-        # from stat_func import percentile
-        # time1 = time.time()
-        # et = before_df.groupby(['tmc_code', 'AP', 'weekday'])['travel_time_minutes'].agg([np_mean, percentile(95), percentile(5)])
-        # et['extra_time'] = et['percentile_95'] - et['mean']
-        # time2 = time.time()
-        # print('New Method: ' + str(time2-time1))
-
-        # time3 = time.time()
         wkdy_data_b = before_df[before_df['weekday'].isin([0, 1, 2, 3, 4])]
         wknd_data_b = before_df[before_df['weekday'].isin([5, 6])]
         mon_data_b = wkdy_data_b[wkdy_data_b['weekday'] == 0]
@@ -711,33 +544,6 @@ class Stage2GridPanel(QtWidgets.QWidget):
         sd._start_time = ['12:00AM', '12:00AM']
         sd._end_time = ['11:59PM', '11:59PM']
         sd._num_days = [dr1[0].daysTo(dr1[1]) + 1, dr2[0].daysTo(dr2[1]) + 1]
-        # sd._sample_size = [self.project.compute_sample_size(0, self.selected_tmc_name), self.project.compute_sample_size(1, self.selected_tmc_name)]
-        # sd._am_mean = [mean(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
-        # sd._md_mean = [mean(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
-        # sd._pm_mean = [mean(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
-        #                mean(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
-        # sd._am_95 = [percentile(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
-        # sd._md_95 = [percentile(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
-        # sd._pm_95 = [percentile(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-        #              percentile(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
-        # self.project.set_summary_data(sd)
-
         func_summ = dict()
         func_summ['sample_size'] = [lambda: self.project.compute_sample_size(0, self.selected_tmc_name),
                                     lambda: self.project.compute_sample_size(1, self.selected_tmc_name)]
@@ -753,21 +559,60 @@ class Stage2GridPanel(QtWidgets.QWidget):
                                 lambda: mean(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
                                 lambda: mean(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values),
                                 lambda: mean(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values)]
-        func_summ['am_95'] = [lambda: percentile(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
-        func_summ['md_95'] = [lambda: percentile(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
-        func_summ['pm_95'] = [lambda: percentile(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5),
-                                lambda: percentile(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values, 5)]
+        pctile = 5  # 100 - 95
+        func_summ['am_95'] = [lambda: percentile(self.plot_dfs5[0][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[9][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[1][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[10][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile)]
+        func_summ['md_95'] = [lambda: percentile(self.plot_dfs5[18][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[27][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[19][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[28][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile)]
+        func_summ['pm_95'] = [lambda: percentile(self.plot_dfs5[36][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[45][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[37][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile),
+                                lambda: percentile(self.plot_dfs5[46][Project.ID_DATA_SPEED][self.selected_tmc_name].values, pctile)]
+        pctile80 = 80
+        pctile50 = 50
+
+        func_summ['tmc_am_lottr'] = [lambda: percentile(self.plot_dfs5[0][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[9][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[0][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50),
+                                     lambda: percentile(self.plot_dfs5[9][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50)]
+        func_summ['tmc_md_lottr'] = [lambda: percentile(self.plot_dfs5[18][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[27][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[18][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50),
+                                     lambda: percentile(self.plot_dfs5[27][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50)]
+        func_summ['tmc_pm_lottr'] = [lambda: percentile(self.plot_dfs5[36][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[45][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[36][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50),
+                                     lambda: percentile(self.plot_dfs5[45][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50)]
+        func_summ['tmc_we_lottr'] = [lambda: percentile(self.plot_dfs5[19][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[28][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile80),
+                                     lambda: percentile(self.plot_dfs5[19][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50),
+                                     lambda: percentile(self.plot_dfs5[28][Project.ID_DATA_TT][self.selected_tmc_name].values, pctile50)]
+
+        func_summ['cor_am_lottr'] = [lambda: compute_corr_lottr(self.plot_dfs5[0]),   # Weekday Period 1
+                                     lambda: compute_corr_lottr(self.plot_dfs5[9])]   # Weekday Period 2
+        func_summ['cor_md_lottr'] = [lambda: compute_corr_lottr(self.plot_dfs5[18]),  # Weekday Period 1
+                                     lambda: compute_corr_lottr(self.plot_dfs5[27])]  # Weekday Period 2
+        func_summ['cor_pm_lottr'] = [lambda: compute_corr_lottr(self.plot_dfs5[36]),  # Weekday Period 1
+                                     lambda: compute_corr_lottr(self.plot_dfs5[45])]  # Weekday Period 2
+        func_summ['cor_we_lottr'] = [lambda: compute_corr_lottr(self.plot_dfs5[19]),  # Weekend Period 1
+                                     lambda: compute_corr_lottr(self.plot_dfs5[28])]  # Weekend Period 2
 
         LoadSummaryQT(self, self.project.main_window, func_summ, sd)
 
 
 def convert_time_to_ap(start_hour, start_min, ap_increment):
     return (start_hour * (60 // ap_increment)) + start_min // ap_increment
+
+
+def compute_corr_lottr(df):
+    lottr_dict = dict()
+    for tmc, vals in df.groupby(level=0):
+        tt_80 = percentile(vals[Project.ID_DATA_TT], 80)
+        tt_50 = percentile(vals[Project.ID_DATA_TT], 50)
+        lottr_dict[tmc] = tt_80 / tt_50
+    return lottr_dict
+

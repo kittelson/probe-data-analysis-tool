@@ -5,10 +5,10 @@ Dialog that helps with importing data
 import os
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebEngineWidgets import QWebEngineView
-from PyQt5.QtWidgets import QDialog, QWidget, QTabWidget, QDialogButtonBox, QTableWidget, QTableWidgetItem, QSplitter
-from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit
+from PyQt5.QtWidgets import QDialog, QWidget, QTabWidget, QDialogButtonBox, QTableWidget, QTableWidgetItem, QAbstractItemView
+from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit, QSpinBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QFormLayout, QGridLayout
-from PyQt5.QtWidgets import QAction
+from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from PyQt5.QtGui import QFont
 import pandas as pd
 from DataHelper import Project
@@ -23,12 +23,29 @@ class ImportDialog(QDialog):
         self.main_window = main_window
         self.project_dir_name = proj_dir_name
         tokens = self.project_dir_name.split('/')
-        self.tmc_file_name = self.project_dir_name + '/tmc_identification.csv'
+        self.indicator_revert_to_master = True
+        if os.path.isfile(self.project_dir_name + '/tmc_identification_master.csv'):
+            self.master_file_exists = True
+            response = QMessageBox.question(self.main_window, 'Custom TMC File Found',
+                                            'An adjusted TMC identification file and a master TMC identification file have both been found.\n\n' +
+                                            'Use the adjusted TMC list?\n(Choosing "No" will revert to the master TMC list).',
+                                            QMessageBox.Yes | QMessageBox.No, QMessageBox.Yes)
+            if response == QMessageBox.Yes:
+                self.tmc_file_name = self.project_dir_name + '/tmc_identification.csv'
+            else:
+                self.tmc_file_name = self.project_dir_name + '/tmc_identification_master.csv'
+                self.indicator_revert_to_master = False
+        else:
+            self.master_file_exists = False
+            self.tmc_file_name = self.project_dir_name + '/tmc_identification.csv'
         self.data_file_name = self.project_dir_name + '/' + tokens[-1] + '.csv'
         self.setWindowTitle("Project Data")
 
         self.data_inspected = False
         self.map_exists = False
+        self.init_map_load = True
+        self.tmc_order_adjusted = False
+        self.tmc_table_init = False
         self.data_preview = None
         self.tmc_preview = None
 
@@ -57,7 +74,7 @@ class ImportDialog(QDialog):
         self.state_label = QLabel('Enter State: ')
         self.state_label.setFont(QFont("Times", weight=QFont.Bold))
         self.state_input = QLineEdit('')
-        self.loc_label = QLabel('Enter Location: ')
+        self.loc_label = QLabel('Enter Facility: ')
         self.loc_label.setFont(QFont("Times", weight=QFont.Bold))
         self.loc_input = QLineEdit('')
         self.data_file_label = QLabel('Data File: ')
@@ -117,18 +134,32 @@ class ImportDialog(QDialog):
         self.cb_tmc_col_elat = QComboBox()
         self.cb_tmc_col_elon = QComboBox()
         self.load_map_button = QPushButton("Add TMCs to Map")
-        self.map_table_panel = QWidget(self.tmc_panel)
-        self.map_view = QWebEngineView(self.map_table_panel)
+        self.map_panel = QWidget(self.tmc_panel)
+        self.map_view = QWebEngineView(self.map_panel)
         self.tmc_table = QTableWidget()
-        self.tmc_label = QLabel("Placeholder description")
+        self.tmc_table.itemSelectionChanged.connect(self.handle_table_select_changed)
+        self.table_panel = QWidget(self.tmc_panel)
+        self.table_button_panel = QWidget(self.table_panel)
+        self.button_tmc_up = QPushButton("Move TMC Up")
+        self.button_tmc_down = QPushButton("Move TMC Down")
+        self.button_include_all_tmc = QPushButton("Select All TMC")
+        self.button_deselect_all_tmc = QPushButton("Deselect All TMC")
+        if self.indicator_revert_to_master:
+            self.button_revert_to_master = QPushButton("Revert to Master List")
+        else:
+            self.button_revert_to_master = QPushButton('Revert to Saved Custom')
+        self.tmc_label = QLabel("Use this panel to inspect the TMC data.  The TMCs can be plotted on the map below, and can be selected for inclusion"
+                                "/exclusions in the table.  The TMC ordering\ncan also be adjusted if any are out of order.")
         # Creating Layouts
         self.tmc_col_layout = QGridLayout(self.tmc_col_select_panel)
-        self.tmc_layout1 = QVBoxLayout(self.tmc_panel)
-        self.tmc_layout2 = QHBoxLayout(self.map_table_panel)
+        self.tmc_panel_layout = QVBoxLayout(self.tmc_panel)
+        self.map_panel_layout = QHBoxLayout(self.map_panel)
+        self.table_panel_layout = QHBoxLayout(self.table_panel)
+        self.table_button_panel_layout = QVBoxLayout(self.table_button_panel)
 
         # -------- Adding tabs
-        self.tab_panel.addTab(self.data_panel, "Data Preview")
         self.tab_panel.addTab(self.tmc_panel, "TMC List")
+        self.tab_panel.addTab(self.data_panel, "Data Preview")
 
         # -------- Creating ButtonBox
         self.button_box = QDialogButtonBox(Qt.Horizontal, self)
@@ -168,7 +199,9 @@ class ImportDialog(QDialog):
         pass
 
     def ok_press(self):
+        adj_tmc_list = None
         if self.data_inspected:
+            # Setting Dataframe column names
             Project.ID_DATA_TMC = self.cb_data_col_tmc.currentText()
             Project.ID_DATA_TIMESTAMP = self.cb_data_col_timestamp.currentText()
             Project.ID_DATA_SPEED = self.cb_data_col_speed.currentText()
@@ -182,14 +215,46 @@ class ImportDialog(QDialog):
             Project.ID_TMC_SLON = self.cb_tmc_col_slon.currentText()
             Project.ID_TMC_ELAT = self.cb_tmc_col_elat.currentText()
             Project.ID_TMC_ELON = self.cb_tmc_col_elon.currentText()
-        self.main_window.new_project_accepted(self,
-                                              self.project_dir_name,
-                                              self.project_name_input,
-                                              self.analyst_input,
-                                              self.agency_input,
-                                              self.state_input,
-                                              self.loc_input)
-        # self.close()
+
+            #Updating TMC Inclusion and Ordering
+            adj_tmc_list = []
+            for ri in range(self.tmc_table.rowCount()):
+                if self.tmc_table.item(ri, 0).checkState() == Qt.Checked:
+                    adj_tmc_list.append(self.tmc_table.item(ri, 1).text())
+            if len(adj_tmc_list) is 0:
+                QMessageBox.warning(self, 'Invalid TMC Selection', 'At least one TMC must be included in the analysis.',
+                                     QMessageBox.Ok, QMessageBox.Ok)
+                return
+
+        proj_info_dict = dict()
+        proj_info_dict['dir'] = self.project_dir_name
+        proj_info_dict['tmc_file_name'] = self.tmc_file_name
+        proj_info_dict['name'] = self.project_name_input.text()
+        proj_info_dict['analyst'] = self.analyst_input.text()
+        proj_info_dict['agency'] = self.agency_input.text()
+        proj_info_dict['state'] = self.state_input.text()
+        proj_info_dict['location'] = self.loc_input.text()
+        if adj_tmc_list is not None:
+            proj_info_dict['adj_tmc_list'] = adj_tmc_list
+            if self.tmc_order_adjusted or len(adj_tmc_list) != self.tmc_preview[Project.ID_TMC_CODE].count():
+                response = QMessageBox.question(self, 'Save TMC Adjustments?',
+                                                'Save any manual reordering or inclusion/exclusion of TMCs for future use?',
+                                                QMessageBox.Yes | QMessageBox.No, QMessageBox.No)
+                if response == QMessageBox.Yes:
+                    if not os.path.isfile(self.project_dir_name + '/tmc_identification_master.csv'):
+                        os.rename(self.project_dir_name + '/tmc_identification.csv', self.project_dir_name + '/tmc_identification_master.csv')
+
+                    self.tmc_preview = self.tmc_preview[self.tmc_preview[Project.ID_TMC_CODE].isin(adj_tmc_list)]
+                    self.tmc_preview.set_index(Project.ID_TMC_CODE, inplace=True)
+                    self.tmc_preview = self.tmc_preview.reindex(adj_tmc_list)
+                    self.tmc_preview.reset_index(level=0, inplace=True)
+                    self.tmc_preview.to_csv(self.project_dir_name + '/tmc_identification.csv', index=False)
+                    QMessageBox.information(self, 'TMC File Updated',
+                                            'The default "tmc_identification.csv" file has now been updated.  However, the original ' +
+                                            'file still exists as "tmc_identification_master.csv" in the data folder.',
+                                            QMessageBox.Ok, QMessageBox.Ok)
+
+        self.main_window.new_project_accepted(proj_info_dict, dlg=self)
 
     def close_press(self):
         self.close()
@@ -268,16 +333,32 @@ class ImportDialog(QDialog):
         self.tmc_col_layout.addWidget(QLabel("End Lon:"), 7, 0)
         self.tmc_col_layout.addWidget(self.cb_tmc_col_elon, 7, 1)
         self.tmc_col_layout.addWidget(self.load_map_button, 8, 0, 1, 2)
-        self.tmc_layout2.addWidget(self.tmc_col_select_panel)
-        self.tmc_layout2.addWidget(self.map_view)
-        self.tmc_layout1.addWidget(self.tmc_label)
-        self.tmc_layout1.addWidget(self.map_table_panel)
-        self.tmc_table.setMinimumHeight(200)
-        self.tmc_layout1.addWidget(self.tmc_table)
+        self.map_panel_layout.addWidget(self.tmc_col_select_panel)
+        self.map_panel_layout.addWidget(self.map_view)
+        self.tmc_panel_layout.addWidget(self.tmc_label)
+        self.tmc_panel_layout.addWidget(self.map_panel)
+        self.tmc_table.setMinimumHeight(250)
+        self.table_button_panel_layout.addWidget(self.button_tmc_up)
+        self.table_button_panel_layout.addWidget(self.button_tmc_down)
+        self.button_tmc_up.setEnabled(False)
+        self.button_tmc_down.setEnabled(False)
+        self.table_button_panel_layout.addWidget(self.button_include_all_tmc)
+        self.table_button_panel_layout.addWidget(self.button_deselect_all_tmc)
+        if self.master_file_exists:
+            self.table_button_panel_layout.addWidget(self.button_revert_to_master)
+        self.table_panel_layout.addWidget(self.tmc_table)
+        self.table_panel_layout.addWidget(self.table_button_panel)
+        self.tmc_panel_layout.addWidget(self.table_panel)
+
         # Setting up panel
         self.setup_tmc_col_select_panel()
         self.setup_tmc_preview_table()
         self.load_map_button.clicked.connect(self.add_tmcs_to_map)
+        self.button_include_all_tmc.clicked.connect(self.select_all_tmcs)
+        self.button_deselect_all_tmc.clicked.connect(self.deselect_all_tmcs)
+        self.button_tmc_up.clicked.connect(self.move_tmc_up)
+        self.button_tmc_down.clicked.connect(self.move_tmc_down)
+        self.button_revert_to_master.clicked.connect(self.handle_revert_to_master)
 
     def setup_tmc_col_select_panel(self):
         if self.tmc_preview is not None:
@@ -312,6 +393,7 @@ class ImportDialog(QDialog):
 
     def setup_tmc_preview_table(self):
         if self.tmc_preview is not None:
+            self.tmc_table_init = True
             num_rows = len(self.tmc_preview)
             num_cols = len(self.tmc_preview.columns)
             self.tmc_table.setRowCount(num_rows)
@@ -333,7 +415,10 @@ class ImportDialog(QDialog):
                 for col_idx in range(num_cols):
                     item = QTableWidgetItem(str(row[col_idx]))
                     item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
-                    self.tmc_table.setItem(index, col_idx+1, item)
+                    self.tmc_table.setItem(index, col_idx + 1, item)
+            self.tmc_table_init = False
+            self.tmc_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+            self.tmc_table.cellChanged.connect(self.handle_cell_changed)
             self.tmc_table.resizeColumnsToContents()
 
     def load_map(self):
@@ -343,6 +428,17 @@ class ImportDialog(QDialog):
 
     def map_loaded(self):
         self.map_exists = True
+        self.add_tmcs_to_map()
+
+
+    def zoom_map_to_full_extent(self):
+        if self.map_exists:
+            self.map_view.page().runJavaScript('updateBounds(-1)')
+
+    def reset_map(self):
+        if self.map_exists:
+            self.map_view.page().runJavaScript('clear_map()')
+            self.add_tmcs_to_map()
 
     def add_tmcs_to_map(self):
         field_slat = self.cb_tmc_col_slat.currentText()
@@ -367,7 +463,7 @@ class ImportDialog(QDialog):
             js_string = js_string + str(tmc_info[field_slon]) + ','
             js_string = js_string + str(tmc_info[field_elat]) + ','
             js_string = js_string + str(tmc_info[field_elon]) + ','
-            js_string = js_string + ' \'' + tmc_info[field_tmc] + '\'' + ','
+            js_string = js_string + ' \'#' + str(index + 1) + ') ' + tmc_info[field_tmc] + '\'' + ','
             js_string = js_string + curr_color
             js_string = js_string + ')'
             if self.map_exists:
@@ -375,4 +471,251 @@ class ImportDialog(QDialog):
         print('createLegend(' + label_str + ',' + color_str + ')')
         self.map_view.page().runJavaScript('createLegend(' + label_str + ',' + color_str + ')')
         self.map_view.page().runJavaScript('updateBounds(-1)')
+        if self.init_map_load:
+            self.init_map_load = False
+            self.load_map_button.setText('Zoom to Full Extent')
+            self.load_map_button.clicked.disconnect()
+            self.load_map_button.clicked.connect(self.zoom_map_to_full_extent)
 
+    def handle_cell_changed(self, row, col):
+        if not self.tmc_table_init and self.map_exists and col == 0:
+            if self.tmc_table.item(row, col).checkState() == Qt.Unchecked:
+                self.map_view.page().runJavaScript('hideTMC(' + str(row) + ')')
+            else:
+                self.map_view.page().runJavaScript('showTMC(' + str(row) + ')')
+
+    def handle_table_select_changed(self):
+        sel_row = self.tmc_table.currentRow()
+        if sel_row > 0:
+            self.button_tmc_up.setEnabled(True)
+        else:
+            self.button_tmc_up.setEnabled(False)
+        if 0 <= sel_row < self.tmc_table.rowCount() - 1:
+            self.button_tmc_down.setEnabled(True)
+        else:
+            self.button_tmc_down.setEnabled(False)
+        if self.map_exists:
+            if 0 <= sel_row < self.tmc_table.rowCount():
+                self.map_view.page().runJavaScript('highlightTMC(' + str(sel_row) + ')')
+            else:
+                self.button_tmc_down.setEnabled('highlightTMC(-1)')
+
+
+    def select_all_tmcs(self):
+        self.change_all_tmc_selection(True)
+
+    def deselect_all_tmcs(self):
+        self.change_all_tmc_selection(False)
+
+    def change_all_tmc_selection(self, isSelected):
+        if isSelected:
+            cs = Qt.Checked
+        else:
+            cs = Qt.Unchecked
+        if self.tmc_table is not None:
+            for ri in range(self.tmc_table.rowCount()):
+                self.tmc_table.item(ri, 0).setCheckState(cs)
+
+    def move_tmc_up(self):
+        sel_row = self.tmc_table.currentItem().row()
+        self.adjust_tmc_order(sel_row, -1)
+
+    def move_tmc_down(self):
+        sel_row = self.tmc_table.currentItem().row()
+        self.adjust_tmc_order(sel_row, 1)
+
+    def adjust_tmc_order(self, tmc_idx, pos_adj):
+        if self.tmc_table is not None:
+            self.tmc_table_init = True
+            self.tmc_order_adjusted = True
+            new_row_i = tmc_idx + pos_adj
+            for ci in range(self.tmc_table.columnCount()):
+                src_row_item = self.tmc_table.takeItem(tmc_idx, ci)
+                dest_row_item = self.tmc_table.takeItem(new_row_i, ci)
+                self.tmc_table.setItem(tmc_idx, ci, dest_row_item)
+                self.tmc_table.setItem(new_row_i, ci, src_row_item)
+            self.tmc_table_init = False
+            self.tmc_table.selectRow(new_row_i)
+
+    def handle_revert_to_master(self):
+        if self.indicator_revert_to_master:
+            response = QMessageBox.question(self,
+                                             'Revert to Master TMC List',
+                                             'This will load in the list of TMCs from the full "master" TMC identification file located in the '+
+                                             'data directory and override any ordering adjustment or inclusion/exclusion preferences.\n\n' +
+                                             'Proceed?',
+                                             QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Ok)
+            if response == QMessageBox.Ok:
+                self.tmc_file_name = self.project_dir_name + '/tmc_identification_master.csv'
+                self.tmc_preview = pd.read_csv(self.tmc_file_name)
+                self.setup_tmc_preview_table()
+                self.button_revert_to_master.setText('Revert to Saved Custom')
+                self.indicator_revert_to_master = False
+        else:
+            response = QMessageBox.question(self,
+                                            'Revert to Saved Custom TMC List',
+                                            'This will load in the list of TMCs from the saved "custom" TMC identification file located in the ' +
+                                            'data directory and apply any ordering adjustment or inclusion/exclusion preferences.\n\n' +
+                                            'Proceed?',
+                                            QMessageBox.Ok | QMessageBox.Cancel, QMessageBox.Ok)
+            if response == QMessageBox.Ok:
+                self.tmc_file_name = self.project_dir_name + '/tmc_identification.csv'
+                self.tmc_preview = pd.read_csv(self.tmc_file_name)
+                self.setup_tmc_preview_table()
+                self.button_revert_to_master.setText('Revert to Master TMC List')
+                self.indicator_revert_to_master = True
+        self.reset_map()
+
+
+class EditInfoDialog(QDialog):
+    def __init__(self, main_window):
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.project = main_window.project
+        self.setWindowTitle('Enter Project Information')
+
+        l = QFormLayout(self)
+        project_name_label = QLabel('Project Name: ')
+        project_name_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.project_name_input = QLineEdit(self.project.get_name())
+        analyst_label = QLabel('Enter Analyst Name: ')
+        analyst_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.analyst_input = QLineEdit(self.project.get_analyst())
+        agency_label = QLabel('Enter Agency: ')
+        agency_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.agency_input = QLineEdit(self.project.get_agency())
+        speed_limit_label = QLabel('Speed Limit (mph): ')
+        speed_limit_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.speed_limit_input = QLineEdit(str(self.project.speed_limit))
+        # speed_lower_label = QLabel('Lower Limit Speed (mph): ')
+        # speed_lower_label.setFont(QFont("Times", weight=QFont.Bold))
+        # self.speed_lower_input = QLineEdit(str(self.project.min_speed))
+        # speed_upper_label = QLabel('Upper Limit Speed (mph): ')
+        # speed_upper_label.setFont(QFont("Times", weight=QFont.Bold))
+        # self.speed_upper_input = QLineEdit(str(self.project.max_speed))
+        l.addRow(project_name_label, self.project_name_input)
+        l.addRow(analyst_label, self.analyst_input)
+        l.addRow(agency_label, self.agency_input)
+        l.addRow(speed_limit_label, self.speed_limit_input)
+        # l.addRow(speed_lower_label, self.speed_lower_input)
+        # l.addRow(speed_upper_label, self.speed_upper_input)
+        buttons = QDialogButtonBox(Qt.Horizontal, self)
+        buttons.addButton(QDialogButtonBox.Ok)
+        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.ok_press)
+        buttons.rejected.connect(self.close_press)
+        l.addWidget(buttons)
+
+    def ok_press(self):
+        proj_info_dict = dict()
+        proj_info_dict['name'] = self.project_name_input.text()
+        proj_info_dict['analyst'] = self.analyst_input.text()
+        proj_info_dict['agency'] = self.agency_input.text()
+        # proj_info_dict['state'] = self.state_input
+        # proj_info_dict['location'] = self.loc_input
+        proj_info_dict['speed_limit'] = float(self.speed_limit_input.text())
+        # proj_info_dict['speed_lower'] = float(self.speed_lower_input.text())
+        # proj_info_dict['speed_upper'] = float(self.speed_upper_input.text())
+
+        self.main_window.set_project_info(proj_info_dict, dlg=self)
+
+    def close_press(self):
+        self.close()
+
+
+class EditDQChartOptionsDialog(QDialog):
+    def __init__(self, main_window):
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.project = main_window.project
+        self.setWindowTitle('Edit Data Availability Chart Options')
+
+        l = QFormLayout(self)
+        title_label = QLabel('Specify the desired data quality thresholds:')
+        title_label.setFont(QFont("Times", weight=QFont.Bold))
+        upper_thresh_label = QLabel('Desired Threshold: ')
+        upper_thresh_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.upper_thresh_input = QSpinBox()
+        self.upper_thresh_input.setRange(0, 100)
+        self.upper_thresh_input.setValue(int(self.project.data_avail_threshold_upper * 100))
+        self.upper_thresh_input.setSingleStep(5)
+        self.upper_thresh_input.setSuffix(' %')
+        lower_thresh_label = QLabel('Warning Threshold: ')
+        lower_thresh_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.lower_thresh_input = QSpinBox()
+        self.lower_thresh_input.setRange(0, 100)
+        self.lower_thresh_input.setValue(int(self.project.data_avail_threshold_lower * 100))
+        self.lower_thresh_input.setSingleStep(5)
+        self.lower_thresh_input.setSuffix(' %')
+
+        l.addRow(title_label)
+        l.addRow(upper_thresh_label, self.upper_thresh_input)
+        l.addRow(lower_thresh_label, self.lower_thresh_input)
+        buttons = QDialogButtonBox(Qt.Horizontal, self)
+        buttons.addButton(QDialogButtonBox.Ok)
+        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.ok_press)
+        buttons.rejected.connect(self.close_press)
+        l.addWidget(buttons)
+
+    def ok_press(self):
+        if self.upper_thresh_input.value() >= self.lower_thresh_input.value():
+            self.project.data_avail_threshold_upper = self.upper_thresh_input.value() / 100.0
+            self.project.data_avail_threshold_lower = self.lower_thresh_input.value() / 100.0
+            self.main_window.dq_chart_panel.update_figures()
+            self.close()
+        else:
+            QMessageBox.warning(self,
+                                'Invalid Values',
+                                'The Desired Threshold must be greater than or equal to the Warning Threshold.',
+                                QMessageBox.Ok, QMessageBox.Ok)
+
+    def close_press(self):
+        self.close()
+
+
+class EditStage1ChartsDialog(QDialog):
+    def __init__(self, main_window):
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.project = main_window.project
+        self.setWindowTitle('Edit Stage 1.2 - 1.4 Chart Options')
+
+        l = QFormLayout(self)
+        speed_lower_label = QLabel('Lower Limit Speed (mph): ')
+        speed_lower_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.speed_lower_input = QSpinBox()
+        self.speed_lower_input.setRange(5, 100)
+        self.speed_lower_input.setValue(int(self.project.min_speed))
+        self.speed_lower_input.setSingleStep(5)
+        self.speed_lower_input.setSuffix(' mph')
+        speed_upper_label = QLabel('Upper Limit Speed (mph): ')
+        speed_upper_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.speed_upper_input = QSpinBox()
+        self.speed_upper_input.setRange(5, 100)
+        self.speed_upper_input.setValue(int(self.project.max_speed))
+        self.speed_upper_input.setSingleStep(5)
+        self.speed_upper_input.setSuffix(' mph')
+        l.addRow(speed_lower_label, self.speed_lower_input)
+        l.addRow(speed_upper_label, self.speed_upper_input)
+        buttons = QDialogButtonBox(Qt.Horizontal, self)
+        buttons.addButton(QDialogButtonBox.Ok)
+        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.ok_press)
+        buttons.rejected.connect(self.close_press)
+        l.addWidget(buttons)
+
+    def ok_press(self):
+        if self.speed_upper_input.value() > self.speed_lower_input.value():
+            self.project.max_speed = self.speed_upper_input.value()
+            self.project.min_speed = self.speed_lower_input.value()
+            self.main_window.redraw_charts()
+            self.close()
+        else:
+            QMessageBox.warning(self,
+                                'Invalid Values',
+                                'The upper limit speed must be greater than or equal to the lower limit.',
+                                QMessageBox.Ok, QMessageBox.Ok)
+
+    def close_press(self):
+        self.close()

@@ -27,45 +27,43 @@ class Ui_MainWindow(object):
         self.widget_2.setMaximumSize(QtCore.QSize(250, 16777215))
         self.widget_2.setObjectName("widget_2")
         self.verticalLayout_2 = QtWidgets.QVBoxLayout(self.widget_2)
-        self.verticalLayout_2.setContentsMargins(-1, 2, -1, -1)
         self.verticalLayout_2.setObjectName("verticalLayout_2")
         self.widget_4 = QtWidgets.QWidget(self.widget_2)
         self.widget_4.setObjectName("widget_4")
         self.horizontalLayout_4 = QtWidgets.QHBoxLayout(self.widget_4)
         self.horizontalLayout_4.setContentsMargins(0, 0, 0, 0)
         self.horizontalLayout_4.setObjectName("horizontalLayout_4")
-        self.verticalLayout_2.addWidget(self.widget_4)
-        self.widget_5 = QtWidgets.QWidget(self.widget_2)
+        self.widget_5 = QtWidgets.QWidget(self.widget_4)
         self.widget_5.setObjectName("widget_5")
-        self.formLayout_2 = QtWidgets.QFormLayout(self.widget_5)
-        self.formLayout_2.setContentsMargins(0, 0, 0, 0)
-        self.formLayout_2.setVerticalSpacing(5)
-        self.formLayout_2.setObjectName("formLayout_2")
+        self.verticalLayout_9 = QtWidgets.QVBoxLayout(self.widget_5)
+        self.verticalLayout_9.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_9.setObjectName("verticalLayout_9")
         self.label_3 = QtWidgets.QLabel(self.widget_5)
         self.label_3.setObjectName("label_3")
-        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.LabelRole, self.label_3)
+        self.verticalLayout_9.addWidget(self.label_3)
         self.label = QtWidgets.QLabel(self.widget_5)
         self.label.setObjectName("label")
-        self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.LabelRole, self.label)
+        self.verticalLayout_9.addWidget(self.label)
         self.label_5 = QtWidgets.QLabel(self.widget_5)
         self.label_5.setObjectName("label_5")
-        self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.LabelRole, self.label_5)
-        self.label_agency = QtWidgets.QLabel(self.widget_5)
-        self.label_agency.setObjectName("label_agency")
-        self.formLayout_2.setWidget(5, QtWidgets.QFormLayout.FieldRole, self.label_agency)
-        self.label_18 = QtWidgets.QLabel(self.widget_5)
-        self.label_18.setObjectName("label_18")
-        self.formLayout_2.setWidget(6, QtWidgets.QFormLayout.LabelRole, self.label_18)
-        self.label_19 = QtWidgets.QLabel(self.widget_5)
-        self.label_19.setObjectName("label_19")
-        self.formLayout_2.setWidget(6, QtWidgets.QFormLayout.FieldRole, self.label_19)
-        self.label_project_name = QtWidgets.QLabel(self.widget_5)
+        self.verticalLayout_9.addWidget(self.label_5)
+        self.horizontalLayout_4.addWidget(self.widget_5)
+        self.widget_6 = QtWidgets.QWidget(self.widget_4)
+        self.widget_6.setObjectName("widget_6")
+        self.verticalLayout_12 = QtWidgets.QVBoxLayout(self.widget_6)
+        self.verticalLayout_12.setContentsMargins(0, 0, 0, 0)
+        self.verticalLayout_12.setObjectName("verticalLayout_12")
+        self.label_project_name = QtWidgets.QLabel(self.widget_6)
         self.label_project_name.setObjectName("label_project_name")
-        self.formLayout_2.setWidget(0, QtWidgets.QFormLayout.FieldRole, self.label_project_name)
-        self.label_analyst = QtWidgets.QLabel(self.widget_5)
+        self.verticalLayout_12.addWidget(self.label_project_name)
+        self.label_analyst = QtWidgets.QLabel(self.widget_6)
         self.label_analyst.setObjectName("label_analyst")
-        self.formLayout_2.setWidget(3, QtWidgets.QFormLayout.FieldRole, self.label_analyst)
-        self.verticalLayout_2.addWidget(self.widget_5)
+        self.verticalLayout_12.addWidget(self.label_analyst)
+        self.label_agency = QtWidgets.QLabel(self.widget_6)
+        self.label_agency.setObjectName("label_agency")
+        self.verticalLayout_12.addWidget(self.label_agency)
+        self.horizontalLayout_4.addWidget(self.widget_6)
+        self.verticalLayout_2.addWidget(self.widget_4)
         self.toolBox = QtWidgets.QToolBox(self.widget_2)
         self.toolBox.setEnabled(True)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Preferred, QtWidgets.QSizePolicy.Preferred)
@@ -108,15 +106,12 @@ class Ui_MainWindow(object):
         self.toolBox.setObjectName("toolBox")
         self.page_15 = QtWidgets.QWidget()
         self.page_15.setEnabled(True)
-        self.page_15.setGeometry(QtCore.QRect(0, 0, 218, 229))
+        self.page_15.setGeometry(QtCore.QRect(0, 0, 218, 266))
         self.page_15.setStyleSheet("")
         self.page_15.setObjectName("page_15")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.page_15)
         self.verticalLayout.setContentsMargins(1, 1, 1, 1)
         self.verticalLayout.setObjectName("verticalLayout")
-        self.label_17 = QtWidgets.QLabel(self.page_15)
-        self.label_17.setObjectName("label_17")
-        self.verticalLayout.addWidget(self.label_17)
         self.treeWidget_3 = QtWidgets.QTreeWidget(self.page_15)
         self.treeWidget_3.setObjectName("treeWidget_3")
         self.verticalLayout.addWidget(self.treeWidget_3)
@@ -199,7 +194,7 @@ class Ui_MainWindow(object):
         self.toolBox.addItem(self.page_16, "")
         self.page_19 = QtWidgets.QWidget()
         self.page_19.setEnabled(True)
-        self.page_19.setGeometry(QtCore.QRect(0, 0, 197, 187))
+        self.page_19.setGeometry(QtCore.QRect(0, 0, 218, 266))
         self.page_19.setObjectName("page_19")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.page_19)
         self.verticalLayout_6.setContentsMargins(1, 1, 1, 1)
@@ -383,7 +378,7 @@ class Ui_MainWindow(object):
         self.toolBox.addItem(self.page_17, "")
         self.page_18 = QtWidgets.QWidget()
         self.page_18.setEnabled(True)
-        self.page_18.setGeometry(QtCore.QRect(0, 0, 217, 325))
+        self.page_18.setGeometry(QtCore.QRect(-20, -36, 217, 281))
         self.page_18.setObjectName("page_18")
         self.verticalLayout_5 = QtWidgets.QVBoxLayout(self.page_18)
         self.verticalLayout_5.setContentsMargins(1, 1, 1, 1)
@@ -422,7 +417,7 @@ class Ui_MainWindow(object):
         self.toolBox.addItem(self.page_18, "")
         self.page_20 = QtWidgets.QWidget()
         self.page_20.setEnabled(True)
-        self.page_20.setGeometry(QtCore.QRect(0, 0, 218, 236))
+        self.page_20.setGeometry(QtCore.QRect(0, 0, 218, 266))
         self.page_20.setObjectName("page_20")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.page_20)
         self.verticalLayout_8.setContentsMargins(7, 1, 1, 1)
@@ -430,24 +425,24 @@ class Ui_MainWindow(object):
         self.treeWidget_2 = QtWidgets.QTreeWidget(self.page_20)
         self.treeWidget_2.setObjectName("treeWidget_2")
         self.verticalLayout_8.addWidget(self.treeWidget_2)
-        self.widget_7 = QtWidgets.QWidget(self.page_20)
-        self.widget_7.setObjectName("widget_7")
-        self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.widget_7)
-        self.horizontalLayout_5.setObjectName("horizontalLayout_5")
-        self.label_4 = QtWidgets.QLabel(self.widget_7)
-        self.label_4.setObjectName("label_4")
-        self.horizontalLayout_5.addWidget(self.label_4)
-        self.label_6 = QtWidgets.QLabel(self.widget_7)
-        self.label_6.setObjectName("label_6")
-        self.horizontalLayout_5.addWidget(self.label_6)
-        self.verticalLayout_8.addWidget(self.widget_7)
-        self.pushButton_tmc_subset = QtWidgets.QPushButton(self.page_20)
-        self.pushButton_tmc_subset.setObjectName("pushButton_tmc_subset")
-        self.verticalLayout_8.addWidget(self.pushButton_tmc_subset)
+        # self.widget_7 = QtWidgets.QWidget(self.page_20)
+        # self.widget_7.setObjectName("widget_7")
+        # self.horizontalLayout_5 = QtWidgets.QHBoxLayout(self.widget_7)
+        # self.horizontalLayout_5.setObjectName("horizontalLayout_5")
+        # self.label_4 = QtWidgets.QLabel(self.widget_7)
+        # self.label_4.setObjectName("label_4")
+        # self.horizontalLayout_5.addWidget(self.label_4)
+        # self.label_6 = QtWidgets.QLabel(self.widget_7)
+        # self.label_6.setObjectName("label_6")
+        # self.horizontalLayout_5.addWidget(self.label_6)
+        # self.verticalLayout_8.addWidget(self.widget_7)
+        # self.pushButton_tmc_subset = QtWidgets.QPushButton(self.page_20)
+        # self.pushButton_tmc_subset.setObjectName("pushButton_tmc_subset")
+        # self.verticalLayout_8.addWidget(self.pushButton_tmc_subset)
         self.toolBox.addItem(self.page_20, "")
         self.page_21 = QtWidgets.QWidget()
         self.page_21.setEnabled(True)
-        self.page_21.setGeometry(QtCore.QRect(0, 0, 218, 85))
+        self.page_21.setGeometry(QtCore.QRect(0, 0, 218, 266))
         self.page_21.setObjectName("page_21")
         self.formLayout = QtWidgets.QFormLayout(self.page_21)
         self.formLayout.setContentsMargins(7, 1, 1, 1)
@@ -496,37 +491,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(5)
         sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
         self.tabWidget.setSizePolicy(sizePolicy)
-        self.tabWidget.setStyleSheet("QTabBar {\n"
-"    qproperty-drawBase: 0;\n"
-"    border-radius: 3px;\n"
-"}\n"
-"\n"
-"QTabBar:focus {\n"
-"    border: 0px transparent black;\n"
-"}\n"
-"QTabBar::tab:top {\n"
-"    color: #eff0f1;\n"
-"    border: 1px solid #76797C;\n"
-"    border-bottom: 1px transparent black;\n"
-"    background-color: #54575B;\n"
-"    padding: 5px;\n"
-"    min-width: 50px;\n"
-"    border-top-left-radius: 2px;\n"
-"    border-top-right-radius: 2px;\n"
-"}\n"
-"\n"
-"QTabBar::tab:top:selected {\n"
-"    color: #eff0f1;\n"
-"    background-color: #31363b;\n"
-"    border: 1px solid #76797C;\n"
-"    border-bottom: 5px solid #3daee9;\n"
-"    border-top-left-radius: 2px;\n"
-"    border-top-right-radius: 2px;\n"
-"}\n"
-"\n"
-"QTabBar::tab:top:!selected:hover {\n"
-"    background-color: #3daee9;\n"
-"}\n")
+        self.tabWidget.setStyleSheet("")
         self.tabWidget.setObjectName("tabWidget")
         self.tab_4 = QtWidgets.QWidget()
         self.tab_4.setStyleSheet("")
@@ -541,7 +506,7 @@ class Ui_MainWindow(object):
         self.label_2 = QtWidgets.QLabel(self.widget_11)
         self.label_2.setMaximumSize(QtCore.QSize(1000, 650))
         self.label_2.setText("")
-        self.label_2.setPixmap(QtGui.QPixmap("18135_splash_chart.jpg"))  # ../NPMRDS_Data_Tool/
+        self.label_2.setPixmap(QtGui.QPixmap("18135_splash_chart.jpg")) # ../NPMRDS_Data_Tool/
         self.label_2.setScaledContents(True)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
@@ -562,7 +527,6 @@ class Ui_MainWindow(object):
         self.pushButton_new_proj.setObjectName("pushButton_new_proj")
         self.horizontalLayout_2.addWidget(self.pushButton_new_proj)
         self.pushButton_open_proj = QtWidgets.QPushButton(self.widget)
-        self.pushButton_open_proj.setEnabled(False)
         font = QtGui.QFont()
         font.setPointSize(16)
         self.pushButton_open_proj.setFont(font)
@@ -590,86 +554,6 @@ class Ui_MainWindow(object):
         self.menubar = QtWidgets.QMenuBar(MainWindow)
         self.menubar.setGeometry(QtCore.QRect(0, 0, 1329, 26))
         self.menubar.setObjectName("menubar")
-        self.menubar.setStyleSheet("QWidget {\n"
-"    color: #eff0f1;\n"
-"    background-color: #31363b;\n"
-"    selection-background-color: #3daee9;\n"
-"    selection-color: #eff0f1;\n"
-"    background-clip: border;\n"
-"    border-image: none;\n"
-"    border: 0px transparent black;\n"
-"    outline: 0;\n"
-"}\n"
-"\n"
-"QWidget:item:hover {\n"
-"    background-color: #18465d;\n"
-"    color: #eff0f1;\n"
-"}\n"
-"\n"
-"QWidget:item:selected {\n"
-"    background-color: #18465d;\n"
-"}\n"
-"QWidget:disabled {\n"
-"    color: #454545;\n"
-"    background-color: #31363b;\n"
-"}\n"
-"QMenuBar {\n"
-"    background-color: #31363b;\n"
-"    color: #eff0f1;\n"
-"}\n"
-"\n"
-"QMenuBar::item {\n"
-"    background: transparent;\n"
-"}\n"
-"\n"
-"QMenuBar::item:selected {\n"
-"    background: transparent;\n"
-"    border: 1px solid #76797C;\n"
-"}\n"
-"\n"
-"QMenuBar::item:pressed {\n"
-"    border: 1px solid #76797C;\n"
-"    background-color: #3daee9;\n"
-"    color: #eff0f1;\n"
-"    margin-bottom: -1px;\n"
-"    padding-bottom: 1px;\n"
-"}\n"
-"\n"
-"QMenu {\n"
-"    border: 1px solid #76797C;\n"
-"    color: #eff0f1;\n"
-"    margin: 2px;\n"
-"}\n"
-"\n"
-"QMenu::icon {\n"
-"    margin: 5px;\n"
-"}\n"
-"\n"
-"QMenu::item {\n"
-"    background-color: #31363b;\n"
-"    padding: 5px 30px 5px 30px;\n"
-"    border: 1px solid transparent;\n"
-"    /* reserve space for selection border */\n"
-"}\n"
-"\n"
-"QMenu::item:selected {\n"
-"    color: #eff0f1;\n"
-"}\n"
-"QMenu::item:hover {\n"
-"    color: #eff0f1;\n"
-"}\n"
-"\n"
-"QMenu::separator {\n"
-"    height: 2px;\n"
-"    background: lightblue;\n"
-"    margin-left: 10px;\n"
-"    margin-right: 5px;\n"
-"}\n"
-"\n"
-"QMenu::indicator {\n"
-"    width: 18px;\n"
-"    height: 18px;\n"
-"}")
         self.menuAnalyze = QtWidgets.QMenu(self.menubar)
         self.menuAnalyze.setObjectName("menuAnalyze")
         self.menuChartOptions = QtWidgets.QMenu(self.menubar)
@@ -709,16 +593,13 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Project:</span></p></body></html>"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Analyst:</span></p></body></html>"))
         self.label_5.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Agency:</span></p></body></html>"))
-        self.label_agency.setText(_translate("MainWindow", "KAI"))
-        self.label_18.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Facility:</span></p></body></html>"))
-        self.label_19.setText(_translate("MainWindow", "--"))
         self.label_project_name.setText(_translate("MainWindow", "--"))
         self.label_analyst.setText(_translate("MainWindow", "--"))
-        self.label_17.setText(_translate("MainWindow", "<html><head/><body><p>Data quality assesment showing<br/>percent of possible sample available<br/>in the imported dataset.</p><p> Explore by direction or TMC</p></body></html>"))
+        self.label_agency.setText(_translate("MainWindow", "--"))
         self.treeWidget_3.headerItem().setText(0, _translate("MainWindow", "Project"))
         self.pushButton_first_chart.setText(_translate("MainWindow", "Proceed to Step 1.2"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_15), _translate("MainWindow", "Stage 1.1 Data Availability"))
-        self.label_7.setText(_translate("MainWindow", "AM Peak Hours"))
+        self.label_7.setText(_translate("MainWindow", "Am Peak Hours"))
         self.label_8.setText(_translate("MainWindow", "Midday Peak Hours"))
         self.label_9.setText(_translate("MainWindow", "PM Peak Hours"))
         self.pushButton_sec_chart.setText(_translate("MainWindow", "Proceed to Step 1.3"))
@@ -746,25 +627,25 @@ class Ui_MainWindow(object):
         self.check_fri.setText(_translate("MainWindow", "Friday"))
         self.check_tue.setText(_translate("MainWindow", "Tuesday"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_17), _translate("MainWindow", "Stage 1.4 Trend Analysis"))
-        self.label_12.setText(_translate("MainWindow", "<html><head/><body><p>Please select two date ranges for<br/>Before/After Analysis:</p><p>Start Date:</p></body></html>"))
-        self.label_13.setText(_translate("MainWindow", "End Date:"))
+        self.label_12.setText(_translate("MainWindow", "Start Date"))
+        self.label_13.setText(_translate("MainWindow", "End Date"))
         self.add_range_button.setText(_translate("MainWindow", "Add Range"))
         self.del_range_button.setText(_translate("MainWindow", "Delete Range"))
         self.treeWidget.headerItem().setText(0, _translate("MainWindow", "Date Range"))
         self.create_charts_button.setText(_translate("MainWindow", "Proceed To Stage 2"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_18), _translate("MainWindow", "Stage 1.5 Set Analysis"))
-        self.treeWidget_2.headerItem().setText(0, _translate("MainWindow", "#) TMC Code"))
+        self.treeWidget_2.headerItem().setText(0, _translate("MainWindow", "ID"))
         self.treeWidget_2.headerItem().setText(1, _translate("MainWindow", "Name"))
         self.treeWidget_2.headerItem().setText(2, _translate("MainWindow", "Dir"))
         self.treeWidget_2.headerItem().setText(3, _translate("MainWindow", "TMC Mi"))
         self.treeWidget_2.headerItem().setText(4, _translate("MainWindow", "Total Mi"))
-        self.label_4.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Selected Length:</span></p></body></html>"))
-        self.label_6.setText(_translate("MainWindow", "0.0 miles"))
-        self.pushButton_tmc_subset.setText(_translate("MainWindow", "Update"))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_20), _translate("MainWindow", "Stage 2: Comparison Analysis"))
-        self.pushButton_5.setText(_translate("MainWindow", "Summary Report"))
-        self.pushButton_6.setText(_translate("MainWindow", "Detailed Report"))
-        self.toolBox.setItemText(self.toolBox.indexOf(self.page_21), _translate("MainWindow", "Stage 3: Reports"))
+        # self.label_4.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Selected Length:</span></p></body></html>"))
+        # self.label_6.setText(_translate("MainWindow", "0.0 miles"))
+        # self.pushButton_tmc_subset.setText(_translate("MainWindow", "Update"))
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_20), _translate("MainWindow", "Stage 2"))
+        self.pushButton_5.setText(_translate("MainWindow", "Summary Table"))
+        self.pushButton_6.setText(_translate("MainWindow", "Summary Report"))
+        self.toolBox.setItemText(self.toolBox.indexOf(self.page_21), _translate("MainWindow", "Reports"))
         self.pushButton_new_proj.setText(_translate("MainWindow", "Create New"))
         self.pushButton_open_proj.setText(_translate("MainWindow", "Open Existing"))
         self.pushButton_exit.setText(_translate("MainWindow", "Exit"))
@@ -779,5 +660,4 @@ class Ui_MainWindow(object):
         self.actionHelp.setText(_translate("MainWindow", "Help"))
         self.actionAbout.setText(_translate("MainWindow", "About"))
 
-# from PyQt5 import QtWebKitWidgets
 from PyQt5 import QtWebEngineWidgets

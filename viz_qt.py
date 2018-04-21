@@ -9,6 +9,7 @@ import datetime
 import pandas as pd
 import time
 from numpy import mean as np_mean
+from numpy import zeros
 
 
 class ProgressHelper:
@@ -200,10 +201,19 @@ class LoadProjectQT(QDialog):
 def load_project_data(project, progress_tracker=None):
 
     tmc = pd.read_csv(project.get_tmc_file_name())
+    # Code below ensures TMC list is adjusted even when the changes were not saved to a custom file
+    adj_tmc_list = project.get_tmc_list_adj()
+    if adj_tmc_list is not None and len(adj_tmc_list) > 0:
+        tmc = tmc[tmc[DataHelper.Project.ID_TMC_CODE].isin(adj_tmc_list)]
+        tmc.set_index(DataHelper.Project.ID_TMC_CODE, inplace=True)
+        tmc = tmc.reindex(adj_tmc_list)
+        tmc.reset_index(level=0, inplace=True)
 
     # Reading and dropping all null values
     df = pd.read_csv(project.get_data_file_name())  # , parse_dates=[DataHelper.Project.ID_DATA_TIMESTAMP]
     df = df[df[DataHelper.Project.ID_DATA_SPEED].notnull()]  # df.speed.notnull()
+    if adj_tmc_list is not None and len(adj_tmc_list) > 0:
+        df = df[df[DataHelper.Project.ID_DATA_TMC].isin(tmc[DataHelper.Project.ID_TMC_CODE].tolist())]
 
     if progress_tracker is not None:
         progress_tracker.bar.setTextVisible(True)
@@ -276,7 +286,7 @@ class LoadDataQualityQT(QDialog):
         self.initUI()
 
     def initUI(self):
-        self.setWindowTitle('Analyzing data...')
+        self.setWindowTitle('Determining Data Availability...')
         self.progress = QProgressBar(self)
         self.progress_helper.set_bar(self.progress)
         self.progress.setGeometry(0, 0, 300, 25)
@@ -411,11 +421,19 @@ def compute_data_quality2(data, ap_per_hour, tmc=None, progress_tracker=None):
         progress += 1
         progress_tracker.emitter.emit(progress)
         chart_data_sub = []
-        chart_data_sub.append(sp_data[sp_data['weekday'].isin([0, 1, 2, 3, 4])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
+        wkdy_df = sp_data[sp_data['weekday'].isin([0, 1, 2, 3, 4])].groupby(['Year', 'Month']).agg([np_mean])
+        if wkdy_df.empty:
+            chart_data_sub.append(zeros((0,)))
+        else:
+            chart_data_sub.append(wkdy_df['data_pct'].values)
         chart_data_sub[0].resize((chart_data_sub[0].shape[0],))
         progress += 1
         progress_tracker.emitter.emit(progress)
-        chart_data_sub.append(sp_data[sp_data['weekday'].isin([5, 6])].groupby(['Year', 'Month']).agg([np_mean])['data_pct'].values)
+        wknd_df = sp_data[sp_data['weekday'].isin([5, 6])].groupby(['Year', 'Month']).agg([np_mean])
+        if wknd_df.empty:
+            chart_data_sub.append(zeros((0,)))
+        else:
+            chart_data_sub.append(wknd_df['data_pct'].values)
         chart_data_sub[1].resize((chart_data_sub[1].shape[0],))
         progress += 1
         progress_tracker.emitter.emit(progress)
@@ -535,6 +553,34 @@ class SummaryLoadThread(QThread):
         self.summary_data._am_95 = summary_stats[4]
         self.summary_data._md_95 = summary_stats[5]
         self.summary_data._pm_95 = summary_stats[6]
+        # TMC Level LoTTR
+        am_lottr_comp = summary_stats[7]
+        md_lottr_comp = summary_stats[8]
+        pm_lottr_comp = summary_stats[9]
+        we_lottr_comp = summary_stats[10]
+        print(we_lottr_comp)
+        self.summary_data.set_tmc_lottr_am(am_lottr_comp[0] / am_lottr_comp[2], 0)
+        self.summary_data.set_tmc_lottr_am(am_lottr_comp[1] / am_lottr_comp[3], 1)
+        self.summary_data.set_tmc_lottr_pm(pm_lottr_comp[0] / pm_lottr_comp[2], 0)
+        self.summary_data.set_tmc_lottr_pm(pm_lottr_comp[1] / pm_lottr_comp[3], 1)
+        self.summary_data.set_tmc_lottr_md_wkdy(md_lottr_comp[0] / md_lottr_comp[2], 0)
+        self.summary_data.set_tmc_lottr_md_wkdy(md_lottr_comp[1] / md_lottr_comp[3], 1)
+        self.summary_data.set_tmc_lottr_md_wknd(we_lottr_comp[0] / we_lottr_comp[2], 0)
+        self.summary_data.set_tmc_lottr_md_wknd(we_lottr_comp[1] / we_lottr_comp[3], 1)
+        # Corridor Level LoTTR
+        cor_am_lottr = summary_stats[11]
+        cor_md_lottr = summary_stats[12]
+        cor_pm_lottr = summary_stats[13]
+        cor_we_lottr = summary_stats[14]
+        self.summary_data.set_lottr_dict_am(cor_am_lottr[0], 0)
+        self.summary_data.set_lottr_dict_am(cor_am_lottr[1], 1)
+        self.summary_data.set_lottr_dict_pm(cor_pm_lottr[0], 0)
+        self.summary_data.set_lottr_dict_pm(cor_pm_lottr[1], 1)
+        self.summary_data.set_lottr_dict_md_wkdy(cor_md_lottr[0], 0)
+        self.summary_data.set_lottr_dict_md_wkdy(cor_md_lottr[1], 1)
+        self.summary_data.set_lottr_dict_md_wknd(cor_we_lottr[0], 0)
+        self.summary_data.set_lottr_dict_md_wknd(cor_we_lottr[1], 1)
+
         self.chart_panel.project.set_summary_data(self.summary_data)
         self.countChanged.emit(-1)
 

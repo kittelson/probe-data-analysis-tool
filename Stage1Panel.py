@@ -57,7 +57,10 @@ class Stage1GridPanel(QtWidgets.QWidget):
         # Filter Components
         if self.panel_type == TYPE_S1_3:
             self.cb_tmc_select = self.project.main_window.ui.cb_tmc_select
-            self.cb_tmc_select.addItems(self.project.get_tmc(as_list=True))
+            self.cb_tmc_select.clear()
+            tmc_list = self.project.get_tmc(as_list=True)
+            tmc_list = ['#' + str(index + 1) + ') ' + tmc_code for index, tmc_code in zip(range(len(tmc_list)), tmc_list)]
+            self.cb_tmc_select.addItems(tmc_list)
             self.cb_peak_hour_start = self.project.main_window.ui.cb_stack_start
             self.cb_peak_hour_end = self.project.main_window.ui.cb_stack_end
             midnight = datetime(2000, 1, 1, 0, 0, 0)
@@ -81,7 +84,10 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.connect_time_combo_box()
         else:
             self.cb_tmc_select = self.project.main_window.ui.cb_tmc_select_trend
-            self.cb_tmc_select.addItems(self.project.get_tmc(as_list=True))
+            self.cb_tmc_select.clear()
+            tmc_list = self.project.get_tmc(as_list=True)
+            tmc_list = ['#' + str(index + 1) + ') ' + tmc_code for index, tmc_code in zip(range(len(tmc_list)), tmc_list)]
+            self.cb_tmc_select.addItems(tmc_list)
             self.cb_peak_hour_start = None
             self.cb_peak_hour_end = None
             self.check_am = self.project.main_window.ui.check_am
@@ -184,30 +190,32 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.check_sun.setDisabled(True)
 
     def check_weekday(self):
-        self.no_compute = True
-        weekday_checked = self.check_wkdy.isChecked()
-        if self.available_days.count(0) > 0:
-            self.check_mon.setChecked(weekday_checked)
-        if self.available_days.count(1) > 0:
-            self.check_tue.setChecked(weekday_checked)
-        if self.available_days.count(2) > 0:
-            self.check_wed.setChecked(weekday_checked)
-        if self.available_days.count(3) > 0:
-            self.check_thu.setChecked(weekday_checked)
-        if self.available_days.count(4) > 0:
-            self.check_fri.setChecked(weekday_checked)
-        self.no_compute = False
-        self.check_func()
+        if not (self.init_mode or self.no_compute):
+            self.no_compute = True
+            weekday_checked = self.check_wkdy.isChecked()
+            if self.available_days.count(0) > 0:
+                self.check_mon.setChecked(weekday_checked)
+            if self.available_days.count(1) > 0:
+                self.check_tue.setChecked(weekday_checked)
+            if self.available_days.count(2) > 0:
+                self.check_wed.setChecked(weekday_checked)
+            if self.available_days.count(3) > 0:
+                self.check_thu.setChecked(weekday_checked)
+            if self.available_days.count(4) > 0:
+                self.check_fri.setChecked(weekday_checked)
+            self.no_compute = False
+            self.check_func()
 
     def check_weekend(self):
-        self.no_compute = True
-        weekend_checked = self.check_wknd.isChecked()
-        if self.available_days.count(5) > 0:
-            self.check_sat.setChecked(weekend_checked)
-        if self.available_days.count(6) > 0:
-            self.check_sun.setChecked(weekend_checked)
-        self.no_compute = False
-        self.check_func()
+        if not (self.init_mode or self.no_compute):
+            self.no_compute = True
+            weekend_checked = self.check_wknd.isChecked()
+            if self.available_days.count(5) > 0:
+                self.check_sat.setChecked(weekend_checked)
+            if self.available_days.count(6) > 0:
+                self.check_sun.setChecked(weekend_checked)
+            self.no_compute = False
+            self.check_func()
 
     def check_func(self):
         if not (self.init_mode or self.no_compute):
@@ -263,22 +271,27 @@ class Stage1GridPanel(QtWidgets.QWidget):
         self.cb_peak_hour_end.currentIndexChanged.connect(self.options_updated)
 
     def update_plot_data(self, **kwargs):
-        full_df = self.dfs[0]
         dir_tmc = self.project.get_tmc()
-        dir_df = full_df[full_df[DataHelper.Project.ID_DATA_TMC].isin(dir_tmc[DataHelper.Project.ID_TMC_CODE])]
-        filtered_df = dir_df[dir_df['weekday'].isin(self.plot_days)]
         selected_tmc = self.cb_tmc_select.currentIndex()
+        old_sel_tmc = self.selected_tmc_name
         self.selected_tmc_name = dir_tmc[DataHelper.Project.ID_TMC_CODE][selected_tmc]
-        tmc_df = filtered_df[filtered_df[DataHelper.Project.ID_DATA_TMC].isin([self.selected_tmc_name])]
         self.selected_tmc_len = dir_tmc[DataHelper.Project.ID_TMC_LEN][selected_tmc]
+        if self.selected_tmc_name != old_sel_tmc and len(self.plot_days) == 0:
+            self.plot_days = [0, 1, 2, 3, 4]
+            self.no_compute = True
+            self.check_wkdy.setChecked(True)
+            self.check_mon.setChecked(True)
+            self.check_tue.setChecked(True)
+            self.check_wed.setChecked(True)
+            self.check_thu.setChecked(True)
+            self.check_fri.setChecked(True)
+            self.no_compute = False
 
         if self.panel_type == TYPE_S1_3:
             self.ap_start = self.cb_peak_hour_start.currentIndex()
             self.ap_end = (self.cb_peak_hour_end.currentIndex() + 1)
-            print(self.ap_start)
-            print(self.ap_end)
             func_list = [None,
-                         lambda: create_pct_congested_sp(tmc_df, self.speed_bins, aps=[self.ap_start, self.ap_end]),  # filtered_df
+                         lambda: create_pct_congested_sp(self.dfs[0], [self.selected_tmc_name], self.speed_bins, aps=[self.ap_start, self.ap_end]),
                          None,
                          lambda: create_speed_heatmap(self.dfs[0], dir_tmc[DataHelper.Project.ID_TMC_CODE][selected_tmc], stacked=self.is_stack),
                          None]
@@ -286,7 +299,7 @@ class Stage1GridPanel(QtWidgets.QWidget):
             am_aps = [self.am_ap_start, self.am_ap_end]
             pm_aps = [self.pm_ap_start, self.pm_ap_end]
             md_aps = [self.md_ap_start, self.md_ap_end]
-            func_list = [lambda: create_trend_analysis(tmc_df, am_aps, pm_aps, md_aps),
+            func_list = [lambda: create_trend_analysis(self.dfs[0], am_aps, pm_aps, md_aps, tmc_list=[self.selected_tmc_name], day_list=self.plot_days),
                          None,
                          None,
                          None,
@@ -315,9 +328,10 @@ class Stage1GridPanel(QtWidgets.QWidget):
             self.chart21.draw()
 
     def options_updated(self):
-        self.options = self.project.chart_panel1_opts
-        self.speed_bins = self.options.speed_bins.copy()
-        self.update_plot_data()
+        if self.cb_tmc_select is not None and self.cb_tmc_select.currentIndex() >= 0:
+            self.options = self.project.chart_panel1_opts
+            self.speed_bins = self.options.speed_bins.copy()
+            self.update_plot_data()
 
     def update_chart_visibility(self):
         self.chart11.setVisible(True)

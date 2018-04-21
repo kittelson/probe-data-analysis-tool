@@ -1,0 +1,1 @@
+powershell "$s=(New-Object -COM WScript.Shell).CreateShortcut('PDAT.lnk');$s.TargetPath='fhwa_spl\PDAT.exe';$s.Save()"

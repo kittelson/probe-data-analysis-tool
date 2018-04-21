@@ -15,6 +15,7 @@ class DataQualityGridPanel(QtWidgets.QWidget):
         self.f_dq_tmc = create_dq_tmc
         self.f_dq_study_period = create_dq_study_period
 
+        self.chart_title_str = 'All TMCs'
         self.chart11 = None
         self.chart21 = None
         self.chart12 = None
@@ -67,7 +68,8 @@ class DataQualityGridPanel(QtWidgets.QWidget):
             # self.chart21.fire_animation()
             # self.chart22.fire_animation()
 
-    def update_all(self, tmc_id=None):
+    def update_all(self, tmc_id=None, chart_title=None):
+        self.chart_title_str = chart_title
         self.update_plot_data(tmc_id=tmc_id)
         # self.chart11.fire_animation()
         # self.chart12.fire_animation()
