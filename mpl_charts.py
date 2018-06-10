@@ -139,8 +139,8 @@ class MplChart(FigureCanvas):
 
         self.context_menu = QtWidgets.QMenu(self)
 
-        self.edit_dq_thresholds_action = QtWidgets.QAction('Edit Thresholds')
-        self.edit_dq_thresholds_action.setToolTip('Edit the threshold lines on the Data Availability Charts')
+        self.edit_dq_thresholds_action = QtWidgets.QAction('Show/Edit Data Thresholds')
+        self.edit_dq_thresholds_action.setToolTip('Show/Edit the threshold lines on the Data Availability Charts')
         self.edit_dq_thresholds_action.triggered.connect(self.project.main_window.edit_dq_thresholds)
         if self.fig_type == FIG_DQ_WKDY or self.fig_type == FIG_DQ_TMC or self.fig_type == FIG_DQ_WKDY:
             self.context_menu.addAction(self.edit_dq_thresholds_action)
@@ -424,7 +424,6 @@ class MplChart(FigureCanvas):
 
         date_ranges = self.panel.project.get_date_ranges()
         if self.panel.show_before_after and date_ranges is not None and len(date_ranges) > 1:
-            print('here')
             first_date = self.panel.project.database.get_first_date(as_datetime=True)
             first_date = QtCore.QDate(first_date.year, first_date.month, first_date.day)
             last_date = self.panel.project.database.get_last_date(as_datetime=True)
@@ -941,18 +940,18 @@ class MplChart(FigureCanvas):
     def compute_speed_tmc_heatmap(self):
         peak_idx = 4
         if self.show_am:
-            hour_str = convert_xval_to_time(self.panel.ap_start1, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end1,
+            hour_str = convert_xval_to_time(self.project.p1_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.project.p1_ap_end,
                                                                                                                                   None,
                                                                                                                                   self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[4]
         elif self.show_mid:
-            hour_str = convert_xval_to_time(self.panel.ap_start2, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end2,
+            hour_str = convert_xval_to_time(self.project.p2_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.project.p2_ap_end,
                                                                                                                                   None,
                                                                                                                                   self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[5]
             peak_idx = 5
         else:
-            hour_str = convert_xval_to_time(self.panel.ap_start3, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.panel.ap_end3,
+            hour_str = convert_xval_to_time(self.project.p3_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(self.project.p3_ap_end,
                                                                                                                                   None,
                                                                                                                                   self.panel.project.data_res)
             imshow_data = self.panel.plot_dfs[6]
@@ -1056,16 +1055,16 @@ class MplChart(FigureCanvas):
                                                                     'CSV files (*.csv)')
         if f_name:
             if self.show_am:
-                hour_str = convert_xval_to_time(self.panel.ap_start1, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
-                    self.panel.ap_end1, None, self.panel.project.data_res)
+                hour_str = convert_xval_to_time(self.project.p1_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.project.p1_ap_end, None, self.panel.project.data_res)
                 imshow_data = self.panel.plot_dfs[4]
             elif self.show_mid:
-                hour_str = convert_xval_to_time(self.panel.ap_start2, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
-                    self.panel.ap_end2, None, self.panel.project.data_res)
+                hour_str = convert_xval_to_time(self.project.p2_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.project.p2_ap_end, None, self.panel.project.data_res)
                 imshow_data = self.panel.plot_dfs[5]
             else:
-                hour_str = convert_xval_to_time(self.panel.ap_start3, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
-                    self.panel.ap_end3, None, self.panel.project.data_res)
+                hour_str = convert_xval_to_time(self.project.p2_ap_start, None, self.panel.project.data_res) + '-' + convert_xval_to_time(
+                    self.project.p3_ap_end, None, self.panel.project.data_res)
                 imshow_data = self.panel.plot_dfs[6]
             num_tmc, num_days = imshow_data.shape
             if file_filter.count('h5') > 0:
@@ -1547,8 +1546,9 @@ class MplChart(FigureCanvas):
         threshold_lower = self.project.data_avail_threshold_lower
         upper_label = str(int(threshold_upper * 100)) + '%'
         lower_label = str(int(threshold_lower * 100)) + '%'
-        self.axes.plot([el for el in range(len(y_values))], [threshold_upper for el in range(len(y_values))], label=upper_label, c='green', ls=':')
-        self.axes.plot([el for el in range(len(y_values))], [threshold_lower for el in range(len(y_values))], label=lower_label, c='firebrick', ls=':')
+        if self.project.show_avail_threshold:
+            self.axes.plot([el for el in range(len(y_values))], [threshold_upper for el in range(len(y_values))], label=upper_label, c='green', ls=':')
+            self.axes.plot([el for el in range(len(y_values))], [threshold_lower for el in range(len(y_values))], label=lower_label, c='firebrick', ls=':')
         self.axes.legend()
         self.wkdy_bars = self.axes.bar([el for el in range(data.shape[0])], y_values)
         self.axes.spines['top'].set_visible(False)
@@ -1653,8 +1653,9 @@ class MplChart(FigureCanvas):
         threshold_lower = self.project.data_avail_threshold_lower
         upper_label = str(int(threshold_upper * 100)) + '%'
         lower_label = str(int(threshold_lower * 100)) + '%'
-        self.axes.plot([el for el in range(num_tmc)], [threshold_upper for el in range(num_tmc)], label=upper_label, c='green', ls=':')
-        self.axes.plot([el for el in range(num_tmc)], [threshold_lower for el in range(num_tmc)], label=lower_label, c='firebrick', ls=':')
+        if self.project.show_avail_threshold:
+            self.axes.plot([el for el in range(num_tmc)], [threshold_upper for el in range(num_tmc)], label=upper_label, c='green', ls=':')
+            self.axes.plot([el for el in range(num_tmc)], [threshold_lower for el in range(num_tmc)], label=lower_label, c='firebrick', ls=':')
         self.axes.legend()
         self.tmc_bars = self.axes.bar([el for el in range(num_tmc)], data.values)
         self.axes.set_xticks([el for el in range(num_tmc)])
@@ -1724,8 +1725,9 @@ class MplChart(FigureCanvas):
         threshold_lower = self.project.data_avail_threshold_lower
         upper_label = str(int(threshold_upper * 100)) + '%'
         lower_label = str(int(threshold_lower * 100)) + '%'
-        self.axes.plot([el for el in range(len(y_wd))], [threshold_upper for el in range(len(y_wd))], label=upper_label, c='green', ls=':')
-        self.axes.plot([el for el in range(len(y_wd))], [threshold_lower for el in range(len(y_wd))], label=lower_label, c='firebrick', ls=':')
+        if self.project.show_avail_threshold:
+            self.axes.plot([el for el in range(len(y_wd))], [threshold_upper for el in range(len(y_wd))], label=upper_label, c='green', ls=':')
+            self.axes.plot([el for el in range(len(y_wd))], [threshold_lower for el in range(len(y_wd))], label=lower_label, c='firebrick', ls=':')
         self.axes.legend()
         width = 0.35
         self.sp_bars1 = self.axes.bar([el for el in range(len(y_wd))], y_wd, width, label='Weekdays')

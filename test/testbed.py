@@ -183,7 +183,7 @@ ax.set_yticklabels(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'])
 ax.set_title('Time of Day Reliability (LOTTR) by Day of Week')
 
 ax_cb = fig.add_axes([0.9, 0.1, 0.03, 0.8])
-cNorm = mpl.colors.Normalize(vmin=1, vmax=1.5)
+cNorm = mpl.colors.Normalize(vmin=1, vmax=2.0)
 cb1 = mpl.colorbar.ColorbarBase(ax_cb, norm=cNorm, cmap='Reds')
 plt.show()
 # # plot_url = py.plot_mpl(fig)

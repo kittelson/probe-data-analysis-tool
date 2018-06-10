@@ -7,7 +7,10 @@ import datetime
 from chart_defaults import ChartOptions
 import viz_qt
 import mpl_charts
-from PyQt5.QtWidgets import QWidget, QVBoxLayout
+
+
+def convert_time_to_ap(start_hour, start_min, ap_increment):
+    return (start_hour * (60 // ap_increment)) + start_min // ap_increment
 
 
 class Project:
@@ -49,6 +52,14 @@ class Project:
         self.max_speed = 70
         self.data_avail_threshold_lower = 0.5
         self.data_avail_threshold_upper = 0.8
+        self.show_avail_threshold = False
+        self.selected_tmc = None
+        self.p1_ap_start = convert_time_to_ap(6, 0, self.data_res)
+        self.p1_ap_end = convert_time_to_ap(10, 0, self.data_res)
+        self.p2_ap_start = convert_time_to_ap(10, 0, self.data_res)
+        self.p2_ap_end = convert_time_to_ap(15, 0, self.data_res)
+        self.p3_ap_start = convert_time_to_ap(15, 0, self.data_res)
+        self.p3_ap_end = convert_time_to_ap(19, 0, self.data_res)
 
     def set_name(self, new_name):
         self._project_name = new_name

@@ -477,6 +477,7 @@ class Stage2GridPanel(QtWidgets.QWidget):
     def select_tmc(self, tmc_code):
         # self.cb_tmc_select.setCurrentText(tmc_code)
         self.selected_tmc_name = tmc_code
+        self.project.selected_tmc = tmc_code
         tmc = self.project.get_tmc(full_list=True)
         self.selected_tmc_len = tmc.loc[tmc[Project.ID_TMC_CODE] == tmc_code, Project.ID_TMC_LEN].iloc[0]
         self.tmc_selection_changed()

@@ -27,7 +27,7 @@ from chart_defaults import ChartOptions, SPEED_BIN_DEFAULTS, generate_color_butt
 # import sql_helper
 # from chart_defaults import generate_vega_lite
 from DataHelper import Project
-from ImportHelper import ImportDialog, EditInfoDialog, EditDQChartOptionsDialog, EditStage1ChartsDialog
+from ImportHelper import ImportDialog, EditInfoDialog, EditDQChartOptionsDialog, EditStage1ChartsDialog, EditPeriodOptionsDialog
 from StyleHelper import get_menu_style
 
 PyQt5.QtWidgets.QApplication.setAttribute(PyQt5.QtCore.Qt.AA_EnableHighDpiScaling, True)
@@ -85,9 +85,9 @@ class MainWindow(QMainWindow):
         #self.web = QWebView()
         #self.container = ConnectionContainer()
 
-        new_file_action = QAction('&New Project', self)
+        new_file_action = QAction('&Load Data', self)
         new_file_action.setShortcut('Ctrl+N')
-        new_file_action.setToolTip('Create New Project File')
+        new_file_action.setToolTip('Load Project Dataset')
         new_file_action.triggered.connect(self.create_new)
         self.ui.menuFile.addAction(new_file_action)
         self.ui.pushButton_new_proj.clicked.connect(self.create_new)
@@ -183,7 +183,7 @@ class MainWindow(QMainWindow):
         self.ui.pushButton_sec_chart.clicked.connect(self.create_chart_panel1)
         self.ui.pushButton_sec_chart.setDisabled(True)
 
-        self.ui.pushButton_open_proj.setEnabled(False)
+        # self.ui.pushButton_open_proj.setEnabled(False)
         self.ui.pushButton_exit.clicked.connect(self.close)
 
         self.ui.create_charts_button.setEnabled(False)
@@ -194,14 +194,17 @@ class MainWindow(QMainWindow):
         f_name = os.path.realpath('templates/minimap_instructions.html')
         self.ui.webView_minimap.load(QUrl('file:///' + f_name.replace('\\', '/')))
 
-        self.ui.pushButton_5.clicked.connect(self.generate_summary_table)
+        # self.ui.pushButton_5.clicked.connect(self.generate_summary_table)
 
-        self.ui.pushButton_tmc_subset.setText('Analyze Corridor Statistics')
-        self.ui.pushButton_tmc_subset.setEnabled(False)
+        # self.ui.pushButton_tmc_subset.setText('Analyze Corridor Statistics')
+        # self.ui.pushButton_tmc_subset.setEnabled(False)
+        self.ui.pushButton_tmc_subset.setVisible(False)
 
-        self.ui.edit_trends_button.setDisabled(True)
-        for item_idx in range(1, 7):
-            self.ui.toolBox.setItemEnabled(item_idx, False)
+        # self.ui.edit_trends_button.setDisabled(True)
+        self.ui.edit_trends_button.clicked.connect(self.edit_time_periods)
+
+        for item_idx in range(1, self.ui.toolBox.count()):
+                self.ui.toolBox.setItemEnabled(item_idx, False)
 
         self.showMaximized()
 
@@ -228,6 +231,25 @@ class MainWindow(QMainWindow):
             self.ui.toolBox.setCurrentIndex(6)
         elif self.ui.tabWidget.currentIndex() > 1:
             self.ui.toolBox.setCurrentIndex(self.ui.tabWidget.currentIndex() - 2)
+
+        # Checking to see if panel is update based on selected TMC
+        if self.ui.tabWidget.currentWidget() is self.chart_panel_spatial:
+            self.chart_panel_spatial.check_time_periods_changed(True)
+        if self.ui.tabWidget.currentWidget() is self.chart_panel1_3:
+            # self.chart_panel1_3.check_selected_tmc()
+            self.chart_panel1_3.check_data_up_to_date()
+        elif self.ui.tabWidget.currentWidget() is self.chart_panel1_4:
+            # self.chart_panel1_4.check_selected_tmc()
+            self.chart_panel1_4.check_data_up_to_date()
+        if self.ui.tabWidget.currentWidget() is self.stage2panel or self.ui.tabWidget.currentWidget() is self.stage2panel_2:
+            # get_selected = self.ui.treeWidget_2.selectedItems()
+            get_selected = self.ui.treeWidget_2.currentIndex()
+            if get_selected and get_selected.row() > -1:
+                dir_tmc = self.project.get_tmc()
+                tmc_index = dir_tmc.loc[dir_tmc[Project.ID_TMC_CODE] == self.project.selected_tmc].index[0]
+                if get_selected.row() != tmc_index:
+                    root_item = self.ui.treeWidget_2.invisibleRootItem()
+                    self.ui.treeWidget_2.setCurrentItem(root_item.child(tmc_index))
 
     def toolbox_select_changed(self):
         curr_page = self.ui.toolBox.currentIndex()
@@ -334,7 +356,8 @@ class MainWindow(QMainWindow):
         project_dir_name = proj_info_dict['dir']
         tokens = project_dir_name.split('/')
         tmc_file_name = proj_info_dict['tmc_file_name']  #project_dir_name + '/tmc_identification.csv'
-        data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+        # data_file_name = project_dir_name + '/' + tokens[-1] + '.csv'
+        data_file_name = proj_info_dict['data_file_name']
         self.edit_project_info_action.setEnabled(True)
         self.project = Project(proj_info_dict['name'], project_dir_name, self)
         self.set_project_info(proj_info_dict)
@@ -398,6 +421,11 @@ class MainWindow(QMainWindow):
         edit_s1_options_dlg.setModal(True)
         edit_s1_options_dlg.show()
 
+    def edit_time_periods(self):
+        edit_time_periods_dlg = EditPeriodOptionsDialog(self)
+        edit_time_periods_dlg.setModal(True)
+        edit_time_periods_dlg.show()
+
     def update_project_info(self):
         self.ui.label_project_name.setText(self.project.get_name())
         self.setWindowTitle('Travel Time and Probe Data Analytics Tool - ' + self.project.get_name())
@@ -431,7 +459,7 @@ class MainWindow(QMainWindow):
         # Enabling components
         self.load_map_action.setEnabled(True)
         self.ui.pushButton_first_chart.setEnabled(True)
-        self.ui.pushButton_sec_chart.setEnabled(True)
+        # self.ui.pushButton_sec_chart.setEnabled(True)
         # self.chart1_load_action.setEnabled(True)
         proj_item.setExpanded(True)
         # proj_item.child(0).setCheckState(0, Qt.Checked)  # Uncomment to make checkable
@@ -533,7 +561,7 @@ class MainWindow(QMainWindow):
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.toolBox.setItemEnabled(5, True)
         self.ui.toolBox.setItemEnabled(6, True)
-        self.ui.pushButton_5.setEnabled(True)
+        # self.ui.pushButton_5.setEnabled(True)
         # pass
 
     def generate_summary_table(self):
@@ -608,29 +636,29 @@ class MainWindow(QMainWindow):
         self.corr_summ_table.setRowCount(4)
         self.corr_summ_table.setColumnCount(4)
         self.corr_summ_table.setHorizontalHeaderItem(0, QTableWidgetItem(''))
-        self.corr_summ_table.setHorizontalHeaderItem(1, QTableWidgetItem('Study Period'))
-        self.corr_summ_table.setHorizontalHeaderItem(2, QTableWidgetItem('Period 1'))
-        self.corr_summ_table.setHorizontalHeaderItem(3, QTableWidgetItem('Period 2'))
+        self.corr_summ_table.setHorizontalHeaderItem(1, QTableWidgetItem('Period 1'))
+        self.corr_summ_table.setHorizontalHeaderItem(2, QTableWidgetItem('Period 2'))
+        # self.corr_summ_table.setHorizontalHeaderItem(3, QTableWidgetItem('Study Period'))
         ri = 0
         self.corr_summ_table.setItem(ri, 0, QTableWidgetItem('% TMC LoTTR < 1.5 (AM)'))
-        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('--'))
-        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(am_val[0])))
-        self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('{:1.2f}%'.format(am_val[1])))
+        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('{:1.2f}%'.format(am_val[0])))
+        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(am_val[1])))
+        # self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('--'))
         ri += 1
         self.corr_summ_table.setItem(ri, 0, QTableWidgetItem('% TMC LoTTR < 1.5 (PM)'))
-        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('--'))
-        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(pm_val[0])))
-        self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('{:1.2f}%'.format(pm_val[1])))
+        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('{:1.2f}%'.format(pm_val[0])))
+        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(pm_val[1])))
+        # self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('--'))
         ri += 1
         self.corr_summ_table.setItem(ri, 0, QTableWidgetItem('% TMC LoTTR < 1.5 (Midday Weekday)'))
-        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('--'))
-        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(md_val[0])))
-        self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('{:1.2f}%'.format(md_val[1])))
+        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('{:1.2f}%'.format(md_val[0])))
+        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(md_val[1])))
+        # self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('--'))
         ri += 1
         self.corr_summ_table.setItem(ri, 0, QTableWidgetItem('% TMC LoTTR < 1.5 (Midday Weekend)'))
-        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('--'))
-        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(we_val[0])))
-        self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('{:1.2f}%'.format(we_val[1])))
+        self.corr_summ_table.setItem(ri, 1, QTableWidgetItem('{:1.2f}%'.format(we_val[0])))
+        self.corr_summ_table.setItem(ri, 2, QTableWidgetItem('{:1.2f}%'.format(we_val[1])))
+        # self.corr_summ_table.setItem(ri, 3, QTableWidgetItem('--'))
         for i in range(self.corr_summ_table.rowCount()):
             for j in range(self.corr_summ_table.columnCount()):
                 self.corr_summ_table.item(i, j).setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
@@ -811,7 +839,7 @@ class MainWindow(QMainWindow):
 
         self.ui.tabWidget.setCurrentIndex(new_tab_index)
         self.ui.toolBox.setItemEnabled(1, True)
-        self.ui.pushButton_sec_chart.setEnabled(True)
+        # self.ui.pushButton_sec_chart.setEnabled(True)
 
         if len(full_dir_list) > 1:
             self.ui.pushButton_first_chart.setText('Update Analysis Direction')

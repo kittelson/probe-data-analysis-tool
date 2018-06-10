@@ -76,19 +76,17 @@ tmc_path = 'TMC_Identification.csv'
 # df = pd.read_csv('C:/Users/ltrask/Documents/18135 - FHWA Sketch Planning Methods/I66_Sample/I66_Sample.csv')
 # tmc = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-EB-2016/' + tmc_path)
 # df = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-EB-2016/I4-South-Section-EB-2016.csv')
-tmc = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-WB-2016/' + tmc_path)
-df = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-WB-2016/I4-South-Section-WB-2016.csv')
+# tmc = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-WB-2016/' + tmc_path)
+# df = pd.read_csv('C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/I4-South-Section-WB-2016/I4-South-Section-WB-2016.csv')
+# tmc = pd.read_csv('C:/Users/ltrask/Downloads/SR99-NB-20180301-20180430/' + tmc_path)
+# df = pd.read_csv('C:/Users/ltrask/Downloads/SR99-NB-20180301-20180430/SR99-NB-20180301-20180430.csv')
+tmc = pd.read_csv('C:/Users/ltrask/Downloads/SR99-SB-20180301-20180430/' + tmc_path)
+df = pd.read_csv('C:/Users/ltrask/Downloads/SR99-SB-20180301-20180430/SR99-SB-20180301-20180430.csv')
 df = df[df.travel_time_minutes.notnull()]
 
 dirs = tmc['direction'].unique()
 tmc_subset1 = tmc[tmc['direction'] == dirs[0]]['tmc']
 df_dir1 = df[df['tmc_code'].isin(tmc_subset1)]
-facility_len1 = tmc[tmc['direction'] == dirs[0]].miles.sum()
-if len(dirs) > 1:
-    tmc_subset2 = tmc[tmc['direction'] == dirs[1]]['tmc']
-    df_dir2 = df[df['tmc_code'].isin(tmc_subset2)]
-    facility_len2 = tmc[tmc['direction'] == dirs[1]].miles.sum()
-
 
 # Creating data for direction #1
 time1 = time.time()
@@ -103,17 +101,18 @@ df_dir1['Hour'] = df_dir1['AP'] // (60 / data_res)
 time2 = time.time()
 print('df_dir1 Creation: '+str(time2-time1))
 
-month_list = [5]
+month_list = [3, 4]
+# month_list = [3]
+# month_list = [4]
 day_list = [1, 2, 3]
 
-# df_wkdy = df_dir1[df_dir1['Day'].isin([0, 1, 2, 3, 4])]
 df_month = df_dir1[df_dir1['Month'].isin(month_list)]
 df_wkdy = df_month[df_month['Day'].isin(day_list)]
 
 df_contour = df_wkdy.groupby(['tmc_code', 'AP']).agg(np.mean)
 df_contour = df_contour.reindex(tmc['tmc'].values, level=0)
 
-f_name1 = 'C:/Users/ltrask/Documents/13066 - I4 BtU/South Section/2016/Contours/WB_2016_May_Speeds.csv'
+f_name1 = 'C:/Users/ltrask/Desktop/Sacramento 99/SB_MarAprTWT.csv'
 f_c = open(f_name1, 'w')
 
 midnight = datetime(1, 1, 1, 0, 0, 0)

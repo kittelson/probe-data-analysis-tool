@@ -6,12 +6,13 @@ import os
 from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QDialog, QWidget, QTabWidget, QDialogButtonBox, QTableWidget, QTableWidgetItem, QAbstractItemView
-from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit, QSpinBox
+from PyQt5.QtWidgets import QLabel, QComboBox, QPushButton, QLineEdit, QSpinBox, QCheckBox
 from PyQt5.QtWidgets import QVBoxLayout, QHBoxLayout, QFormLayout, QGridLayout
 from PyQt5.QtWidgets import QMessageBox, QFileDialog
 from PyQt5.QtGui import QFont
 import pandas as pd
 from DataHelper import Project
+import datetime
 
 
 NUM_DATA_PREV = 10
@@ -39,7 +40,17 @@ class ImportDialog(QDialog):
             self.master_file_exists = False
             self.tmc_file_name = self.project_dir_name + '/tmc_identification.csv'
         self.data_file_name = self.project_dir_name + '/' + tokens[-1] + '.csv'
-        self.setWindowTitle("Project Data")
+        if not os.path.isfile(self.data_file_name):
+            QMessageBox.warning(None,
+                                'Default Data File Not Found',
+                                'A data file with the default name was not found. Please select the desired dataset file.',
+                                QMessageBox.Ok, QMessageBox.Ok)
+            filename, _ = QFileDialog.getOpenFileName(self, 'Select Data File', self.project_dir_name, "CSV files (*.csv)")
+            if filename:
+                self.data_file_name = filename
+            else:
+                return
+        self.setWindowTitle("Import Project Data")
 
         self.data_inspected = False
         self.map_exists = False
@@ -228,6 +239,7 @@ class ImportDialog(QDialog):
 
         proj_info_dict = dict()
         proj_info_dict['dir'] = self.project_dir_name
+        proj_info_dict['data_file_name'] = self.data_file_name
         proj_info_dict['tmc_file_name'] = self.tmc_file_name
         proj_info_dict['name'] = self.project_name_input.text()
         proj_info_dict['analyst'] = self.analyst_input.text()
@@ -633,6 +645,10 @@ class EditDQChartOptionsDialog(QDialog):
         l = QFormLayout(self)
         title_label = QLabel('Specify the desired data quality thresholds:')
         title_label.setFont(QFont("Times", weight=QFont.Bold))
+        show_thresh_label = QLabel('Show Thresholds on Chart: ')
+        show_thresh_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.show_thresh_check = QCheckBox()
+        self.show_thresh_check.setChecked(self.project.show_avail_threshold)
         upper_thresh_label = QLabel('Desired Threshold: ')
         upper_thresh_label.setFont(QFont("Times", weight=QFont.Bold))
         self.upper_thresh_input = QSpinBox()
@@ -649,6 +665,7 @@ class EditDQChartOptionsDialog(QDialog):
         self.lower_thresh_input.setSuffix(' %')
 
         l.addRow(title_label)
+        l.addRow(show_thresh_label, self.show_thresh_check)
         l.addRow(upper_thresh_label, self.upper_thresh_input)
         l.addRow(lower_thresh_label, self.lower_thresh_input)
         buttons = QDialogButtonBox(Qt.Horizontal, self)
@@ -662,6 +679,7 @@ class EditDQChartOptionsDialog(QDialog):
         if self.upper_thresh_input.value() >= self.lower_thresh_input.value():
             self.project.data_avail_threshold_upper = self.upper_thresh_input.value() / 100.0
             self.project.data_avail_threshold_lower = self.lower_thresh_input.value() / 100.0
+            self.project.show_avail_threshold = self.show_thresh_check.isChecked()
             self.main_window.dq_chart_panel.update_figures()
             self.close()
         else:
@@ -719,3 +737,85 @@ class EditStage1ChartsDialog(QDialog):
 
     def close_press(self):
         self.close()
+
+
+class EditPeriodOptionsDialog(QDialog):
+    def __init__(self, main_window):
+        super().__init__(main_window)
+        self.main_window = main_window
+        self.project = main_window.project
+        self.setWindowTitle('Edit Trend Time Periods')
+
+        l = QFormLayout(self)
+        title_label = QLabel('Specify start and end times for each period:')
+        title_label.setFont(QFont("Times", weight=QFont.Bold))
+        midnight = datetime.datetime(2000, 1, 1, 0, 0, 0)
+        ap_list = [(midnight + datetime.timedelta(minutes=self.project.data_res * i)).strftime('%I:%M%p') for i in
+                   range(24 * 60 // self.project.data_res)]
+        p1_start_label = QLabel('AM (Period 1) Start:')
+        p1_start_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p1_start_cb = QComboBox()
+        self.p1_start_cb.addItems(ap_list)
+        p1_end_label = QLabel('AM (Period 1) End:')
+        p1_end_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p1_end_cb = QComboBox()
+        self.p1_end_cb.addItems(ap_list)
+        p2_start_label = QLabel('Midday (Period 2) Start:')
+        p2_start_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p2_start_cb = QComboBox()
+        self.p2_start_cb.addItems(ap_list)
+        p2_end_label = QLabel('Midday (Period 2) End:')
+        p2_end_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p2_end_cb = QComboBox()
+        self.p2_end_cb.addItems(ap_list)
+        p3_start_label = QLabel('PM (Period 3) Start:')
+        p3_start_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p3_start_cb = QComboBox()
+        self.p3_start_cb.addItems(ap_list)
+        p3_end_label = QLabel('PM (Period 3) End:')
+        p3_end_label.setFont(QFont("Times", weight=QFont.Bold))
+        self.p3_end_cb = QComboBox()
+        self.p3_end_cb.addItems(ap_list)
+
+        self.p1_start_cb.setCurrentIndex(self.project.p1_ap_start)
+        self.p1_end_cb.setCurrentIndex(self.project.p1_ap_end)
+        self.p2_start_cb.setCurrentIndex(self.project.p2_ap_start)
+        self.p2_end_cb.setCurrentIndex(self.project.p2_ap_end)
+        self.p3_start_cb.setCurrentIndex(self.project.p3_ap_start)
+        self.p3_end_cb.setCurrentIndex(self.project.p3_ap_end)
+
+        l.addRow(title_label)
+        l.addRow(p1_start_label, self.p1_start_cb)
+        l.addRow(p1_end_label, self.p1_end_cb)
+        l.addRow(p2_start_label, self.p2_start_cb)
+        l.addRow(p2_end_label, self.p2_end_cb)
+        l.addRow(p3_start_label, self.p3_start_cb)
+        l.addRow(p3_end_label, self.p3_end_cb)
+        buttons = QDialogButtonBox(Qt.Horizontal, self)
+        buttons.addButton(QDialogButtonBox.Ok)
+        buttons.addButton(QDialogButtonBox.Cancel)
+        buttons.accepted.connect(self.ok_press)
+        buttons.rejected.connect(self.close_press)
+        l.addWidget(buttons)
+
+    def ok_press(self):
+        if self.p1_start_cb.currentIndex() < self.p1_end_cb.currentIndex() \
+                and self.p2_start_cb.currentIndex() < self.p2_end_cb.currentIndex() \
+                and self.p3_start_cb.currentIndex() < self.p3_end_cb.currentIndex():
+            self.project.p1_ap_start = self.p1_start_cb.currentIndex()
+            self.project.p1_ap_end = self.p1_end_cb.currentIndex()
+            self.project.p2_ap_start = self.p2_start_cb.currentIndex()
+            self.project.p2_ap_end = self.p2_end_cb.currentIndex()
+            self.project.p3_ap_start = self.p3_start_cb.currentIndex()
+            self.project.p3_ap_end = self.p3_end_cb.currentIndex()
+            self.main_window.chart_panel1_4.check_time_periods_changed(True)
+            self.close()
+        else:
+            QMessageBox.warning(self,
+                                'Invalid Values',
+                                'All period end times must be after the period start times.',
+                                QMessageBox.Ok, QMessageBox.Ok)
+
+    def close_press(self):
+        self.close()
+
