@@ -9,11 +9,11 @@ Has leftover code defining the FlaskThread for potential future web/d3js visuali
 import sys
 import os
 import PyQt5
-from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate
+from PyQt5.QtCore import QObject, pyqtSlot, QUrl, QThread, Qt, QDate, QRect
 # from PyQt5.QtWebKitWidgets import QWebView
 from PyQt5.QtWebEngineWidgets import QWebEngineView
 from PyQt5.QtWidgets import QApplication, QMainWindow, QMenu, QAction, QFileDialog, QDialog, QFormLayout, QDialogButtonBox
-from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QHBoxLayout
+from PyQt5.QtWidgets import QVBoxLayout, QGridLayout, QHBoxLayout, QStyleFactory, QMenuBar
 from PyQt5.QtWidgets import QLineEdit, QTreeWidgetItem, QWidget, QLabel, QColorDialog, QMessageBox, QTableWidget, QTableWidgetItem
 from PyQt5.QtWidgets import QInputDialog, QHeaderView
 from PyQt5.QtGui import QColor, QFont
@@ -108,7 +108,7 @@ class MainWindow(QMainWindow):
         self.ui.menuFile.addSeparator()
 
 
-        exit_app_action = QAction('&Exit', self)
+        exit_app_action = QAction(' &Exit', self)
         exit_app_action.setShortcut(('Ctrl+Q'))
         exit_app_action.setToolTip('Exit Program')
         exit_app_action.triggered.connect(self.close)
@@ -198,7 +198,7 @@ class MainWindow(QMainWindow):
 
         # self.ui.pushButton_tmc_subset.setText('Analyze Corridor Statistics')
         # self.ui.pushButton_tmc_subset.setEnabled(False)
-        self.ui.pushButton_tmc_subset.setVisible(False)
+        # self.ui.pushButton_tmc_subset.setVisible(False)
 
         # self.ui.edit_trends_button.setDisabled(True)
         self.ui.edit_trends_button.clicked.connect(self.edit_time_periods)
@@ -208,21 +208,8 @@ class MainWindow(QMainWindow):
 
         self.showMaximized()
 
-    # def load_finished(self):
-    #     self.ui.webView_map.page().mainFrame().addToJavaScriptWindowObject("container", self.container)
-
-    # def load_browser(self):
-    #     print('Action Triggered')
-    #     f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "HTML files (*.html)")
-    #     print(f_name[0])
-    #     self.ui.webView.loadFinished.connect(self.load_finished)
-    #     self.ui.webView.load(QUrl('file:///' + f_name[0]))
-
-    # def load_reader(self):
-    #     print('Action Triggered')
-    #     f_name = QFileDialog.getOpenFileName(self, 'Open file', '', "HTML files (*.html)")
-    #     print(f_name[0])
-    #     self.ui.webView_2.load(QUrl('file:///' + f_name[0]))  # 'file:///C:/Users/ltrask/PycharmProjects/BrowserTest/index.html'
+        self.ui.menubar.setVisible(False)
+        self.ui.menubar.setVisible(True)
 
     def tab_select_changed(self):
         if self.ui.tabWidget.currentWidget() is self.stage2panel or self.ui.tabWidget.currentWidget() is self.stage2panel_2:
@@ -867,8 +854,9 @@ class MainWindow(QMainWindow):
         self.ui.toolBox.setItemEnabled(3, False)
         self.ui.toolBox.setItemEnabled(4, False)
         self.ui.toolBox.setItemEnabled(5, False)
-        self.ui.toolBox.setItemEnabled(6, False)
+        # self.ui.toolBox.setItemEnabled(6, False)
 
+        self.project.selected_tmc = None
         self.load_spatial_charts()
 
     def create_chart_panel1(self):
@@ -1152,6 +1140,10 @@ def provide_gui_for(application):
     qt_app = QApplication(sys.argv)
     web_app = FlaskThread(application)
     web_app.start()
+
+    # set new style globally
+    s = QStyleFactory.create('Fusion')
+    qt_app.setStyle(s)
 
     qt_app.aboutToQuit.connect(web_app.terminate)
     mw = MainWindow()

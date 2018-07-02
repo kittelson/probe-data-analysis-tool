@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'mw_test.ui'
+# Form implementation generated from reading ui file 'mw_20180612.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.10.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -11,7 +11,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         MainWindow.setObjectName("MainWindow")
-        MainWindow.resize(1329, 864)
+        MainWindow.resize(1332, 873)
         MainWindow.setStyleSheet("")
         self.centralwidget = QtWidgets.QWidget(MainWindow)
         self.centralwidget.setObjectName("centralwidget")
@@ -108,7 +108,7 @@ class Ui_MainWindow(object):
         self.toolBox.setObjectName("toolBox")
         self.page_15 = QtWidgets.QWidget()
         self.page_15.setEnabled(True)
-        self.page_15.setGeometry(QtCore.QRect(0, 0, 218, 229))
+        self.page_15.setGeometry(QtCore.QRect(0, 0, 218, 276))
         self.page_15.setStyleSheet("")
         self.page_15.setObjectName("page_15")
         self.verticalLayout = QtWidgets.QVBoxLayout(self.page_15)
@@ -199,7 +199,7 @@ class Ui_MainWindow(object):
         self.toolBox.addItem(self.page_16, "")
         self.page_19 = QtWidgets.QWidget()
         self.page_19.setEnabled(True)
-        self.page_19.setGeometry(QtCore.QRect(0, 0, 197, 187))
+        self.page_19.setGeometry(QtCore.QRect(0, 0, 218, 187))
         self.page_19.setObjectName("page_19")
         self.verticalLayout_6 = QtWidgets.QVBoxLayout(self.page_19)
         self.verticalLayout_6.setContentsMargins(1, 1, 1, 1)
@@ -422,7 +422,7 @@ class Ui_MainWindow(object):
         self.toolBox.addItem(self.page_18, "")
         self.page_20 = QtWidgets.QWidget()
         self.page_20.setEnabled(True)
-        self.page_20.setGeometry(QtCore.QRect(0, 0, 218, 236))
+        self.page_20.setGeometry(QtCore.QRect(0, 0, 218, 239))
         self.page_20.setObjectName("page_20")
         self.verticalLayout_8 = QtWidgets.QVBoxLayout(self.page_20)
         self.verticalLayout_8.setContentsMargins(7, 1, 1, 1)
@@ -441,26 +441,7 @@ class Ui_MainWindow(object):
         self.label_6.setObjectName("label_6")
         self.horizontalLayout_5.addWidget(self.label_6)
         self.verticalLayout_8.addWidget(self.widget_7)
-        self.pushButton_tmc_subset = QtWidgets.QPushButton(self.page_20)
-        self.pushButton_tmc_subset.setObjectName("pushButton_tmc_subset")
-        self.verticalLayout_8.addWidget(self.pushButton_tmc_subset)
         self.toolBox.addItem(self.page_20, "")
-        # self.page_21 = QtWidgets.QWidget()
-        # self.page_21.setEnabled(True)
-        # self.page_21.setGeometry(QtCore.QRect(0, 0, 218, 85))
-        # self.page_21.setObjectName("page_21")
-        # self.formLayout = QtWidgets.QFormLayout(self.page_21)
-        # self.formLayout.setContentsMargins(7, 1, 1, 1)
-        # self.formLayout.setObjectName("formLayout")
-        # self.pushButton_5 = QtWidgets.QPushButton(self.page_21)
-        # self.pushButton_5.setEnabled(False)
-        # self.pushButton_5.setObjectName("pushButton_5")
-        # self.formLayout.setWidget(1, QtWidgets.QFormLayout.SpanningRole, self.pushButton_5)
-        # self.pushButton_6 = QtWidgets.QPushButton(self.page_21)
-        # self.pushButton_6.setEnabled(False)
-        # self.pushButton_6.setObjectName("pushButton_6")
-        # self.formLayout.setWidget(2, QtWidgets.QFormLayout.SpanningRole, self.pushButton_6)
-        # self.toolBox.addItem(self.page_21, "")
         self.verticalLayout_2.addWidget(self.toolBox)
         self.scrollArea = QtWidgets.QScrollArea(self.widget_2)
         sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed)
@@ -496,15 +477,7 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(5)
         sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
         self.tabWidget.setSizePolicy(sizePolicy)
-        self.tabWidget.setStyleSheet("QTabBar {\n"
-"    qproperty-drawBase: 0;\n"
-"    border-radius: 3px;\n"
-"}\n"
-"\n"
-"QTabBar:focus {\n"
-"    border: 0px transparent black;\n"
-"}\n"
-"QTabBar::tab:top {\n"
+        self.tabWidget.setStyleSheet("QTabBar::tab:top {\n"
 "    color: #eff0f1;\n"
 "    border: 1px solid #76797C;\n"
 "    border-bottom: 1px transparent black;\n"
@@ -526,7 +499,8 @@ class Ui_MainWindow(object):
 "\n"
 "QTabBar::tab:top:!selected:hover {\n"
 "    background-color: #3daee9;\n"
-"}\n")
+"}\n"
+"")
         self.tabWidget.setObjectName("tabWidget")
         self.tab_4 = QtWidgets.QWidget()
         self.tab_4.setStyleSheet("")
@@ -541,7 +515,7 @@ class Ui_MainWindow(object):
         self.label_2 = QtWidgets.QLabel(self.widget_11)
         self.label_2.setMaximumSize(QtCore.QSize(1000, 650))
         self.label_2.setText("")
-        self.label_2.setPixmap(QtGui.QPixmap("18135_splash_chart.jpg"))  # ../NPMRDS_Data_Tool/
+        self.label_2.setPixmap(QtGui.QPixmap("icon/18135_splash_chart.jpg"))
         self.label_2.setScaledContents(True)
         self.label_2.setObjectName("label_2")
         self.horizontalLayout.addWidget(self.label_2)
@@ -561,15 +535,9 @@ class Ui_MainWindow(object):
         self.pushButton_new_proj.setFont(font)
         self.pushButton_new_proj.setObjectName("pushButton_new_proj")
         self.horizontalLayout_2.addWidget(self.pushButton_new_proj)
-        # self.pushButton_open_proj = QtWidgets.QPushButton(self.widget)
-        # self.pushButton_open_proj.setEnabled(False)
-        self.label_20 = QtWidgets.QLabel('')
-        font = QtGui.QFont()
-        font.setPointSize(16)
-        # self.pushButton_open_proj.setFont(font)
-        # self.pushButton_open_proj.setObjectName("pushButton_open_proj")
+        self.label_20 = QtWidgets.QLabel(self.widget)
+        self.label_20.setText("")
         self.label_20.setObjectName("label_20")
-        # self.horizontalLayout_2.addWidget(self.pushButton_open_proj)
         self.horizontalLayout_2.addWidget(self.label_20)
         self.pushButton_exit = QtWidgets.QPushButton(self.widget)
         font = QtGui.QFont()
@@ -591,7 +559,7 @@ class Ui_MainWindow(object):
         self.gridLayout.addWidget(self.tabWidget, 0, 1, 1, 1)
         MainWindow.setCentralWidget(self.centralwidget)
         self.menubar = QtWidgets.QMenuBar(MainWindow)
-        self.menubar.setGeometry(QtCore.QRect(0, 0, 1329, 26))
+        self.menubar.setGeometry(QtCore.QRect(0, 0, 1332, 26))
         self.menubar.setObjectName("menubar")
         self.menubar.setStyleSheet("QWidget {\n"
 "    color: #eff0f1;\n"
@@ -694,14 +662,13 @@ class Ui_MainWindow(object):
         self.actionAbout = QtWidgets.QAction(MainWindow)
         self.actionAbout.setObjectName("actionAbout")
         self.menuHelp.addAction(self.actionHelp)
-        self.menuHelp.addAction(self.actionAbout)
         self.menubar.addAction(self.menuFile.menuAction())
         self.menubar.addAction(self.menuAnalyze.menuAction())
         self.menubar.addAction(self.menuChartOptions.menuAction())
         self.menubar.addAction(self.menuHelp.menuAction())
 
         self.retranslateUi(MainWindow)
-        self.toolBox.setCurrentIndex(0)
+        self.toolBox.setCurrentIndex(5)
         self.toolBox.layout().setSpacing(7)
         self.tabWidget.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(MainWindow)
@@ -712,7 +679,7 @@ class Ui_MainWindow(object):
         self.label_3.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Project:</span></p></body></html>"))
         self.label.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Analyst:</span></p></body></html>"))
         self.label_5.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Agency:</span></p></body></html>"))
-        self.label_agency.setText(_translate("MainWindow", "KAI"))
+        self.label_agency.setText(_translate("MainWindow", "--"))
         self.label_18.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Facility:</span></p></body></html>"))
         self.label_19.setText(_translate("MainWindow", "--"))
         self.label_project_name.setText(_translate("MainWindow", "--"))
@@ -763,13 +730,8 @@ class Ui_MainWindow(object):
         self.treeWidget_2.headerItem().setText(4, _translate("MainWindow", "Total Mi"))
         self.label_4.setText(_translate("MainWindow", "<html><head/><body><p><span style=\" font-weight:600;\">Selected Length:</span></p></body></html>"))
         self.label_6.setText(_translate("MainWindow", "0.0 miles"))
-        self.pushButton_tmc_subset.setText(_translate("MainWindow", "Update"))
         self.toolBox.setItemText(self.toolBox.indexOf(self.page_20), _translate("MainWindow", "Stage 2: Comparison Analysis"))
-        # self.pushButton_5.setText(_translate("MainWindow", "Summary Report"))
-        # self.pushButton_6.setText(_translate("MainWindow", "Detailed Report"))
-        # self.toolBox.setItemText(self.toolBox.indexOf(self.page_21), _translate("MainWindow", "Stage 3: Reports"))
         self.pushButton_new_proj.setText(_translate("MainWindow", "Load Data"))
-        # self.pushButton_open_proj.setText(_translate("MainWindow", "Open Existing"))
         self.pushButton_exit.setText(_translate("MainWindow", "Exit"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), _translate("MainWindow", "Welcome"))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), _translate("MainWindow", "Facility Map"))
@@ -782,5 +744,4 @@ class Ui_MainWindow(object):
         self.actionHelp.setText(_translate("MainWindow", "Help"))
         self.actionAbout.setText(_translate("MainWindow", "About"))
 
-# from PyQt5 import QtWebKitWidgets
 from PyQt5 import QtWebEngineWidgets
