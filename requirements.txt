@@ -14,7 +14,7 @@ macholib==1.9
 MarkupSafe==1.0
 matplotlib==2.1.0
 numexpr==2.6.4
-numpy==1.13.3
+numpy==1.22.0
 osrm-py==0.4
 pandas==0.21.0
 pefile==2017.11.5
